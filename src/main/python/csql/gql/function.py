@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Type
 
+import graphene
 from graphene_sqlalchemy.converter import convert_sqlalchemy_type
 from graphene_sqlalchemy.registry import get_global_registry
 from graphql_relay import from_global_id
 from sqlalchemy import Column, func, select
 
-import graphene
 from csql.sql.utils import cachedclassproperty
 
 if TYPE_CHECKING:

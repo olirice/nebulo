@@ -7,6 +7,7 @@ class UserConfig:
         graphql_route: str,
         graphiql: bool,
         port: int,
+        demo: bool,
     ):
         self.connection = connection
         self.schema = schema
@@ -14,6 +15,7 @@ class UserConfig:
         self.graphiql = graphiql
         self.graphql_route = graphql_route
         self.port = port
+        self.demo = demo
 
     def __str__(self):
         return f"UserConfig(**{self.__dict__})"

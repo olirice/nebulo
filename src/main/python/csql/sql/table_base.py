@@ -103,3 +103,14 @@ def after_tooling_application():
             # if "@ommit" in comment:
             #    delattr(table, column.name)
             #    print(f"Omitted {column.name}")
+
+
+# @event.listens_for(Engine, "connect")
+def set_sqlite_pragmas(dbapi_connection, connection_record):
+    print("Setting pragmas")
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA TEMP_STORE=MEMORY")
+    cursor.execute("PRAGMA JOURNAL_MODE=MEMORY")
+    cursor.execute("PRAGMA SYNCHRONOUS=OFF")  # Unsafe, use FULL
+    # cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()

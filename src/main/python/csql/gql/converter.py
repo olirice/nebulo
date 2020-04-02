@@ -211,16 +211,16 @@ def table_to_order_by(sqla_model: TableBase) -> GraphQLInputObjectType:
     )
 
 
-def resolver_query_all(obj, info, **user_kwargs) -> List[TableBase]:
-    print(obj, info, user_kwargs)
-
+async def resolver_query_all(obj, info, **user_kwargs) -> List[TableBase]:
     context = info.context
-    session = context["session"]
+    # database = context["database"]
+    session = context["session"]()
     return_type = info.return_type
 
     sqla_type = [k for k, v in sqla_to_connection.items() if v == return_type][0]
-
-    sqla_result = session.query(sqla_type).limit(10).all()
+    # query = sqla_type.__table__.select()
+    # sqla_result = await database.fetch_all(query)
+    sqla_result = session.query(sqla_type).all()
 
     result = {
         "pageInfo": {
@@ -231,7 +231,6 @@ def resolver_query_all(obj, info, **user_kwargs) -> List[TableBase]:
         }
     }
     result["nodes"] = sqla_result
-
     return result
 
 
