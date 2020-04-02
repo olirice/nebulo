@@ -99,7 +99,6 @@ def reflect_function(connection, function_name: str, schema: str):
             AND pg_catalog.pg_function_is_visible(pg_proc.oid);
     """
     )
-    print(function_name, schema)
 
     oid, sql_func_name, return_type, param_names, param_types = connection.execute(
         query, {"schema": schema, "function_name": function_name}

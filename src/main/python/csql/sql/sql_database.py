@@ -30,21 +30,9 @@ class SQLDatabase:
     @lru_cache()
     def functions(self):
         function_names = get_function_names(self.engine, schema=self.schema)
-        function_names = ["authenticate"]
-        print(function_names)
+        # function_names = ["authenticate"]
         reflected_functions = []
         for function_name in function_names:
-            try:
-                ref_fun = reflect_function(self.engine, function_name, schema=self.schema)
-                reflected_functions.append(ref_fun)
-            except Exception as exc:
-                continue
-                # graphene does not provide a specific exception type for this
-                msg = str(exc)
-                print(msg)
-                continue
-                if True:  # "" in msg:
-                    print("Warning:", msg)
-                else:
-                    raise exc
+            ref_fun = reflect_function(self.engine, function_name, schema=self.schema)
+            reflected_functions.append(ref_fun)
         return reflected_functions

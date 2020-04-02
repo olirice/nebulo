@@ -76,7 +76,6 @@ class GQLDatabase:
         for function in self.gql_functions:
             key = f"call_{function.sql_function_name}"
             value = function.call_class.Field()
-            print("Function", value, key)
             entity_attrs[key] = value
 
         all_attrs = {**relay_attrs, **entity_attrs}
