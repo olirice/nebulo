@@ -29,10 +29,7 @@ def sqla_models_to_query_object(sqla_models):
     """Creates a base query object from available graphql objects/tables"""
     query_fields = {
         **{f"{x.__table__.name}": one_node_factory(x) for x in sqla_models},
-        **{
-            f"all{snake_to_camel(to_plural(x.__table__.name))}": many_node_factory(x)
-            for x in sqla_models
-        },
+        **{f"all{snake_to_camel(to_plural(x.__table__.name))}": many_node_factory(x) for x in sqla_models},
     }
 
     query_object = ObjectType(name="Query", fields=lambda: query_fields)

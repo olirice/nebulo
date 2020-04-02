@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from flask import Flask
 from flask_graphql import GraphQLView
 from nebulous.gql.gql_database import GQLDatabase
@@ -8,7 +10,7 @@ from nebulous.sql.sql_database import SQLDatabase
 __all__ = ["create_app"]
 
 
-def create_app(connection: str, schema: str, echo_queries: bool, engine=None):
+def create_app(connection: Optional[str], schema: str, echo_queries: bool, engine=None):
     app = Flask(__name__)
     app.config["connection"] = connection
     app.config["schema"] = schema
