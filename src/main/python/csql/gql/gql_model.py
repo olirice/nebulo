@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 def model_reflection_factory(table: TableBase) -> ReflectedGQLModel:
     tablename: str = table.table_name
-    metaclass = type("Meta", (), {"model": table, "interfaces": (relay.Node,)})
 
     # Alter Types, Add Descriptions, Change Required flag,
     extra_attrs = {}
@@ -32,6 +31,10 @@ def model_reflection_factory(table: TableBase) -> ReflectedGQLModel:
                 if sql_comment_line.startswith(key):
                     description = sql_comment_line.replace(key, "", 1).lstrip()
                     extra_attrs[sql_column.name] = ORMField(description=description)
+
+    metaclass = type(
+        "Meta", (), {"model": table, "exclude_fields": (), "interfaces": (relay.Node,)}
+    )
 
     output = type(tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs))
 
@@ -60,6 +63,7 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
         # Class name is not used externally
         class_name = cls.sql_table_name + "Attributes"
         # Copy fields from the graphene model excluding 'id' which can not be user defined
+
         attrs = {
             k: v for k, v in cls._meta.fields.items() if k != "id" and isinstance(v, graphene.Field)
         }

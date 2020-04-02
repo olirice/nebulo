@@ -1,7 +1,6 @@
-from sqlalchemy import func, literal_column, select, type_coerce
+from sqlalchemy import func, literal_column, select, text, type_coerce
 from sqlalchemy.orm import column_property
 from sqlalchemy.types import TEXT
-from sqlalchemy import text
 
 
 class ComputedColumnsMixin:
@@ -61,14 +60,15 @@ class ComputedColumnsMixin:
                 parameters.data_type = 'USER-DEFINED'
                 -- Only lookup cases when the tables row is the only parameter
                 and parameter_count.freq = 1
-                and routines.specific_schema=:schema
+               -- and routines.specific_schema=schema
             ORDER BY
                 parameters.udt_name,
                 routines.routine_name
         """
             ),
-            {"schema": schema},
+            {},  # {"schema": schema},
         ).fetchall()
+        print(computed_col_list)
 
         # TODO(OR): update query to include return type for type_coerce below
         # TODO(OR): lookup available types by string returned from query above?
@@ -92,3 +92,6 @@ class ComputedColumnsMixin:
 
                 # Assign the column to the model
                 setattr(table, col_name, col)
+
+                # register column as computed
+                table.computed_columns.append(col_name)

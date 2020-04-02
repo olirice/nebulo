@@ -1,8 +1,8 @@
 # pylint: disable=bad-continuation
 from typing import List
 
-from sqlalchemy.sql.sqltypes import TypeEngine
 from sqlalchemy import text
+from sqlalchemy.sql.sqltypes import TypeEngine
 
 
 class SQLFunction:
@@ -55,7 +55,7 @@ def reflect_function(connection, function_name: str, schema: str):
     )
 
     # TODO(OR): Make sure sqlite and mysql have the same private function
-    def reflect_type(type_name: str) -> TypeEngine:
+    def reflect_type(dialect, type_name: str) -> TypeEngine:
         """Returns the correct SQLAlchemy type given the SQL type
         as a string"""
         return dialect._get_column_info(
@@ -103,7 +103,7 @@ def reflect_function(connection, function_name: str, schema: str):
     oid, sql_func_name, return_type, param_names, param_types = connection.execute(
         query, {"schema": schema, "function_name": function_name}
     ).first()
-    param_types = [reflect_type(x) for x in param_types]
+    param_types = [reflect_type(dialect, x) for x in param_types]
     return_type = reflect_type(return_type)
 
     sql_function = SQLFunction(
@@ -114,51 +114,3 @@ def reflect_function(connection, function_name: str, schema: str):
     )
 
     return sql_function
-
-
-# TODO(OR): Do something with these
-# User Defined Types
-"""
-    SELECT n.nspname AS schema,
-        pg_catalog.format_type ( t.oid, NULL ) AS name,
-        t.typname AS internal_name,
-        CASE
-            WHEN t.typrelid != 0
-            THEN CAST ( 'tuple' AS pg_catalog.text )
-            WHEN t.typlen < 0
-            THEN CAST ( 'var' AS pg_catalog.text )
-            ELSE CAST ( t.typlen AS pg_catalog.text )
-        END AS size,
-        --pg_catalog.array_to_string (
-            ARRAY( SELECT e.enumlabel
-                    FROM pg_catalog.pg_enum e
-                    WHERE e.enumtypid = t.oid
-                    ORDER BY e.oid --), E'\n'
-            ) AS tuple_elements,
-                array(select attname from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_name_arr,
-                array(select typ.typname type_name from pg_attribute at1 left join pg_type typ on at1.atttypid = typ.oid where at1.attrelid = (select typrelid from pg_type where typname = t.typname)) attr_type_arr,
-                array(select attnotnull from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_not_null_arr,
-                array(select attrelid from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_id_arr,
-                pg_catalog.obj_description ( t.oid, 'pg_type' ) AS description
-    FROM pg_catalog.pg_type t
-    LEFT JOIN pg_catalog.pg_namespace n
-        ON n.oid = t.typnamespace
-    WHERE ( t.typrelid = 0
-            OR ( SELECT c.relkind = 'c'
-                    FROM pg_catalog.pg_class c
-                    WHERE c.oid = t.typrelid
-                )
-        )
-        AND NOT EXISTS
-            ( SELECT 1
-                FROM pg_catalog.pg_type el
-                WHERE el.oid = t.typelem
-                    AND el.typarray = t.oid
-            )
-        AND n.nspname <> 'pg_catalog'
-        AND n.nspname <> 'information_schema'
-        AND pg_catalog.pg_type_is_visible ( t.oid )
-        and pg_catalog.format_type = '{function_name}'
-    ORDER BY 1, 2;
-
-"""

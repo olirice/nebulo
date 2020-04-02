@@ -12,6 +12,7 @@ from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstr
 from sqlalchemy_utils import generic_repr
 
 from csql.sql.computed_column_mixin import ComputedColumnsMixin
+from csql.sql.ddl_mixin import OmitMixin
 from csql.sql.gql_base_mixin import GQLBaseMixin
 
 from .base import Base
@@ -19,7 +20,7 @@ from .utils import classproperty
 
 
 @generic_repr
-class TableBase(GQLBaseMixin, ComputedColumnsMixin, Base):
+class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
     """Base class for application sql tables"""
 
     __abstract__ = True
@@ -67,6 +68,8 @@ class TableBase(GQLBaseMixin, ComputedColumnsMixin, Base):
                 setattr(self, key, value)
             else:
                 raise KeyError(f"Key {key} does not exist on model {self.table_name}")
+
+    computed_columns = []
 
 
 @event.listens_for(mapper, "before_configured", once=True)
