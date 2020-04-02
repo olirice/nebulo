@@ -18,21 +18,9 @@ from stringcase import pascalcase
 
 from .converter import convert_table, table_to_query_all
 
-# import graphene
-# from graphene import relay
-# from graphene_sqlalchemy import SQLAlchemyConnectionField
-
-# from .function import ReflectedGQLFunction, function_reflection_factory
-
-
 if TYPE_CHECKING:
     from csql.sql.sql_database import SQLDatabase
     from csql.user_config import UserConfig
-
-
-# F = GraphQLField
-# L = GraphQLList
-# NN = GraphQLNonNull
 
 
 class GQLDatabase:

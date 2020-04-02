@@ -28,7 +28,6 @@ def run(**kwargs):
 
     # Reflect SQL to GQL
     gql_db = GQLDatabase(sql_db, config)
-    print("serving")
 
     # Build flask webserver
     server = FlaskServer(gql_db, sql_db, config)

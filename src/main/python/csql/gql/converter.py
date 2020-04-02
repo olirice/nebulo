@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, List, Tuple, Union
 
 from graphql import (
     GraphQLArgument,
@@ -57,7 +57,6 @@ def get_node(global_id, _info):
     _info.context['session'] must exist
     """
     type_, id_ = from_global_id(global_id)
-    print(type_, id_)
     sqla_model = model_name_to_sqla[type_]
     context = _info.context
     # Database session
@@ -212,6 +211,30 @@ def table_to_order_by(sqla_model: TableBase) -> GraphQLInputObjectType:
     )
 
 
+def resolver_query_all(obj, info, **user_kwargs) -> List[TableBase]:
+    print(obj, info, user_kwargs)
+
+    context = info.context
+    session = context["session"]
+    return_type = info.return_type
+
+    sqla_type = [k for k, v in sqla_to_connection.items() if v == return_type][0]
+
+    sqla_result = session.query(sqla_type).limit(10).all()
+
+    result = {
+        "pageInfo": {
+            "hasNextPage": False,
+            "hasPreviousPage": False,
+            "startCursor": "Unknown",
+            "endCursor": "Unknown",
+        }
+    }
+    result["nodes"] = sqla_result
+
+    return result
+
+
 def table_to_query_all(sqla_model: TableBase) -> GraphQLObjectType:
     sqla_model_type = sqla_model
     model_connection = sqla_to_connection[sqla_model_type]
@@ -229,7 +252,7 @@ def table_to_query_all(sqla_model: TableBase) -> GraphQLObjectType:
             "orderBy": GraphQLArgument(L(NN(model_order_by)), default_value=["ID_DESC"]),
             "condition": GraphQLArgument(model_condition),
         },
-        resolver=None,
+        resolver=resolver_query_all,
     )
 
 
