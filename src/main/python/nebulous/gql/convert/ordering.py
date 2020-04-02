@@ -9,6 +9,15 @@ __all__ = ["ordering_factory"]
 
 
 @lru_cache()
+def to_default_ordering(sqla_model):
+    # TODO(OR): Support multi-column primary key
+    pk_order = []
+    for col in sqla_model.primary_key.columns:
+        pk_order.append((col.key, asc))
+    return pk_order
+
+
+@lru_cache()
 def ordering_factory(sqla_model) -> InputObjectType:
     result_name = f"{snake_to_camel(sqla_model.__table__.name)}OrderBy"
 

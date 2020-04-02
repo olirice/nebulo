@@ -12,7 +12,7 @@ INSERT INTO account (id) VALUES
 """
 
 
-def test_query_node_id(gql_exec_builder):
+def test_round_trip_node_id(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
 
     account_id = 1
@@ -26,7 +26,6 @@ def test_query_node_id(gql_exec_builder):
     }}
     """
     result = executor(gql_query)
-    print(result.data)
     assert result.errors is None
     assert result.data["account"]["nodeId"] == node_id
 

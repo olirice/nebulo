@@ -70,90 +70,43 @@ class SQLDatabase:
     def build_demo_schema(self) -> None:
         self.session.execute(
             """
-        drop table if exists offer;
+            DROP SCHEMA public CASCADE;
+            CREATE SCHEMA public;
+            GRANT ALL ON SCHEMA public TO postgres;
         """
         )
 
         self.session.execute(
             """
-        drop table if exists account;
+            CREATE TABLE account (
+                id serial primary key,
+                name text not null,
+                created_at timestamp without time zone default (now() at time zone 'utc')
+            );
+
+            INSERT INTO account (id, name) VALUES
+            (1, 'oliver'),
+            (2, 'rachel'),
+            (3, 'sophie'),
+            (4, 'buddy');
+
+
+            create table offer (
+                id serial primary key, --integer primary key autoincrement,
+                currency text,
+                account_id int not null,
+
+                constraint fk_offer_account_id
+                    foreign key (account_id)
+                    references account (id)
+            );
+
+            INSERT INTO offer (currency, account_id) VALUES
+            ('usd', 2),
+            ('gbp', 2),
+            ('eur', 3),
+            ('jpy', 4);
         """
         )
-
-        self.session.execute(
-            """
-        drop table if exists organization_entity;
-        drop table if exists organization;
-        """
-        )
-
-        self.session.execute(
-            """
-        create table organization_entity (
-            id serial primary key, --integer primary key autoincrement,
-            org_name text not null
-        );
-            """
-        )
-
-        self.session.execute(
-            """
-        create table account (
-            id serial primary key, --integer primary key autoincrement,
-            name text not null,
-            age int,
-            organization_id int,
-
-            constraint fk_account_organization_q25555ds
-                foreign key (organization_id)
-                references organization_entity (id)
-        );
-        """
-        )
-
-        self.session.execute(
-            """
-        create table offer (
-            id serial primary key, --integer primary key autoincrement,
-            currency text,
-            account_id int not null,
-            created_at timestamp  not null,
-
-            constraint fk_offer_account_id
-                foreign key (account_id)
-                references account (id)
-        );
-        """
-        )
-
-        self.session.execute(
-            """
-        insert into organization_entity (id, org_name) values
-            (default, 'oli_corp');
-        """
-        )
-
-        self.session.execute(
-            """
-        insert into account (id, name, age, organization_id) values
-            (1, 'oliver', 29, 1),
-            (2, 'rachel', 29, 1),
-            (3, 'buddy', 20, 1)
-        ;
-        """
-        )
-
-        self.session.execute(
-            """
-        insert into offer (id, currency, account_id, created_at) values
-            (1, 'abc', 1, now()),
-            (2, 'def', 1, now()),
-            (3, 'pqr', 2, now()),
-            (4, 'mno', 2, now()),
-            (5, 'pqr', 3, now())
-        ;
-        """
-        )
-
         self.session.commit()
         return

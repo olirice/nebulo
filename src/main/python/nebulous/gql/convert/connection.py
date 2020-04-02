@@ -44,10 +44,11 @@ def connection_factory(sqla_model):
 
 def connection_args_factory(sqla_model):
     from .condition import condition_factory
-    from .ordering import ordering_factory
+    from .ordering import ordering_factory, to_default_ordering
 
     condition = condition_factory(sqla_model)
     ordering = ordering_factory(sqla_model)
+    default_ordering = to_default_ordering(sqla_model)
 
     return {
         "first": Argument(Int, description="", out_name=None),
@@ -55,7 +56,7 @@ def connection_args_factory(sqla_model):
         "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
-        "orderBy": Argument(List(ordering)),
+        "orderBy": Argument(List(NonNull(ordering)), default_value=default_ordering),
     }
 
 

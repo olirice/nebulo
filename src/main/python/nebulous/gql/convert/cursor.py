@@ -33,7 +33,7 @@ def from_cursor(
 
     # e.g. 'id:desc,age:asc'
     ordering_str, remain = remain.split("]", 1)
-    ordering_elements = ordering_str.split(",")
+    ordering_elements = [x for x in ordering_str.split(",") if x]
     ordering: typing.Tuple[str, "asc/desc"] = []
     for ordering_element in ordering_elements:
         ordering_col_name, ordering_direction_str = ordering_element.split(":")
@@ -41,7 +41,7 @@ def from_cursor(
         ordering.append((ordering_col_name, ordering_direction))
 
     # e.g. '4'
-    pkey_values_as_str: typing.List[str] = remain[1:].split(",")
+    pkey_values_as_str: typing.List[str] = remain[1:-1].split(",")
     return sqla_model_name, ordering, pkey_values_as_str
 
 
@@ -70,7 +70,6 @@ def resolve_cursor(query, ordering: typing.Tuple[str, "asc/desc"], sqla_model):
     columns = list(sqla_model.primary_key.columns)
     column_str_builder = []
     for column in columns:
-        print(column)
         column_str_builder.append(cast(getattr(query.c, column.name), sqlalchemy.String()))
         column_str_builder.append(literal(","))
     # Remove the final comma. Never realized how useful ''.join is until you can't use it..
@@ -78,6 +77,8 @@ def resolve_cursor(query, ordering: typing.Tuple[str, "asc/desc"], sqla_model):
 
     for element in column_str_builder:
         content += element
+
+    content += literal(")")
 
     return to_encoding_in_sql(content)
 

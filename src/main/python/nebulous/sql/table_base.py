@@ -4,17 +4,22 @@ A base class to derive sql tables from
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from sqlalchemy import MetaData
 from sqlalchemy import inspect as sql_inspect
+from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
 
 from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 
-from .base import Base
 from .utils import classproperty
 
 
-class TableBase(Base, ComputedColumnsMixin):
+def build_base():
+    return automap_base(metadata=MetaData())
+
+
+class TableBase(build_base(), ComputedColumnsMixin):
     """Base class for application sql tables"""
 
     __abstract__ = True
