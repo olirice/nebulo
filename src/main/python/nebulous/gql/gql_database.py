@@ -19,8 +19,8 @@ from stringcase import pascalcase
 from .converter import convert_table, table_to_query_all
 
 if TYPE_CHECKING:
-    from csql.sql.sql_database import SQLDatabase
-    from csql.user_config import UserConfig
+    from nebulous.sql.sql_database import SQLDatabase
+    from nebulous.user_config import UserConfig
 
 
 class GQLDatabase:

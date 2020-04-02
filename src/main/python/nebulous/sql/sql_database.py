@@ -7,12 +7,12 @@ import databases
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from csql.sql.table_base import TableBase
+from nebulous.sql.table_base import TableBase
 
 from .reflection.functions import get_function_names, reflect_function
 
 if TYPE_CHECKING:
-    from csql.user_config import UserConfig
+    from nebulous.user_config import UserConfig
 
 
 class SQLDatabase:

@@ -8,10 +8,10 @@ from graphene_sqlalchemy.registry import get_global_registry
 from graphql_relay import from_global_id
 from sqlalchemy import Column, func, select
 
-from csql.sql.utils import cachedclassproperty
+from nebulous.sql.utils import cachedclassproperty
 
 if TYPE_CHECKING:
-    from csql.sql.reflection.functions import SQLFunction
+    from nebulous.sql.reflection.functions import SQLFunction
 
 
 def sqla_type_to_graphene_type(_type, name: str):

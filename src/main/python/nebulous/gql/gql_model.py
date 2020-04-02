@@ -8,10 +8,10 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphene_sqlalchemy.types import ORMField
 from graphql_relay import from_global_id
 
-from csql.sql.utils import cachedclassproperty
+from nebulous.sql.utils import cachedclassproperty
 
 if TYPE_CHECKING:
-    from csql.sql.table_base import TableBase
+    from nebulous.sql.table_base import TableBase
 
 
 def model_reflection_factory(table: TableBase) -> ReflectedGQLModel:

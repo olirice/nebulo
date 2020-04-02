@@ -64,7 +64,7 @@ typemap = {
 
 
 if TYPE_CHECKING:
-    from csql.sql.sql_database import TableBase
+    from nebulous.sql.sql_database import TableBase
     from .registry import Registry
 
 

@@ -6,9 +6,9 @@ from flask import Flask
 from flask_graphql import GraphQLView
 
 if TYPE_CHECKING:
-    from csql.gql.gql_database import GQLDatabase
-    from csql.sql.sql_database import SQLDatabase
-    from csql.user_config import UserConfig
+    from nebulous.gql.gql_database import GQLDatabase
+    from nebulous.sql.sql_database import SQLDatabase
+    from nebulous.user_config import UserConfig
 
 __all__ = ["FlaskServer"]
 

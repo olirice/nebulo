@@ -15,7 +15,7 @@ from sqlalchemy_utils import generic_repr
 from .base import Base
 from .utils import classproperty
 
-# from csql.sql.gql_base_mixin import GQLBaseMixin
+# from nebulous.sql.gql_base_mixin import GQLBaseMixin
 
 
 @generic_repr

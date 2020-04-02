@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="csql",
+    name="nebulous",
     version="0.0.1",
-    description="CSQL Continuous SQL",
+    description="Nebulous Continuous SQL",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
     license="TBD",
@@ -17,7 +17,7 @@ setup(
     packages=find_packages("src/main/python"),
     package_dir={"": "src/main/python"},
     include_package_data=True,
-    entry_points={"console_scripts": ["csql=csql.cli.csql_cli:main"]},
+    entry_points={"console_scripts": ["nebulous=nebulous.cli.nebulous_cli:main"]},
     test_suite="nose.collector",
     tests_require=["nose==1.3.7"],
     install_requires=["pre-commit"],

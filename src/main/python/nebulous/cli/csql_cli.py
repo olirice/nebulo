@@ -1,9 +1,9 @@
 import click
 
-from csql.gql.gql_database import GQLDatabase
-from csql.server.starlette import StarletteServer
-from csql.sql.sql_database import SQLDatabase
-from csql.user_config import UserConfig
+from nebulous.gql.gql_database import GQLDatabase
+from nebulous.server.starlette import StarletteServer
+from nebulous.sql.sql_database import SQLDatabase
+from nebulous.user_config import UserConfig
 
 
 @click.group()

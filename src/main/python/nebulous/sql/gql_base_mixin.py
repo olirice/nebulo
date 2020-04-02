@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from csql.gql.gql_model import ReflectedGQLModel, model_reflection_factory
+from nebulous.gql.gql_model import ReflectedGQLModel, model_reflection_factory
 
 
 class GQLBaseMixin:
