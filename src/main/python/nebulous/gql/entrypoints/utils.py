@@ -1,9 +1,10 @@
 import json
+
 import sqlparse
 
 
 class Encoder(json.JSONEncoder):
-    def default(self, o): # pylint: disable=method-hidden
+    def default(self, o):  # pylint: disable=method-hidden
         return str(o)
 
 

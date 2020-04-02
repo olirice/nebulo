@@ -1,5 +1,3 @@
-import pytest
-
 SQL_UP = """
 CREATE TABLE account (
     id serial primary key,
@@ -13,6 +11,7 @@ INSERT INTO account (id, name) VALUES
 (3, 'sophie'),
 (4, 'buddy');
 """
+
 
 def test_query_multiple_fields(gql_exec_builder, benchmark):
     executor = gql_exec_builder(SQL_UP)

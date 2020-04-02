@@ -9,13 +9,13 @@ from sqlalchemy import cast, func, types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import RelationshipProperty, interfaces
+from sqlalchemy.sql.schema import Column
 
 from ..alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .node_interface import NodeID, NodeInterface
 
-from sqlalchemy.sql.schema import Column
 DateTimeType = ScalarType(name="DateTime", serialize=str)  # pylint: disable=invalid-name
 
 typemap = {

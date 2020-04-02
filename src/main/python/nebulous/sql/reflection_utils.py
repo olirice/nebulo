@@ -1,15 +1,17 @@
 # pylint: disable=unused-argument
 import re
-import inflect
 import typing
-from sqlalchemy import Table, event
 from functools import lru_cache
-
-
-from inflect import engine
-from nebulous.sql.table_base import TableBase
-from sqlalchemy.sql.schema import Table
 from typing import Type
+
+import inflect
+from inflect import engine
+from sqlalchemy import Table, event
+from sqlalchemy.sql.schema import Table
+
+from nebulous.sql.table_base import TableBase
+
+
 @lru_cache()
 def get_pluralizer() -> engine:
     """Return an instance of inflection library's engine.
@@ -18,9 +20,7 @@ def get_pluralizer() -> engine:
 
 
 def to_camelcase(text: str) -> str:
-    return str(
-        text[0].lower() + re.sub(r"_([a-z])", lambda m: m.group(1).upper(), text[1:])
-    )
+    return str(text[0].lower() + re.sub(r"_([a-z])", lambda m: m.group(1).upper(), text[1:]))
 
 
 def camelize_classname(base: Type[TableBase], tablename: str, table: Table) -> str:

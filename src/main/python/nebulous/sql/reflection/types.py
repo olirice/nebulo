@@ -29,8 +29,8 @@ from functools import lru_cache
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql.base import ischema_names
 from sqlalchemy.sql.sqltypes import TypeEngine
-from sqlalchemy_utils import CompositeArray, CompositeType, register_composites
 
+from sqlalchemy_utils import CompositeArray, CompositeType, register_composites
 from stringcase import pascalcase
 
 # Ensure the array type is present

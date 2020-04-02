@@ -6,19 +6,17 @@ import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
-from sqlalchemy import event, Table
 from sqlalchemy import inspect as sql_inspect
-from sqlalchemy.orm import ColumnProperty, RelationshipProperty, mapper
+from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
+
+# from nebulous.sql.gql_base_mixin import GQLBaseMixin
+from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 
 from .base import Base
 from .utils import classproperty
 
 # from sqlalchemy_utils import generic_repr
-
-
-# from nebulous.sql.gql_base_mixin import GQLBaseMixin
-from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 
 
 # @generic_repr
@@ -85,7 +83,6 @@ class TableBase(Base, ComputedColumnsMixin):
             elif isinstance(value, datetime.datetime):
                 result_dict[column] = value.isoformat()
         return result_dict
-
 
 
 # @event.listens_for(Engine, "connect")

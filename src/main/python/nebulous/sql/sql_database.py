@@ -11,17 +11,14 @@ from nebulous.sql.table_base import TableBase
 from .reflection.functions import get_function_names, reflect_function
 from .reflection_utils import (
     camelize_classname,
-    pluralize_collection,
-    pluralize_and_camelize_collection,
     camelize_collection,
+    pluralize_and_camelize_collection,
+    pluralize_collection,
+    to_camelcase,
 )
 
 if TYPE_CHECKING:
     from nebulous.user_config import UserConfig
-
-
-from .reflection_utils import to_camelcase
-from sqlalchemy import event
 
 
 def camelize_reflected_columns(inspector, table, column_info):
@@ -58,7 +55,6 @@ class SQLDatabase:
         )
         # SQLA Tables
         self.models = self.base.classes
-
 
     @property
     @lru_cache()

@@ -41,9 +41,9 @@ if __name__ == "__main__":
         schema="public",
         demo=True,
         port=5052,
-        graphql_route='/graphql',
+        graphql_route="/graphql",
         graphiql=True,
-        echo_queries=False
+        echo_queries=False,
     )
 
     sql_db = SQLDatabase(config)

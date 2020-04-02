@@ -1,6 +1,7 @@
 import re
 
 from sqlalchemy.sql.elements import quoted_name
+
 __all__ = ["camel_to_snake", "snake_to_camel"]
 
 _re_camel_to_snake = re.compile(r"([a-z]|[A-Z]+)(?=[A-Z])")
