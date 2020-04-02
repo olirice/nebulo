@@ -5,36 +5,38 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from nebulous.sql.sql_database import SQLDatabase
 from nebulous.user_config import UserConfig
 
-
 from . import TEST_ROOT_DIR
 
 CONNECTION_STR = "postgresql://postgres:password@localhost:5432/pytest"
 
 
-@pytest.fixture(scope='session')
+with open(TEST_ROOT_DIR / "schema_down.sql", "r") as f:
+    SQL_DOWN = f.read()
+
+
+@pytest.fixture(scope="session")
 def engine():
     _engine = create_engine(CONNECTION_STR)
-    with open(TEST_ROOT_DIR / "schema_down.sql", "r") as f:
-        sql_down = f.read()
 
     # Make sure the schema is clean
-    _engine.execute(sql_down)
+    _engine.execute(SQL_DOWN)
     yield _engine
-    _engine.execute(sql_down)
+    _engine.execute(SQL_DOWN)
     _engine.dispose()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def session_maker(engine):
     smake = sessionmaker(bind=engine)
     yield smake
-    pass
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def session(session_maker):
     _session = scoped_session(session_maker)
     yield _session
+    _session.execute(SQL_DOWN)
+    _session.commit()
     _session.close()
 
 

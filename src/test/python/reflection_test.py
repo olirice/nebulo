@@ -1,10 +1,7 @@
-from .conftests import engine, sqla_db
-from nebulous.sql.table_base import TableBase
 import sqlalchemy as sqla
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 
-__all__ = ["engine", "sqla_db"]
-
+from nebulous.sql.table_base import TableBase
 
 SQL_UP = """
 CREATE TABLE public.refl_numer (
@@ -22,12 +19,13 @@ CREATE TABLE public.refl_numer (
 """
 
 
-def test_reflect_numeric_types(engine):
-    engine.execute(SQL_UP)
+def test_reflect_numeric_types(engine, session):
+    session.execute(SQL_UP)
+    session.commit()
 
     TableBase.prepare(engine, reflect=True, schema="public")
-    tab = TableBase.classes['refl_numer']
-    tab.col_7.type.asdecimal=True
+    tab = TableBase.classes["refl_numer"]
+    tab.col_7.type.asdecimal = True
     assert isinstance(tab.col_0.type, sqla.Integer)
     assert isinstance(tab.col_1.type, sqla.Integer)
     assert isinstance(tab.col_2.type, sqla.Integer)

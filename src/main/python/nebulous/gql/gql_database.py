@@ -27,6 +27,7 @@ class GQLDatabase:
         # GQL Schema
         self.schema = Schema(sqla_models_to_query_object(sqldb.models))
 
+
 def sqla_models_to_query_object(sqla_models):
     """Creates a base query object from available graphql objects/tables"""
     # query_fields = {
@@ -35,10 +36,7 @@ def sqla_models_to_query_object(sqla_models):
 
     query_fields = {
         **{f"{x.__table__.name}": one_node_factory(x) for x in sqla_models},
-        **{
-            f"all{snake_to_camel(x.__table__.name)}": many_node_factory(x)
-            for x in sqla_models
-        },
+        **{f"all{snake_to_camel(x.__table__.name)}": many_node_factory(x) for x in sqla_models},
         # **{
         #    f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
         #    for x in self.sqldb.models
