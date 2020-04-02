@@ -34,10 +34,6 @@ class SQLDatabase:
 
         # SQLA Tables
         self.models = list(self.base.classes)
-        print(self.models)
-
-        x = self.models[1]
-        print(self.session.query(x).first())
 
     @property
     @lru_cache()
@@ -90,17 +86,23 @@ class SQLDatabase:
 
         self.session.execute(
             """
-        insert into account (id, name, age) values (
-            2, 'oliver', 29
-        );
+        insert into account (id, name, age) values
+            (1, 'oliver', 29),
+            (2, 'rachel', 29),
+            (3, 'buddy', 20)
+        ;
         """
         )
 
         self.session.execute(
             """
-        insert into offer (id, currency, account_id, created_at) values (
-            1, 'usd', 2, datetime()
-        );
+        insert into offer (id, currency, account_id, created_at) values
+            (1, 'abc', 1, datetime()),
+            (2, 'def', 1, datetime()),
+            (3, 'jkl', 2, datetime()),
+            (4, 'mno', 2, datetime()),
+            (5, 'pqr', 3, datetime())
+        ;
         """
         )
 

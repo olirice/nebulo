@@ -54,9 +54,9 @@ def convert_column(
     column, output_type: typing.Union[Field, InputField] = Field
 ) -> typing.Union[Field, InputField]:
     """Converts a sqlalchemy column into a graphql field or input field"""
-    gql_type = String if column.name != "id" else typemap[type(column.type)]
-    notnull = not (column.nullable or False)
-    return_type = NonNull(gql_type) if notnull else gql_type
+    gql_type = typemap.get(type(column.type), String)
+    notnull = not column.nullable
+    return_type = NonNull(gql_type) if notnull and output_type == Field else gql_type
     return output_type(return_type)
 
 
