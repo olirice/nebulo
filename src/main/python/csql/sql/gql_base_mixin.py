@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from csql.gql.gql_model import GQLModel
+from csql.gql.gql_model import reflection_factory
 
 
 class GQLBaseMixin:
@@ -12,5 +12,5 @@ class GQLBaseMixin:
     @lru_cache()
     def to_graphql(cls) -> GQLModel:
         """Converts a sqlalchemy model into a graphene object"""
-        return GQLModel(cls)
+        return reflection_factory(cls)
 

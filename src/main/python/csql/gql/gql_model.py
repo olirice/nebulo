@@ -1,32 +1,44 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING, Type
 from functools import lru_cache
-from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
-from graphene import relay
-from graphql_relay import from_global_id
+from typing import TYPE_CHECKING, List, Type
+
 import graphene
+from graphene import relay
+from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
+from graphene_sqlalchemy.types import ORMField
+from graphql_relay import from_global_id
+
+from csql.sql.utils import cachedclassproperty, classproperty
 
 if TYPE_CHECKING:
-    from csql.sql_models.sqla import SQLDatabase
+    from csql.sql.sql_database import SQLDatabase
     from csql.user_config import UserConfig
     from csql.sql.table_base import TableBase
 
 
-class GQLModel:
-    def __init__(self, table: TableBase):
-        self.table = table
+def reflection_factory(table: TableBase) -> ReflectedGQLModel:
+    tablename: str = table.table_name
+    metaclass = type("Meta", (), {"model": table, "interfaces": (relay.Node,)})
 
-    @property
-    @lru_cache()
-    def graphene_model(self) -> SQLAlchemyObjectType:
-        tablename: str = self.table.table_name
-        metaclass = type("Meta", (), {"model": self.table, "interfaces": (relay.Node,)})
-        return type(tablename, (SQLAlchemyObjectType,), {"Meta": metaclass})
+    # Alter Types, Add Descriptions, Change Required flag,
+    extra_attrs = {}
+    if hasattr(table, "team_name"):
+        extra_attrs["team_name"] = ORMField(description="name o da thing")
 
-    @property
-    @lru_cache()
-    def mutation_attributes_class(self) -> Type:
+    return type(tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs))
+
+
+class ReflectedGQLModel(SQLAlchemyObjectType):
+    class Meta:
+        abstract = True
+
+    @cachedclassproperty
+    def sql_table_name(cls) -> str:
+        return cls._meta.model.table_name
+
+    @cachedclassproperty
+    def _mutation_attributes_class(cls) -> Type:
         """Returns a class defining the attributes
         that the user can provide for creates and updates
 
@@ -37,20 +49,15 @@ class GQLModel:
             body = graphene.String() 
         """
         # Class name is not used externally
-        class_name = self.table.table_name + "Attributes"
+        class_name = cls.sql_table_name + "Attributes"
         # Copy fields from the graphene model excluding 'id' which can not be user defined
-        # TODO(OR): Do any other fields need to be excluded?
-        print(self.graphene_model._meta.fields.items())
         attrs = {
-            k: v
-            for k, v in self.graphene_model._meta.fields.items()
-            if k != "id" and isinstance(v, graphene.Field)
+            k: v for k, v in cls._meta.fields.items() if k != "id" and isinstance(v, graphene.Field)
         }
         return type(class_name, (), attrs)
 
-    @property
-    @lru_cache()
-    def creation_input_class(self) -> Type:
+    @cachedclassproperty
+    def _creation_input_class(cls) -> Type:
         """Returns a class defining what a user can send
         when creating a new instance of this model
 
@@ -59,12 +66,11 @@ class GQLModel:
         class postCreateInput(graphene.InputObjectType, postAttributes):
             pass
         """
-        class_name = self.table.table_name + "CreateInput"
-        return type(class_name, (graphene.InputObjectType, self.mutation_attributes_class), {})
+        class_name = cls.sql_table_name + "CreateInput"
+        return type(class_name, (graphene.InputObjectType, cls._mutation_attributes_class), {})
 
-    @property
-    @lru_cache()
-    def creation_class(self) -> Type:
+    @cachedclassproperty
+    def creation_class(cls) -> Type:
         """Returns a class that handles creating new objects
 
         Example:
@@ -87,14 +93,14 @@ class GQLModel:
         arguments_key = "Arguments"
         mutate_key = "mutate"
         inner_argument_cls = type(
-            arguments_key, (), {"input": self.creation_input_class(required=True)}
+            arguments_key, (), {"input": cls._creation_input_class(required=True)}
         )
 
         create_cls = type(
-            f"baseCreate{self.table.table_name}",
+            f"baseCreate{cls.sql_table_name}",
             (graphene.Mutation,),
             {
-                self.table.table_name: graphene.Field(lambda: self.graphene_model, description=""),
+                cls.sql_table_name: graphene.Field(lambda: cls, description=""),
                 arguments_key: inner_argument_cls,
                 # Graphene requires a mutate method is defined
                 # on every graphene.Mutation. We will patch it in a sec
@@ -103,19 +109,18 @@ class GQLModel:
         )
         # Graphene requires using reserved word input....
         def mutate(_, info, input):
-            data = input_to_dictionary(input)
+            data = cls.input_to_dictionary(input)
             db_session = info.context["session"]
 
-            sql_row = self.table(**data)
+            sql_row = cls._meta.model(**data)
             db_session.add(sql_row)
             db_session.commit()
-            return create_cls(**{self.table.table_name: sql_row})
+            return create_cls(**{cls.sql_table_name: sql_row})
 
-        return type(f"{self.table.table_name}Create", (create_cls,), {"mutate": mutate})
+        return type(f"{cls.sql_table_name}Create", (create_cls,), {"mutate": mutate})
 
-    @property
-    @lru_cache()
-    def update_input_class(self):
+    @cachedclassproperty
+    def _update_input_class(cls):
         """Returns class defining user input to uniquely identify a database object
 
         Example:
@@ -124,14 +129,13 @@ class GQLModel:
             id = graphene.Field(lambda: self.graphene_model)
         """
         return type(
-            f"{self.table.table_name}UpdateInput",
-            (graphene.InputObjectType, self.mutation_attributes_class),
-            {"id": graphene.ID(required=True, description="")},
+            f"{cls.sql_table_name}UpdateInput",
+            (graphene.InputObjectType, cls._mutation_attributes_class),
+            {"id": graphene.ID(required=True, description="GraphQL relay identifier")},
         )
 
-    @property
-    @lru_cache()
-    def update_class(self):
+    @cachedclassproperty
+    def update_class(cls):
         """Returns class that handles updating existing database objects
 
         Example:
@@ -155,14 +159,14 @@ class GQLModel:
         arguments_key = "Arguments"
         mutate_key = "mutate"
         inner_argument_cls = type(
-            arguments_key, (), {"input": self.update_input_class(required=True)}
+            arguments_key, (), {"input": cls._update_input_class(required=True)}
         )
 
         update_cls = type(
-            f"baseUpdate{self.table.table_name}",
+            f"baseUpdate{cls.sql_table_name}",
             (graphene.Mutation,),
             {
-                self.table.table_name: graphene.Field(lambda: self.graphene_model, description=""),
+                cls.sql_table_name: graphene.Field(lambda: cls, description=""),
                 arguments_key: inner_argument_cls,
                 # Graphene requires a mutate method is defined
                 # on every graphene.Mutation. We will patch it in a sec
@@ -172,26 +176,26 @@ class GQLModel:
 
         # Graphene requires using reserved word input....
         def mutate(_, info, input):
-            data = input_to_dictionary(input)
+            data = cls.input_to_dictionary(input)
             db_session = info.context["session"]
 
             # TODO(OR): More assuming that the id field for the table is name "id"
-            existing_row = db_session.query(self.table).filter_by(id=data["id"])  # .one()
-            existing_row.update(data)
+            existing_row = db_session.query(cls._meta.model).filter_by(id=data["id"]).one()
+            existing_row.update(**data)
             db_session.commit()
-            existing_row = db_session.query(self.table).filter_by(id=data["id"]).one()
-            return update_cls(**{self.table.table_name: existing_row})
+            db_session.refresh(existing_row)
+            return update_cls(**{cls.sql_table_name: existing_row})
 
-        return type(f"{self.table.table_name}Update", (update_cls,), {"mutate": mutate})
+        return type(f"{cls.sql_table_name}Update", (update_cls,), {"mutate": mutate})
 
-
-def input_to_dictionary(graphene_input):
-    """Converts a graphene input to a sqlalchemy friendly dict"""
-    as_dict = {}
-    for key in graphene_input:
-        # Convert relay id to sql id
-        # TODO(OR): Lookup the field type and confirm its a relay id
-        if key[-2:] == "id":
-            graphene_input[key] = from_global_id(graphene_input[key])[1]
-        as_dict[key] = graphene_input[key]
-    return as_dict
+    @staticmethod
+    def input_to_dictionary(graphene_input):
+        """Converts a graphene input to a sqlalchemy friendly dict"""
+        as_dict = {}
+        for key in graphene_input:
+            # Convert relay id to sql id
+            # TODO(OR): Lookup the field type and confirm its a relay id
+            if key[-2:] == "id":
+                graphene_input[key] = from_global_id(graphene_input[key])[1]
+            as_dict[key] = graphene_input[key]
+        return as_dict

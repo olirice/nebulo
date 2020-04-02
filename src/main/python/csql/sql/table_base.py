@@ -2,7 +2,7 @@
 A base class to derive sql tables from
 """
 
-from typing import Any, Dict, List, Tuple, Callable, Union, Optional
+from typing import Any, Dict, List, Tuple, Callable, Union, Optional, NoReturn
 from inspect import Parameter, Signature
 
 from sqlalchemy.ext.declarative import declared_attr
@@ -54,3 +54,16 @@ class TableBase(GQLBaseMixin, Base):
     def relationships(cls) -> List[RelationshipProperty]:
         """Relationships with other tables"""
         return list(sql_inspect(cls).relationships)
+
+    def update(self, **kwargs: Dict[str, Any]) -> NoReturn:
+        """Updates the row instance in place by replacing column existing values with thos provided
+        in the kwarg dict. The dict's keys match the model's attributes/columns. Incorrect or 
+        unknown keys result in an Exception"""
+        column_names = {x.name for x in self.columns}
+        for key, value in kwargs.items():
+            if key in column_names:
+                setattr(self, key, value)
+            else:
+                # TODO(OR): Library error class
+                raise KeyError(f"Key {key} does not exist on model {self.table_name}")
+

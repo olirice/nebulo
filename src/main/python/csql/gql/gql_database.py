@@ -8,17 +8,17 @@ from graphql_relay import from_global_id
 import graphene
 
 if TYPE_CHECKING:
-    from csql.sql_models.sqla import SQLDatabase
+    from csql.sql.sql_database import SQLDatabase
     from csql.user_config import UserConfig
     from csql.sql.table_base import TableBase
-    from csql.gql.gql_model import GQLModel
+    from csql.gql.gql_model import ReflectedGQLModel
 
 
 class GQLDatabase:
     def __init__(self, sqldb: SQLDatabase, config: UserConfig):
         self.config = config
         # GQL Tables
-        self.gql_models: List[GQLModel] = [x.to_graphql() for x in sqldb.models]
+        self.gql_models: List[ReflectedGQLModel] = [x.to_graphql() for x in sqldb.models]
         # GQL Schema
         self.schema = graphene.Schema(query=self.query_class, mutation=self.mutation_class)
 
@@ -31,7 +31,7 @@ class GQLDatabase:
         # Create dictionary of attributes for the query object
         entity_attrs = {}
         for table in self.gql_models:
-            graphene_table = table.graphene_model
+            graphene_table = table
             # List All
             key = f"all_{graphene_table._meta.name}"
             value = SQLAlchemyConnectionField(graphene_table, sort=graphene_table.sort_argument())
@@ -56,7 +56,7 @@ class GQLDatabase:
         # Create dictionary of attributes for the query object
         entity_attrs = {}
         for table in self.gql_models:
-            graphene_table = table.graphene_model
+            graphene_table = table
             # Creation method
             key = f"create_{graphene_table._meta.name}"
             value = table.creation_class.Field()
