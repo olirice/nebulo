@@ -30,7 +30,7 @@ def camelize_reflected_columns(inspector, table, column_info):
 
 
 class SQLDatabase:
-    def __init__(self, config: UserConfig, engine=None):
+    def __init__(self, config: UserConfig, engine: None = None) -> None:
         # Configure SQLAlchemy
         if engine:
             self.engine = engine
@@ -71,7 +71,7 @@ class SQLDatabase:
             reflected_functions.append(ref_fun)
         return reflected_functions
 
-    def build_demo_schema(self):
+    def build_demo_schema(self) -> None:
         self.session.execute(
             """
         drop table if exists offer;

@@ -1,3 +1,5 @@
+import pytest
+
 SQL_UP = """
 CREATE TABLE account (
     id serial primary key,
@@ -12,8 +14,7 @@ INSERT INTO account (id, name) VALUES
 (4, 'buddy');
 """
 
-
-def test_query_multiple_fields(gql_exec_builder):
+def test_query_multiple_fields(gql_exec_builder, benchmark):
     executor = gql_exec_builder(SQL_UP)
     gql_query = f"""
     {{
@@ -26,6 +27,6 @@ def test_query_multiple_fields(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
+    result = benchmark(executor, request_string=gql_query)
     assert result.errors is None
     assert "nodes" in result.data["allAccount"]

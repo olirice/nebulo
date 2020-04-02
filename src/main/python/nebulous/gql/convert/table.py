@@ -15,6 +15,7 @@ from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .node_interface import NodeID, NodeInterface
 
+from sqlalchemy.sql.schema import Column
 DateTimeType = ScalarType(name="DateTime", serialize=str)  # pylint: disable=invalid-name
 
 typemap = {
@@ -39,7 +40,7 @@ if typing.TYPE_CHECKING:
 
 @lru_cache()
 def convert_column(
-    column, output_type: typing.Union[Field, InputField] = Field
+    column: Column, output_type: typing.Union[Field, InputField] = Field
 ) -> typing.Union[Field, InputField]:
     """Converts a sqlalchemy column into a graphql field or input field"""
     gql_type = typemap.get(type(column.type), String)
@@ -90,7 +91,7 @@ def table_factory(sqla_model):
         attrs["nodeId"] = Field(NonNull(NodeID), resolver=default_resolver)
 
         for column in sqla_model.columns:
-            key = column.name
+            key = column.key
             attrs[key] = convert_column(column)
 
             for relationship in sqla_model.relationships:

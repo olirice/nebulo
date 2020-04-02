@@ -7,8 +7,8 @@ class UserConfig:
         graphql_route: str,
         graphiql: bool,
         port: int,
-        demo: bool,
-    ):
+        demo: bool
+    ) -> None:
         self.connection = connection
         self.schema = schema
         self.echo_queries = echo_queries

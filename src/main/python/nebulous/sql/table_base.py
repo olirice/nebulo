@@ -6,7 +6,7 @@ import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
-from sqlalchemy import event
+from sqlalchemy import event, Table
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, mapper
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
@@ -18,11 +18,11 @@ from .utils import classproperty
 
 
 # from nebulous.sql.gql_base_mixin import GQLBaseMixin
+from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 
 
 # @generic_repr
-# class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
-class TableBase(Base):
+class TableBase(Base, ComputedColumnsMixin):
     """Base class for application sql tables"""
 
     __abstract__ = True
@@ -86,22 +86,6 @@ class TableBase(Base):
                 result_dict[column] = value.isoformat()
         return result_dict
 
-
-@event.listens_for(mapper, "before_configured", once=True)
-def before_tooling_application():
-    """This is a bad idea"""
-    pass  # pylint: disable=unnecessary-pass
-
-
-@event.listens_for(mapper, "after_configured", once=True)
-def after_tooling_application():
-    """Hooks for post-mapper config"""
-    tables = [x for x in TableBase.__subclasses__()]
-
-    for table in tables:
-        for column in table.columns:
-            comment: str = column.comment or ""  # pylint: disable=unused-variable
-            comment
 
 
 # @event.listens_for(Engine, "connect")

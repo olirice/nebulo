@@ -1,5 +1,6 @@
 import re
 
+from sqlalchemy.sql.elements import quoted_name
 __all__ = ["camel_to_snake", "snake_to_camel"]
 
 _re_camel_to_snake = re.compile(r"([a-z]|[A-Z]+)(?=[A-Z])")
@@ -11,7 +12,7 @@ def camel_to_snake(s):
     return _re_camel_to_snake.sub(r"\1_", s).lower()
 
 
-def snake_to_camel(s, upper=True):
+def snake_to_camel(s: quoted_name, upper: bool = True) -> str:
     """Convert from snake_case to CamelCase
     If upper is set, then convert to upper CamelCase, otherwise the first character
     keeps its case.

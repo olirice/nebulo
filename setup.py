@@ -26,10 +26,10 @@ setup(
         "sqlalchemy",
         "flask",
         "flask-graphql",
-        "sqlalchemy_utils",
+        #"sqlalchemy_utils",
         "psycopg2-binary",
         "sqlparse==0.3.0",
         "inflect",
     ],
-    extras_require={"test": ["pre-commit", "pytest", "pytest-cov"]},
+    extras_require={"test": ["pre-commit", "pytest", "pytest-cov", "pytest-benchmark"]},
 )

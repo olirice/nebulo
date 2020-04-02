@@ -32,3 +32,21 @@ def run(**kwargs):
 
     app = FlaskServer(gql_db, sql_db, config)
     app.run()
+
+
+if __name__ == "__main__":
+    # Set up configuration object
+    config = UserConfig(
+        connection="postgresql://postgres:password@localhost:5432/postgres",
+        schema="public",
+        demo=True,
+        port=5052,
+        graphql_route='/graphql',
+        graphiql=True,
+        echo_queries=False
+    )
+
+    sql_db = SQLDatabase(config)
+    gql_db = GQLDatabase(sql_db, config)
+    app = FlaskServer(gql_db, sql_db, config)
+    app.run()

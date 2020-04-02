@@ -68,7 +68,6 @@ class ComputedColumnsMixin:
             ),
             {},  # {"schema": schema},
         ).fetchall()
-        print(computed_col_list)
 
         # TODO(OR): update query to include return type for type_coerce below
         # TODO(OR): lookup available types by string returned from query above?
