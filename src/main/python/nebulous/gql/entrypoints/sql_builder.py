@@ -2,6 +2,8 @@ import random
 import string
 import typing
 
+from nebulous.gql.convert.node_interface import to_global_id_sql
+
 from ..alias import ConnectionType, ScalarType, TableType
 from ..convert.node_interface import NodeID
 
@@ -36,18 +38,10 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     return res
 
 
-def to_node_id(sqla_model) -> str:
-    # sqla_model = field["return_type"].sqla_model
-    table_name = sqla_model.table_name
-    pkey_cols = list(sqla_model.primary_key.columns)
-    columns_str = ", ".join([col.name for col in pkey_cols])
-    return f"(({columns_str}))"
-
-
 def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
     return_type = field["return_type"]
     if return_type == NodeID:
-        return (field["name"], to_node_id(sqla_model))
+        return (field["name"], to_global_id_sql(sqla_model))
     return (field["name"], getattr(sqla_model, field["name"]).name)
 
 

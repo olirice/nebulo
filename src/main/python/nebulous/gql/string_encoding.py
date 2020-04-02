@@ -14,5 +14,6 @@ def from_base64(string):
     return _unbase64(string).decode("utf-8")
 
 
-def to_encoding_in_sql(text_to_encode, encoding="base64"):
+def to_base64_sql(text_to_encode):
+    encoding = "base64"
     return func.encode(cast(text_to_encode, BYTEA()), cast(encoding, sqlalchemy.Text()))

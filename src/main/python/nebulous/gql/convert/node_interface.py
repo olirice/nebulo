@@ -2,36 +2,47 @@ from __future__ import annotations
 
 import typing
 
-import sqlalchemy
-from sqlalchemy import cast, literal
+from sqlalchemy import text
 
 from ..alias import Field, InterfaceType, NonNull, ScalarType
-from ..string_encoding import from_base64, to_base64, to_encoding_in_sql
+from ..string_encoding import from_base64, to_base64, to_base64_sql
 
 if typing.TYPE_CHECKING:
     pass
 
 
-def to_global_id(name, _id):
+def to_global_id(table_name, values: typing.List[typing.Any]) -> str:
     """
     Takes a type name and an ID specific to that type name, and returns a
     "global ID" that is unique among all types.
     """
-    return to_base64(":".join([name, str(_id)]))
+    return to_base64(table_name + "@" + ",".join([str(x) for x in values]))
 
 
-def from_global_id(global_id: str):
+def from_global_id(global_id: str) -> typing.Tuple[str, typing.List[str]]:
     """
     Takes the "global ID" created by toGlobalID, and returns the type name and ID
     used to create it.
     """
     try:
         unbased_global_id = from_base64(global_id)
-        _type, _id = unbased_global_id.split(":", 1)
-        _id = int(_id)
+        table_name, values = unbased_global_id.split("@", 1)
+        # TODO(OR): Text fields in primary key might contain a comma
+        values = values.split(",")
     except Exception:
         raise ValueError(f"Bad input: invalid NodeID {global_id}")
-    return _type, _id
+    return table_name, values
+
+
+def to_global_id_sql(sqla_model) -> "sql_selector":
+    table_name = sqla_model.table_name
+    pkey_cols = list(sqla_model.primary_key.columns)
+
+    selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
+
+    str_to_encode = f"'{table_name}' || '@' || " + selector
+
+    return to_base64_sql(text(str_to_encode)).compile(compile_kwargs={"literal_binds": True})
 
 
 NodeID = ScalarType(
@@ -51,9 +62,3 @@ NodeInterface = InterfaceType(
     # Maybe not necessary
     resolve_type=lambda *args, **kwargs: None,
 )
-
-
-def resolve_node_id(query, sqla_model):
-    return to_encoding_in_sql(
-        literal(sqla_model.__table__.name) + literal(":") + cast(query.c.id, sqlalchemy.String())
-    )

@@ -7,7 +7,7 @@ import sqlalchemy
 from sqlalchemy import asc, cast, desc, literal
 
 from ..alias import ScalarType
-from ..string_encoding import from_base64, to_base64, to_encoding_in_sql
+from ..string_encoding import from_base64, to_base64, to_base64_sql
 
 __all__ = ["Cursor"]
 
@@ -80,7 +80,7 @@ def resolve_cursor(query, ordering: typing.Tuple[str, "asc/desc"], sqla_model):
 
     content += literal(")")
 
-    return to_encoding_in_sql(content)
+    return to_base64_sql(content)
 
 
 def to_cursor(sqla_model, sqla_record, ordering: typing.List["UnaryExpr"]) -> str:

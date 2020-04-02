@@ -18,7 +18,7 @@ INSERT INTO account (id, name) VALUES
 def test_query_one_field(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 1
-    node_id = to_global_id(name="account", _id=account_id)
+    node_id = to_global_id(table_name="account", values=[account_id])
     gql_query = f"""
     {{
         account(nodeId: "{node_id}") {{
@@ -36,7 +36,7 @@ def test_query_one_field(gql_exec_builder):
 def test_query_multiple_fields(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 1
-    node_id = to_global_id(name="account", _id=account_id)
+    node_id = to_global_id(table_name="account", values=[account_id])
     gql_query = f"""
     {{
         account(nodeId: "{node_id}") {{
