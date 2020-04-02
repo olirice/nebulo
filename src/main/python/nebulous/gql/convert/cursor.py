@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import typing
 
+from nebulous.sql.inspect import get_table_name
 from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import asc, desc, text
 
@@ -47,8 +48,8 @@ def to_cursor(table_name, values: typing.List[typing.Any]) -> str:
 
 
 def to_cursor_sql(sqla_model) -> "sql_selector":
-    table_name = sqla_model.table_name
-    pkey_cols = list(sqla_model.primary_key.columns)
+    table_name = get_table_name(sqla_model)
+    pkey_cols = list(sqla_model.__table__.primary_key.columns)
 
     selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
 

@@ -23,7 +23,7 @@ def ordering_factory(sqla_model) -> InputObjectType:
 
     value_dict = {}
 
-    for col in sqla_model.columns:
+    for col in sqla_model.__table__.columns:
         col_name = col.name.upper()
         for key, direction in [(col_name + "_ASC", asc), (col_name + "_DESC", desc)]:
             value_dict[key] = EnumValue(value=(col.name, direction))

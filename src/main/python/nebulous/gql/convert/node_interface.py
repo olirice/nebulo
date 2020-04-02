@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+from nebulous.sql.inspect import get_table_name
 from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import text
 
@@ -11,7 +12,7 @@ if typing.TYPE_CHECKING:
     pass
 
 
-def to_global_id(table_name, values: typing.List[typing.Any]) -> str:
+def to_global_id(table_name: str, values: typing.List[typing.Any]) -> str:
     """
     Takes a type name and an ID specific to that type name, and returns a
     "global ID" that is unique among all types.
@@ -35,8 +36,8 @@ def from_global_id(global_id: str) -> typing.Tuple[str, typing.List[str]]:
 
 
 def to_global_id_sql(sqla_model) -> "sql_selector":
-    table_name = sqla_model.table_name
-    pkey_cols = list(sqla_model.primary_key.columns)
+    table_name = get_table_name(sqla_model)
+    pkey_cols = list(sqla_model.__table__.primary_key.columns)
 
     selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
 

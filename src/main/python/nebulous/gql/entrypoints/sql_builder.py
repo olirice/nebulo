@@ -5,6 +5,7 @@ import typing
 
 from nebulous.gql.convert.cursor import to_cursor_sql
 from nebulous.gql.convert.node_interface import to_global_id_sql
+from nebulous.sql.inspect import get_primary_key, get_table_name
 
 from ..alias import ConnectionType, ScalarType, TableType
 from ..convert.node_interface import NodeID
@@ -13,7 +14,7 @@ from ..convert.node_interface import NodeID
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
     parent_field = field.parent
     relation_from_parent = getattr(parent_field.return_type.sqla_model, field.name).property
-    local_table_name = field.return_type.sqla_model.table_name
+    local_table_name = get_table_name(field.return_type.sqla_model)
 
     join_clause = []
     for parent_col, local_col in relation_from_parent.local_remote_pairs:
@@ -27,8 +28,8 @@ def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
 
 def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     local_table = field.return_type.sqla_model
-    local_table_name = field.return_type.sqla_model.table_name
-    pkey_cols = list(local_table.primary_key.columns)
+    local_table_name = get_table_name(field.return_type.sqla_model)
+    pkey_cols = list(get_primary_key(local_table).columns)
 
     if not hasattr(pkey_eq, "__iter__"):
         pkey_eq = [pkey_eq]
@@ -42,17 +43,15 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
 
 def to_after_clause(field) -> typing.List[str]:
     local_table = field.return_type.sqla_model
-    local_table_name = field.return_type.sqla_model.table_name
+    local_table_name = get_table_name(field.return_type.sqla_model)
 
-    pkey_cols = list(local_table.primary_key.columns)
+    pkey_cols = list(get_primary_key(local_table).columns)
 
     args = field.args
     cursor = args.get("after", None)
     if cursor is None:
         return "true"
     cursor_table, cursor_values = cursor
-    # if not hasattr(cursorpkey_eq, "__iter__"):
-    #    pkey_eq = [pkey_eq]
 
     if cursor_table != local_table_name:
         raise ValueError("Invalid after cursor")
@@ -70,7 +69,7 @@ def to_limit_clause(field) -> int:
 
 
 def to_conditions_clause(field) -> typing.List[str]:
-    local_table_name = field.return_type.sqla_model.table_name
+    local_table_name = get_table_name(field.return_type.sqla_model)
     args = field.args
 
     conditions = args.get("condition")
@@ -97,7 +96,6 @@ def build_relationship(field, block_name):
 
 def sql_builder(tree, parent_name=None):
     return_type = tree.return_type
-    sqla_model = return_type.sqla_model
 
     if isinstance(return_type, TableType):
         return row_block(field=tree, parent_name=parent_name)
@@ -117,7 +115,7 @@ def row_block(field, parent_name=None):
     sqla_model = return_type.sqla_model
 
     block_name = random_string()
-    table_name = sqla_model.table_name
+    table_name = get_table_name(sqla_model)
     if parent_name is None:
         # If there is no parent, nodeId is mandatory
         _, pkey_eq = field.args["nodeId"]
@@ -158,7 +156,7 @@ def row_block(field, parent_name=None):
 
 def to_order_clause(field):
     sqla_model = field.return_type.sqla_model
-    return ", ".join([x.name for x in sqla_model.primary_key.columns])
+    return ", ".join([x.name for x in get_primary_key(sqla_model).columns])
 
 
 def check_has_total(field) -> bool:
@@ -180,7 +178,7 @@ def connection_block(field, parent_name):
     sqla_model = return_type.sqla_model
 
     block_name = random_string()
-    table_name = sqla_model.table_name
+    table_name = get_table_name(sqla_model)
     if parent_name is None:
         join_conditions = ["true"]
     else:

@@ -5,6 +5,7 @@ import typing
 from functools import lru_cache
 
 import sqlalchemy
+from nebulous.sql.inspect import get_relationships
 from nebulous.text_utils import snake_to_camel
 from sqlalchemy import cast, func, types
 from sqlalchemy.dialects import postgresql
@@ -86,11 +87,11 @@ def table_factory(sqla_model):
         # Override id to relay standard
         attrs["nodeId"] = Field(NonNull(NodeID), resolver=default_resolver)
 
-        for column in sqla_model.columns:
+        for column in sqla_model.__table__.columns:
             key = column.key
             attrs[key] = convert_column(column)
 
-            for relationship in sqla_model.relationships:
+            for relationship in get_relationships(sqla_model):
                 direction = relationship.direction
                 to_sqla_model = relationship.mapper.class_
                 is_nullable = relationship_is_nullable(relationship, sqla_model)

@@ -2,15 +2,18 @@
 A base class to derive sql tables from
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Tuple
 
-from nebulous.sql.classproperty import classproperty
 from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
-from sqlalchemy import MetaData
-from sqlalchemy import inspect as sql_inspect
+from sqlalchemy import Column, MetaData
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import ColumnProperty, RelationshipProperty
-from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
+
+if TYPE_CHECKING:
+    _Base = declarative_base()
+    ColumnType = Column[Any]  # pylint: disable=unsubscriptable-object,invalid-name
+else:
+    _Base = object
+    ColumnType = Column
 
 
 def build_base():
@@ -23,35 +26,3 @@ class TableBase(build_base(), ComputedColumnsMixin):
     __abstract__ = True
     __table_args__: Tuple[Any, Any] = ()
     __mapper_args__: Dict[str, Any] = {}
-
-    @classproperty
-    def table_name(cls) -> str:  # pylint: disable=no-self-argument
-        """Name of the table"""
-        return cls.__table__.name
-
-    @classproperty
-    def columns(cls) -> List[ColumnProperty]:  # pylint: disable=no-self-argument
-        """All columns in table"""
-        # return list(sql_inspect(cls).column_attrs.values())
-        return list(cls.__table__.columns)
-
-    @classproperty
-    def constraints(cls) -> List[Constraint]:  # pylint: disable=no-self-argument
-        """All constraints on the table"""
-        return sorted(cls.__table__.constraints, key=lambda x: str(x))
-
-    @classproperty
-    def unique_constraints(cls) -> List[UniqueConstraint]:  # pylint: disable=no-self-argument
-        """Unique constraints in the table"""
-        return [x for x in cls.constraints if isinstance(x, UniqueConstraint)]
-
-    @classproperty
-    def primary_key(cls) -> Optional[PrimaryKeyConstraint]:  # pylint: disable=no-self-argument
-        """Primary key for the table"""
-        maybe_empty_pkey = [x for x in cls.constraints if isinstance(x, PrimaryKeyConstraint)]
-        return maybe_empty_pkey[0] if maybe_empty_pkey else None
-
-    @classproperty
-    def relationships(cls) -> List[RelationshipProperty]:  # pylint: disable=no-self-argument
-        """Relationships with other tables"""
-        return list(sql_inspect(cls).relationships)
