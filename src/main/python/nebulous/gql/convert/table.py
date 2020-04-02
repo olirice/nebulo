@@ -146,4 +146,8 @@ class Table(TableToGraphQLField):
             return session.query(sqla_model).first()
 
         # If not those 2 conditions, skip and delegate
+        # Resolving nodes
+        if user_kwargs:
+            return session.query(sqla_model).limit(user_kwargs["limit"]).all()
+
         return session.query(sqla_model).all()

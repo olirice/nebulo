@@ -77,7 +77,8 @@ class Connection(TableToGraphQLField):
         session = context["session"]
         return_type = info.return_type
         sqla_result = session.query(sqla_model).all()
-        return {"nodes": sqla_result}
+        # return {"nodes": sqla_result}
+        return {}
 
 
 @lru_cache()
