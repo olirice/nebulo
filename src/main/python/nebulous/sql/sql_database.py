@@ -10,20 +10,14 @@ from nebulous.sql.table_base import TableBase
 
 from .reflection.functions import get_function_names, reflect_function
 from .reflection_utils import (
-    camelize_classname,
-    camelize_collection,
-    pluralize_and_camelize_collection,
-    pluralize_collection,
-    to_camelcase,
+    rename_columns,
+    rename_table,
+    rename_to_many_collection,
+    rename_to_one_collection,
 )
 
 if TYPE_CHECKING:
     from nebulous.user_config import UserConfig
-
-
-def camelize_reflected_columns(inspector, table, column_info):
-    """Reflect columns in camelcase"""
-    column_info["key"] = to_camelcase(column_info["name"])
 
 
 class SQLDatabase:
@@ -43,15 +37,17 @@ class SQLDatabase:
         # It also functions with (non-nested) composites, which sqla proper does not
         # self.type_register = TypeRegister(self.engine, schema=config.schema)
 
+        rename_columns()
+
         self.schema = config.schema
         self.base = TableBase
         self.base.prepare(
             self.engine,
             reflect=True,
-            classname_for_table=camelize_classname,
-            name_for_scalar_relationship=camelize_collection,
-            name_for_collection_relationship=pluralize_and_camelize_collection,
             schema=config.schema,
+            classname_for_table=rename_table,
+            name_for_scalar_relationship=rename_to_one_collection,
+            name_for_collection_relationship=rename_to_many_collection,
         )
         # SQLA Tables
         self.models = self.base.classes
