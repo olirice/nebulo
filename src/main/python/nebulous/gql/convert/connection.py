@@ -6,7 +6,7 @@ from functools import lru_cache
 from sqlalchemy import asc, cast, desc, func, literal, literal_column, select, tuple_
 from sqlalchemy.sql.operators import gt, lt
 
-from ..alias import Argument, Field, Int, List, NonNull, ObjectType
+from ..alias import Argument, Field, Int, List, NonNull, ConnectionType 
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .cursor import Cursor
@@ -37,7 +37,7 @@ def connection_factory(sqla_model):
             "totalCount": Field(NonNull(TotalCount), resolver=default_resolver),
         }
 
-    return_type = ObjectType(name=name, fields=build_attrs, description="")
+    return_type = ConnectionType(name=name, fields=build_attrs, description="")
     return_type.sqla_model = sqla_model
     return return_type
 

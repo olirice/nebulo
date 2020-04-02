@@ -35,6 +35,7 @@ ScalarType = GraphQLScalarType
 class ObjectType(GraphQLObjectType):
     sqla_model = None
 
+class ConnectionType(GraphQLObjectType): pass
 
 class EdgeType(ObjectType):
     pass

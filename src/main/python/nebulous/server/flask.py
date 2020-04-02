@@ -46,4 +46,4 @@ class FlaskServer:
 
     def run(self):
         """Start serving requests from the application"""
-        self.app.run(port=self.config.port, debug=False)
+        self.app.run(port=self.config.port, debug=True)

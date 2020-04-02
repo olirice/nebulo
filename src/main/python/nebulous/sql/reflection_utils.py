@@ -40,7 +40,9 @@ def pluralize_and_camelize_collection(base, local_cls, referred_cls, constraint)
     referred_name = referred_cls.__name__
     pluralized = to_plural(referred_name)
     camel_name = to_camelcase(pluralized)
-    return camel_name
+    from ..gql.casing import snake_to_camel
+    #print(constraint, dir(constraint))
+    return camel_name + 'By' + 'And'.join(snake_to_camel(col.name) for col in constraint.columns)
 
 
 def camelize_columns() -> typing.NoReturn:
