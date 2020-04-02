@@ -27,6 +27,6 @@ setup(
         "flask-graphql",
         "sqlalchemy_utils",
         "psycopg2",
-        "pytest"
+        "pytest",
     ],
 )
