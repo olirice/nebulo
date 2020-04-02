@@ -12,7 +12,6 @@ from sqlalchemy.orm import ColumnProperty, RelationshipProperty, mapper
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy_utils import generic_repr
 
-
 from .base import Base
 from .utils import classproperty
 

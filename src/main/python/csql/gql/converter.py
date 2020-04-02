@@ -37,10 +37,7 @@ typemap = {
     postgresql.UUID: GraphQLString,
     postgresql.INET: GraphQLString,
     postgresql.CIDR: GraphQLString,
-    # TSVectorType: GraphQLString,
-    # Can do better
     types.DateTime: GraphQLString,
-    # Add remaining
 }
 
 

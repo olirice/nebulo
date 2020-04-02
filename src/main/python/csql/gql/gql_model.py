@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Type
 
-import graphene
-from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphene_sqlalchemy.types import ORMField
 from graphql_relay import from_global_id
 
+import graphene
 from csql.sql.utils import cachedclassproperty
+from graphene import relay
 
 if TYPE_CHECKING:
     from csql.sql.table_base import TableBase
