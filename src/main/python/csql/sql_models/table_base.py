@@ -25,6 +25,11 @@ class TableBase(GQLBaseMixin, Base):
     __mapper_args__: Dict[str, Any] = {}
 
     @classproperty
+    def table_name(cls) -> str:
+        """Name of the table"""
+        return cls.__table__.name
+
+    @classproperty
     def columns(cls) -> List[Column]:
         """All columns in table"""
         return list(cls.__table__.columns)
