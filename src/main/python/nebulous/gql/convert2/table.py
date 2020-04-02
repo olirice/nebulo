@@ -5,10 +5,10 @@ import typing
 from functools import lru_cache
 
 import sqlalchemy
-from sqlalchemy import cast, func, types
+from sqlalchemy import cast, func, select, types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BYTEA
-from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.expression import literal
 
 from ..alias import (
@@ -85,10 +85,6 @@ def relationship_to_attr_name(relationship: RelationshipProperty) -> str:
     )
 
 
-def resolve_one_to_relationship(obj, info, relationship_key=None, **kwargs):
-    return getattr(obj, relationship_key)
-
-
 @lru_cache()
 def table_factory(sqla_model):
     name = snake_to_camel(sqla_model.__table__.name)
@@ -105,6 +101,20 @@ def table_factory(sqla_model):
             key = column.name
             attrs[key] = convert_column(column)
 
+            for relationship in sqla_model.relationships:
+                direction = relationship.direction
+                to_sqla_model = relationship.mapper.class_
+                is_nullable = relationship_is_nullable(relationship)
+
+                # Name of the attribute on the model
+                attr_key = relationship_to_attr_name(relationship)
+
+                # TODO(OR): Update so key is set by relevant fields
+                # If this model has 1 counterpart, do not use a list
+                if direction == interfaces.MANYTOONE:
+                    _type = table_factory(to_sqla_model)
+                    _type = NonNull(_type) if not is_nullable else _type
+                    attrs[attr_key] = Field(_type, resolver=default_resolver)
         return attrs
 
     return_type = TableType(
@@ -120,10 +130,18 @@ def encode(text_to_encode, encoding="base64"):
 
 
 def resolve_one(tree, parent_query: "cte"):
+    """Resolves a single record from a table"""
     return_type = tree["return_type"]
     sqla_model = return_type.sqla_model
 
     query = parent_query if parent_query is not None else return_type.sqla_model.__table__.alias()
+
+    # Maps graphql model attribute to sqla relationship
+    to_one_relation_map = {
+        relationship_to_attr_name(rel): rel
+        for rel in sqla_model.relationships
+        if rel.direction == interfaces.MANYTOONE
+    }
 
     fields = tree["fields"]
 
@@ -131,10 +149,12 @@ def resolve_one(tree, parent_query: "cte"):
     for tree_field in fields:
         field_name = tree_field["name"]
         field_alias = tree_field["alias"]
-        # no args accepted
-        # subfields possible
+
+        # Handle basic attribute access case
         if hasattr(sqla_model, field_name):
             builder.extend([literal(field_alias), getattr(query.c, field_name)])
+
+        # Handle NodeID case
         elif field_name == "nodeId":
             # Move this into node_interface
             builder.extend(
@@ -146,8 +166,62 @@ def resolve_one(tree, parent_query: "cte"):
                         + cast(query.c.id, sqlalchemy.String())
                     ),
                 ]
-            )  # sql_encode(query.c.id)])
+            )
+        # Handle ManyToOne relationships
+        elif field_name in to_one_relation_map.keys():
+            # Now we need a new table alias for the table we're joining against
+            # pre-joined against the current table
+            # Since we know it will return exactly 1 row, we can pass it back
+            # into resolve_one
+            relation = to_one_relation_map[field_name]
+
+            # Table we're joinig to
+            joined_table = list(relation.remote_side)[0].table
+            joined_alias = joined_table.alias()
+
+            # Apply join as filters
+            joined_query = apply_left_join(
+                left_query=query,
+                right_query=joined_alias,
+                left_tab_name=sqla_model.__table__.name,
+                right_tab_name=joined_table.name,
+                relation=relation,
+            )
+            builder.extend(
+                [literal(field_name), resolve_one(tree_field, parent_query=joined_query)]
+            )
         else:
             print("Field named:", field_name, "not known")
 
     return func.json_build_object(*builder)
+
+
+def apply_left_join(
+    left_query, right_query, left_tab_name: str, right_tab_name: str, relation
+) -> "FilteredQuery":
+    """
+
+    """
+    local_columns = list(relation.local_columns)
+
+    # This only allows each column to be used for 1 foreign key
+    remote_columns = [list(x.foreign_keys)[0].column for x in local_columns]
+
+    if local_columns[0].table.name == left_tab_name:
+        left_columns = local_columns
+        right_columns = remote_columns
+    else:
+        left_columns = remote_columns
+        right_columns = local_columns
+
+    left_names = [x.name for x in left_columns]
+    right_names = [x.name for x in right_columns]
+
+    q = select([right_query]).where(
+        *[
+            getattr(left_query.c, left_name) == getattr(right_query.c, right_name)
+            for left_name, right_name in zip(left_names, right_names)
+        ]
+    )
+
+    return q.alias()
