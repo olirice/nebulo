@@ -1,4 +1,3 @@
-from functools import lru_cache
 from typing import Callable
 
 
@@ -14,9 +13,3 @@ def classproperty(method: Callable):
     Usage: @classproperty
     """
     return ClassProperty(classmethod(method))
-
-
-def cachedclassproperty(method: Callable):
-    """Caches a class property to be computed exactly once
-    Uusage: @cachedclassproperty"""
-    return classproperty(lru_cache()(method))

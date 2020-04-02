@@ -87,6 +87,7 @@ def sqla_db(engine):
         port=5008,
         demo=False,
     )
+    print(config)
     sql_db = SQLDatabase(config, engine=engine)
 
     yield sql_db

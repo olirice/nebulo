@@ -1,22 +1,13 @@
 # pylint: disable=unused-argument
 import re
 import typing
-from functools import lru_cache
 from typing import Type
 
-import inflect
-from inflect import engine
 from sqlalchemy import Table, event
 from sqlalchemy.sql.schema import Table
 
 from nebulous.sql.table_base import TableBase
-
-
-@lru_cache()
-def get_pluralizer() -> engine:
-    """Return an instance of inflection library's engine.
-    This is wrapped in a function to reduce import side effects"""
-    return inflect.engine()
+from nebulous.string_utils import to_plural
 
 
 def to_camelcase(text: str) -> str:
@@ -32,9 +23,8 @@ def camelize_classname(base: Type[TableBase], tablename: str, table: Table) -> s
 def pluralize_collection(base, local_cls, referred_cls, constraint):
     "Produce an 'uncamelized', 'pluralized' class name, e.g. "
     "'SomeTerm' -> 'some_terms'"
-    pluralizer = get_pluralizer()
     referred_name = referred_cls.__name__
-    pluralized = pluralizer.plural(referred_name)
+    pluralized = to_plural(referred_name)
     return pluralized
 
 
@@ -47,9 +37,8 @@ def camelize_collection(base, local_cls, referred_cls, constraint):
 def pluralize_and_camelize_collection(base, local_cls, referred_cls, constraint):
     "Produce an 'uncamelized', 'pluralized' class name, e.g. "
     "'SomeTerm' -> 'some_terms'"
-    pluralizer = get_pluralizer()
     referred_name = referred_cls.__name__
-    pluralized = pluralizer.plural(referred_name)
+    pluralized = to_plural(referred_name)
     camel_name = to_camelcase(pluralized)
     return camel_name
 

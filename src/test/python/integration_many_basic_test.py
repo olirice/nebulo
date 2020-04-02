@@ -1,3 +1,5 @@
+from graphql.error.located_error import GraphQLLocatedError
+
 SQL_UP = """
 CREATE TABLE account (
     id serial primary key,
@@ -13,11 +15,11 @@ INSERT INTO account (id, name) VALUES
 """
 
 
-def test_query_multiple_fields(gql_exec_builder, benchmark):
+def test_query_multiple_fields(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     gql_query = f"""
     {{
-        allAccount {{
+        allAccounts {{
             nodes {{
                 id
                 name
@@ -26,6 +28,41 @@ def test_query_multiple_fields(gql_exec_builder, benchmark):
         }}
     }}
     """
-    result = benchmark(executor, request_string=gql_query)
+    result = executor(request_string=gql_query)
     assert result.errors is None
-    assert "nodes" in result.data["allAccount"]
+    assert "nodes" in result.data["allAccounts"]
+
+
+def test_arg_first(gql_exec_builder):
+    executor = gql_exec_builder(SQL_UP)
+    gql_query = f"""
+    {{
+        allAccounts(first: 2) {{
+            nodes {{
+                id
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert result.errors is None
+    assert len(result.data["allAccounts"]["nodes"]) == 2
+    assert result.data["allAccounts"]["nodes"][0]["id"] == 1
+    assert result.data["allAccounts"]["nodes"][1]["id"] == 2
+
+
+def test_arg_last_requires_before_cursor(gql_exec_builder):
+    executor = gql_exec_builder(SQL_UP)
+    gql_query = f"""
+    {{
+        allAccounts(last: 2) {{
+            nodes {{
+                id
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert len(result.errors) == 1
+    error: GraphQLLocatedError = result.errors[0]
+    assert "cursor is required" in error.message

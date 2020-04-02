@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from nebulous.string_utils import to_plural
+
 from .alias import ObjectType, Schema
 from .casing import snake_to_camel
 from .entrypoints.many import many_node_factory
@@ -36,7 +38,10 @@ def sqla_models_to_query_object(sqla_models):
 
     query_fields = {
         **{f"{x.__table__.name}": one_node_factory(x) for x in sqla_models},
-        **{f"all{snake_to_camel(x.__table__.name)}": many_node_factory(x) for x in sqla_models},
+        **{
+            f"all{snake_to_camel(to_plural(x.__table__.name))}": many_node_factory(x)
+            for x in sqla_models
+        },
         # **{
         #    f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
         #    for x in self.sqldb.models

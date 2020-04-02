@@ -2,24 +2,18 @@
 A base class to derive sql tables from
 """
 
-import datetime
-from decimal import Decimal
-from typing import Any, Dict, List, NoReturn, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
 
-# from nebulous.sql.gql_base_mixin import GQLBaseMixin
 from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 
 from .base import Base
 from .utils import classproperty
 
-# from sqlalchemy_utils import generic_repr
 
-
-# @generic_repr
 class TableBase(Base, ComputedColumnsMixin):
     """Base class for application sql tables"""
 
@@ -58,39 +52,3 @@ class TableBase(Base, ComputedColumnsMixin):
     def relationships(cls) -> List[RelationshipProperty]:  # pylint: disable=no-self-argument
         """Relationships with other tables"""
         return list(sql_inspect(cls).relationships)
-
-    def update(self, **kwargs: Dict[str, Any]) -> NoReturn:
-        """Updates the row instance in place by replacing column existing values with thos provided
-        in the kwarg dict. The dict's keys match the model's attributes/columns. Incorrect or
-        unknown keys result in an Exception"""
-        column_names = {x.name for x in self.columns}
-        for key, value in kwargs.items():
-            if key in column_names:
-                setattr(self, key, value)
-            else:
-                raise KeyError(f"Key {key} does not exist on model {self.table_name}")
-
-    computed_columns = []
-
-    def to_dict(self):
-        """Return the resource as a dictionary.
-        """
-        result_dict = {}
-        for column in self.__table__.columns.keys():  # pylint: disable=no-member
-            value = result_dict[column] = getattr(self, column, None)
-            if isinstance(value, Decimal):
-                result_dict[column] = float(result_dict[column])
-            elif isinstance(value, datetime.datetime):
-                result_dict[column] = value.isoformat()
-        return result_dict
-
-
-# @event.listens_for(Engine, "connect")
-def set_sqlite_pragmas(dbapi_connection, connection_record):
-    print("Setting pragmas")
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA TEMP_STORE=MEMORY")
-    cursor.execute("PRAGMA JOURNAL_MODE=MEMORY")
-    cursor.execute("PRAGMA SYNCHRONOUS=FULL")
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
