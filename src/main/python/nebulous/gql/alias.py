@@ -48,6 +48,10 @@ class EdgeType(ObjectType, HasSQLAModel):
     pass
 
 
+class CursorType(ScalarType):
+    pass
+
+
 ID = GraphQLID
 InterfaceType = GraphQLInterfaceType
 Int = GraphQLInt

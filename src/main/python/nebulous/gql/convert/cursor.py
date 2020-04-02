@@ -4,9 +4,9 @@ from __future__ import annotations
 import typing
 
 import sqlalchemy
-from sqlalchemy import asc, cast, desc, literal
+from sqlalchemy import asc, cast, desc, literal, text
 
-from ..alias import ScalarType
+from ..alias import CursorType
 from ..string_encoding import from_base64, to_base64, to_base64_sql
 
 __all__ = ["Cursor"]
@@ -45,7 +45,7 @@ def from_cursor(
     return sqla_model_name, ordering, pkey_values_as_str
 
 
-Cursor = ScalarType(
+Cursor = CursorType(
     "Cursor", serialize=str, parse_value=from_cursor, parse_literal=lambda x: from_cursor(x.value)
 )
 
@@ -96,3 +96,14 @@ def to_cursor(sqla_model, sqla_record, ordering: typing.List["UnaryExpr"]) -> st
     values = [x.element.name + "," + str(pkey_value) + op_to_str(x) for x in ordering]
     to_encode = ":".join([model_name, *values])
     return to_base64(to_encode)
+
+
+def to_cursor_sql(sqla_model) -> "sql_selector":
+    table_name = sqla_model.table_name
+    pkey_cols = list(sqla_model.primary_key.columns)
+
+    selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
+
+    str_to_encode = f"'{table_name}' || '@' || " + selector
+
+    return to_base64_sql(text(str_to_encode)).compile(compile_kwargs={"literal_binds": True})

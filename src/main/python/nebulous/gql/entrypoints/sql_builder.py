@@ -2,9 +2,10 @@ import random
 import string
 import typing
 
+from nebulous.gql.convert.cursor import to_cursor_sql
 from nebulous.gql.convert.node_interface import to_global_id_sql
 
-from ..alias import ConnectionType, ScalarType, TableType
+from ..alias import ConnectionType, CursorType, ScalarType, TableType
 from ..convert.node_interface import NodeID
 
 
@@ -38,10 +39,57 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     return res
 
 
+def to_after_clause(field) -> typing.List[str]:
+    local_table = field["return_type"].sqla_model
+    local_table_name = field["return_type"].sqla_model.table_name
+    pkey_cols = list(local_table.primary_key.columns)
+    args = field["args"]
+    cursor = args.get("after", None)
+
+    if cursor is None:
+        return "true"
+
+    if not hasattr(pkey_eq, "__iter__"):
+        pkey_eq = [pkey_eq]
+
+    cursor_table, cursor_values = cursor
+
+    if cursor_table != local_table_name:
+        raise ValueError("Invalid after cursor")
+
+    left = "(" + ", ".join([x.name for x in pkey_cols]) + ")"
+    right = "(" + ", ".join(cursor_values) + ")"
+
+    return left + " = " + right
+
+
+def to_limit_clause(field) -> int:
+    args = field["args"]
+    limit = args.get("first", 10)
+    return limit
+
+
+def to_conditions_clause(field) -> typing.List[str]:
+    local_table_name = field["return_type"].sqla_model.table_name
+    args = field["args"]
+
+    conditions = args.get("condition")
+
+    if conditions is None:
+        return ["true"]
+
+    res = []
+    for col_name, val in conditions.items():
+        res.append(f"{local_table_name}.{col_name} = {val}")
+    return res
+
+
 def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
     return_type = field["return_type"]
     if return_type == NodeID:
         return (field["name"], to_global_id_sql(sqla_model))
+    if return_type == CursorType:
+        return (field["name"], to_cursor_sql(sqla_model))
     return (field["name"], getattr(sqla_model, field["name"]).name)
 
 
@@ -57,10 +105,12 @@ def sql_builder(tree, parent_name=None):
         block_name = random_string()
         table_name = sqla_model.table_name
         if parent_name is None:
+            # If there is no parent, nodeId is mandatory
             _, pkey_eq = tree["args"]["nodeId"]
             pkey_clause = to_pkey_clause(tree, pkey_eq)
             join_clause = ["true"]
         else:
+            # If there is a parent no arguments are accepted
             join_clause = to_join_clause(tree, parent_name)
             pkey_clause = ["true"]
 
@@ -71,7 +121,7 @@ def sql_builder(tree, parent_name=None):
             else:
                 select_clause.append(build_relationship(field, block_name))
 
-        return single_block(
+        return row_block(
             block_name=block_name,
             table_name=table_name,
             pkey_clause=pkey_clause,
@@ -87,7 +137,9 @@ def sql_builder(tree, parent_name=None):
         else:
             join_conditions = to_join_clause(tree, parent_name)
 
-        filter_conditions = []
+        filter_conditions = to_conditions_clause(tree)
+        limit_clause = to_limit_clause(tree)
+        after_clause = to_after_clause(tree)
 
         nodes_selects = []
         edge_node_selects = []
@@ -114,6 +166,8 @@ def sql_builder(tree, parent_name=None):
             filter_conditions=filter_conditions,
             nodes_selects=nodes_selects,
             edge_node_selects=edge_node_selects,
+            limit=limit_clause,
+            after=after_clause,
         )
 
 
@@ -124,15 +178,19 @@ select
     """
 
 
-def single_block(
+def row_block(
     block_name: str, table_name, pkey_clause, join_clause, select_clause: typing.List[str]
 ):
     block = f"""
 (
     with {block_name} as (
-        select *
-        from {table_name}
-        where ({" and ".join(pkey_clause)}) and ({" and ".join(join_clause)})
+        select
+            *
+        from
+            {table_name}
+        where
+            ({" and ".join(pkey_clause)})
+            and ({" and ".join(join_clause)})
     )
     select
         jsonb_build_object({", ".join([f"'{name}', {expr}" for name, expr in select_clause])})
@@ -151,13 +209,20 @@ def connection_block(
     filter_conditions: typing.List[str],
     nodes_selects: typing.List[typing.Tuple[str, "expr"]],
     edge_node_selects: typing.List[typing.Tuple[str, "expr"]],
+    limit: int = 10,
+    after: typing.Optional[str] = None,
 ):
     block = f"""
 (
     with {block_name} as (
         select *
         from {table_name}
-        where {"and".join(join_conditions) or 'true'} and {"and".join(filter_conditions) or 'true'}
+        where 
+            ({"and".join(join_conditions) or 'true'})
+            and ({"and".join(filter_conditions) or 'true'})
+ import            and ({after or 'true'})
+        limit
+            {min(limit, 10)}
     )
     select
         jsonb_build_object(

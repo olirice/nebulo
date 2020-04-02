@@ -10,8 +10,6 @@ from ..alias import Argument, ConnectionType, Field, Int, List, NonNull
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .cursor import Cursor
-from .page_info import PageInfo
-from .total_count import TotalCount
 
 if typing.TYPE_CHECKING:
     pass
@@ -33,8 +31,8 @@ def connection_factory(sqla_model):
         return {
             "nodes": Field(NonNull(List(table)), resolver=default_resolver),
             "edges": Field(NonNull(List(NonNull(edge))), resolver=default_resolver),
-            "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
-            "totalCount": Field(NonNull(TotalCount), resolver=default_resolver),
+            # "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
+            # "totalCount": Field(NonNull(TotalCount), resolver=default_resolver),
         }
 
     return_type = ConnectionType(name=name, fields=build_attrs, description="")
@@ -52,11 +50,11 @@ def connection_args_factory(sqla_model):
 
     return {
         "first": Argument(Int, description="", out_name=None),
-        "last": Argument(Int),
-        "before": Argument(Cursor),
+        # "last": Argument(Int),
+        # "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
-        "orderBy": Argument(List(NonNull(ordering)), default_value=default_ordering),
+        # "orderBy": Argument(List(NonNull(ordering)), default_value=default_ordering),
     }
 
 
