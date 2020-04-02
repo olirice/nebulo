@@ -2,8 +2,8 @@
 import re
 from typing import Type
 
-from nebulous.sql.table_base import TableBase
-from nebulous.text_utils import snake_to_camel, to_plural
+from nebulo.sql.table_base import TableBase
+from nebulo.text_utils import snake_to_camel, to_plural
 from sqlalchemy import Table, event
 
 

@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import typing
 
-from nebulous.gql.alias import CursorType
-from nebulous.sql.inspect import get_table_name
-from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
+from nebulo.gql.alias import CursorType
+from nebulo.sql.inspect import get_table_name
+from nebulo.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import asc, desc, text
 
 if typing.TYPE_CHECKING:

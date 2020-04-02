@@ -1,4 +1,4 @@
-from nebulous.gql.convert.cursor import to_cursor
+from nebulo.gql.convert.cursor import to_cursor
 
 SQL_UP = """
 CREATE TABLE account (

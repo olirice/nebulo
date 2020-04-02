@@ -1,15 +1,14 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="nebulous",
+    name="nebulo",
     version="0.0.1",
-    description="Nebulous: Reflect RDBMS to GraphQL API",
+    description="Nebulo: Reflect RDBMS to GraphQL API",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
     license="TBD",
     classifiers=[
         "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
@@ -18,8 +17,8 @@ setup(
     package_dir={"": "src/main/python"},
     include_package_data=True,
     entry_points={
-        "console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"],
-        "pygments.lexers": ["graphqllexer=nebulous.lexer:GraphQLLexer"],
+        "console_scripts": ["nebulo=nebulo.cli:main", "neb=nebulo.cli:main"],
+        "pygments.lexers": ["graphqllexer=nebulo.lexer:GraphQLLexer"],
     },
     install_requires=[
         "sqlalchemy==1.3.15",

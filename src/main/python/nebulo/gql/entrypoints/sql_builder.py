@@ -5,10 +5,10 @@ import random
 import string
 import typing
 
-from nebulous.gql.alias import ConnectionType, ScalarType, TableType
-from nebulous.gql.convert.cursor import to_cursor_sql
-from nebulous.gql.convert.node_interface import NodeID, to_global_id_sql
-from nebulous.sql.inspect import get_primary_key_columns, get_table_name
+from nebulo.gql.alias import ConnectionType, ScalarType, TableType
+from nebulo.gql.convert.cursor import to_cursor_sql
+from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
+from nebulo.sql.inspect import get_primary_key_columns, get_table_name
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.sql.compiler import StrSQLCompiler

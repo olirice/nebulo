@@ -1,6 +1,6 @@
-from nebulous.gql.alias import Field
-from nebulous.gql.convert.connection import connection_args_factory, connection_factory
-from nebulous.gql.entrypoints.resolver import resolver
+from nebulo.gql.alias import Field
+from nebulo.gql.convert.connection import connection_args_factory, connection_factory
+from nebulo.gql.entrypoints.resolver import resolver
 
 
 def many_node_factory(sqla_model) -> Field:

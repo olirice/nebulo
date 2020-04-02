@@ -3,13 +3,13 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulous.text_utils import snake_to_camel
+from nebulo.text_utils import snake_to_camel
 
 from ..alias import InputField, InputObjectType
 from .table import convert_column
 
 if typing.TYPE_CHECKING:
-    from nebulous.sql.table_base import TableBase
+    from nebulo.sql.table_base import TableBase
 
 __all__ = ["condition_factory"]
 

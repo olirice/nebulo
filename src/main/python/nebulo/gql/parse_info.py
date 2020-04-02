@@ -1,7 +1,7 @@
 import typing
 
 from graphql.execution.values import get_argument_values
-from nebulous.gql.alias import Field, List, NonNull, ObjectType, ResolveInfo, Schema
+from nebulo.gql.alias import Field, List, NonNull, ObjectType, ResolveInfo, Schema
 
 __all__ = ["parse_resolve_info"]
 

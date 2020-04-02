@@ -1,6 +1,6 @@
 import json
 
-from nebulous.gql.convert.node_interface import to_global_id
+from nebulo.gql.convert.node_interface import to_global_id
 
 SQL_UP = """
 CREATE TABLE account (

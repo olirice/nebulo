@@ -6,11 +6,11 @@ import typing
 
 import pytest
 from graphql import graphql as execute_graphql
-from nebulous.gql.alias import Schema
-from nebulous.gql.gql_database import sqla_models_to_query_object
-from nebulous.server.flask import create_app
-from nebulous.sql import table_base
-from nebulous.sql.reflection_utils import (
+from nebulo.gql.alias import Schema
+from nebulo.gql.gql_database import sqla_models_to_query_object
+from nebulo.server.flask import create_app
+from nebulo.sql import table_base
+from nebulo.sql.reflection_utils import (
     rename_columns,
     rename_table,
     rename_to_many_collection,
@@ -22,13 +22,13 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 if typing.TYPE_CHECKING:
     from flask import Flask
 
-CONNECTION_STR = "postgresql://nebulous_user:password@localhost:4442/nebulous_db"
+CONNECTION_STR = "postgresql://nebulo_user:password@localhost:4442/nebulo_db"
 
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;
     CREATE SCHEMA public;
-    GRANT ALL ON SCHEMA public TO nebulous_user;
+    GRANT ALL ON SCHEMA public TO nebulo_user;
 """
 
 

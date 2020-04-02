@@ -5,11 +5,11 @@ import typing
 from functools import lru_cache
 
 import sqlalchemy
-from nebulous.gql.alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
-from nebulous.gql.convert.node_interface import NodeID, NodeInterface
-from nebulous.gql.default_resolver import default_resolver
-from nebulous.sql.inspect import get_relationships
-from nebulous.text_utils import snake_to_camel
+from nebulo.gql.alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
+from nebulo.gql.convert.node_interface import NodeID, NodeInterface
+from nebulo.gql.default_resolver import default_resolver
+from nebulo.sql.inspect import get_relationships
+from nebulo.text_utils import snake_to_camel
 from sqlalchemy import cast, func, types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BYTEA
@@ -35,7 +35,7 @@ typemap = {
 
 
 if typing.TYPE_CHECKING:
-    from nebulous.sql.table_base import TableBase
+    from nebulo.sql.table_base import TableBase
 
     ColumnType = Column[typing.Any]
     RelationshipPropertyType = RelationshipProperty[typing.Any]

@@ -12,9 +12,9 @@ jobs:
         image: postgres:12
         env:
           POSTGRES_HOST: localhost
-          POSTGRES_USER: nebulous_user
+          POSTGRES_USER: nebulo_user
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: nebulous_db
+          POSTGRES_DB: nebulo_db
 
         ports:
         - 4442:5432
@@ -26,7 +26,7 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Install nebulous
+    - name: Install nebulo
       run: |
         sudo apt-get install libpq-dev
         python -m pip install --upgrade pip
@@ -34,4 +34,4 @@ jobs:
 
     - name: Run Tests with Coverage
       run: |
-        pytest --cov=nebulous src/test
+        pytest --cov=nebulo src/test

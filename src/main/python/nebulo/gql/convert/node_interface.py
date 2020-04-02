@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import typing
 
-from nebulous.gql.alias import Field, InterfaceType, NonNull, ScalarType
-from nebulous.sql.inspect import get_table_name
-from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
+from nebulo.gql.alias import Field, InterfaceType, NonNull, ScalarType
+from nebulo.sql.inspect import get_table_name
+from nebulo.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import text
 
 if typing.TYPE_CHECKING:
@@ -42,7 +42,6 @@ def to_global_id_sql(sqla_model) -> StrSQLCompiler:
 
     str_to_encode = f"'{table_name}' || '@' || " + selector
     ret_val = to_base64_sql(text(str_to_encode)).compile(compile_kwargs={"literal_binds": True})
-    print("ret_val", ret_val, type(ret_val))
     return ret_val
 
 

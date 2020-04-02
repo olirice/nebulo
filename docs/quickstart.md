@@ -1,6 +1,6 @@
 ## Quickstart
 
-For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulous to reflect our GraphQL API. Finally, we'll query from that API.
+For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulo to reflect our GraphQL API. Finally, we'll query from that API.
 
 ### Database Setup
 
@@ -39,7 +39,7 @@ Now we're ready to reflect our new database schema into a GraphQL schema. The Gr
 
 To inspect the GraphQL schema
 ```shell
-neb dump-schema -c postgresql://nebulous_user:password@localhost:4443/nebulous_db
+neb dump-schema -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 ```
 where the connection string provided by `-c` is in the format `postgresql://<user>:<password>@<host>:<port>/<database_name>`
 
@@ -134,10 +134,10 @@ Notice that our API detected the foreign key relationship between `Account` and 
 To start the API server, execute `neb run` passing in a connection to the database.
 
 ```shell
-neb run -c postgresql://nebulous_user:password@localhost:4443/nebulous_db
+neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 ```
 
-In addition to handling GraphQL requests, nebulous also serves the [GraphiQL explorer](https://github.com/graphql/graphiql) locally at [http://localhost:5018/graphql](http://localhost:5018/graphql).
+In addition to handling GraphQL requests, nebulo also serves the [GraphiQL explorer](https://github.com/graphql/graphiql) locally at [http://localhost:5018/graphql](http://localhost:5018/graphql).
 
 
 ![graphiql image](images/graphiql.png)

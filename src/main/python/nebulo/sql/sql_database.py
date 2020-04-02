@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from nebulous.sql.table_base import TableBase
+from nebulo.sql.table_base import TableBase
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import scoped_session, sessionmaker

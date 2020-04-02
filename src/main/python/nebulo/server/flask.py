@@ -4,8 +4,8 @@ from typing import Optional
 
 from flask import Flask
 from flask_graphql import GraphQLView
-from nebulous.gql.gql_database import GQLDatabase
-from nebulous.sql.sql_database import SQLDatabase
+from nebulo.gql.gql_database import GQLDatabase
+from nebulo.sql.sql_database import SQLDatabase
 
 __all__ = ["create_app"]
 

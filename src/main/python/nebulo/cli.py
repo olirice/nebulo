@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import click
 from graphql.utils.schema_printer import print_schema
-from nebulous.server.flask import create_app
+from nebulo.server.flask import create_app
 
 if TYPE_CHECKING:
     pass

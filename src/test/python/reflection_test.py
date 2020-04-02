@@ -1,5 +1,5 @@
 import sqlalchemy as sqla
-from nebulous.sql.table_base import TableBase
+from nebulo.sql.table_base import TableBase
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 
 SQL_UP = """

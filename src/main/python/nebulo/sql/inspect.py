@@ -4,7 +4,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List
 
-from nebulous.sql.table_base import TableBase
+from nebulo.sql.table_base import TableBase
 from sqlalchemy import Column
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import RelationshipProperty

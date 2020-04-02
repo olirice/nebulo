@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from nebulous.gql.alias import ObjectType, Schema
-from nebulous.gql.entrypoints.many import many_node_factory
-from nebulous.gql.entrypoints.one import one_node_factory
-from nebulous.sql.inspect import get_table_name
-from nebulous.text_utils import snake_to_camel, to_plural
+from nebulo.gql.alias import ObjectType, Schema
+from nebulo.gql.entrypoints.many import many_node_factory
+from nebulo.gql.entrypoints.one import one_node_factory
+from nebulo.sql.inspect import get_table_name
+from nebulo.text_utils import snake_to_camel, to_plural
 
 if TYPE_CHECKING:
-    from nebulous.sql.sql_database import SQLDatabase
+    from nebulo.sql.sql_database import SQLDatabase
 
 
 class GQLDatabase:

@@ -1,6 +1,6 @@
-from nebulous.gql.alias import ResolveInfo
-from nebulous.gql.entrypoints.sql_builder import sql_builder, sql_finalize
-from nebulous.gql.parse_info import parse_resolve_info
+from nebulo.gql.alias import ResolveInfo
+from nebulo.gql.entrypoints.sql_builder import sql_builder, sql_finalize
+from nebulo.gql.parse_info import parse_resolve_info
 
 
 def resolver(_, info: ResolveInfo, **kwargs):

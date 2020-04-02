@@ -1,5 +1,5 @@
 from click.testing import CliRunner
-from nebulous.cli import main
+from nebulo.cli import main
 
 
 def test_cli_version():

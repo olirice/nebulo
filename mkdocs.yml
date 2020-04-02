@@ -1,11 +1,11 @@
-site_name: Nebulous
+site_name: Nebulo
 site_description: Instant GraphQL API from PostgreSQL Database
 
 theme:
     name: 'readthedocs'
 
-repo_name: olirice/nebulous
-repo_url: https://github.com/olirice/nebulous
+repo_name: olirice/nebulo
+repo_url: https://github.com/olirice/nebulo
 
 nav:
     - Introduction: 'index.md'
