@@ -11,12 +11,17 @@ jobs:
       postgres:
         image: postgres:12
         env:
+          # use localhost for the host here because we are running the job on the VM.
+          # If we were running the job on in a container this would be postgres
+          POSTGRES_HOST: localhost
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: pytest
+
         ports:
         # will assign a random free host port
-        - 5432/tcp
+        #- 5432/tcp
+        - 5432/5432
         # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
@@ -31,13 +36,7 @@ jobs:
         sudo apt-get install libpq-dev
         python -m pip install --upgrade pip
         pip install .
-#    - name: Lint with flake8
-#      run: |
-#        pip install flake8
-#        # stop the build if there are Python syntax errors or undefined names
-#        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-#        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-#        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+        
     - name: Run Tests
       run: |
         pip install pytest
