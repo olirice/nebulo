@@ -1,30 +1,14 @@
-from sqlalchemy import func, select
-from sqlalchemy.sql.expression import literal, literal_column
-
-from ..alias import Argument, Field, ResolveInfo, ConnectionType
+from ..alias import Argument, Field, ResolveInfo
 from ..convert.node_interface import NodeID
-from ..convert.sql_resolver import resolve_one
 from ..convert.table import table_factory
 from ..parse_info import parse_resolve_info
-from .utils import print_json, print_query
-import typing
-
-from ..alias import EdgeType, ObjectType, ScalarType, TableType, ConnectionType
-from ..convert.cursor import Cursor
-from ..convert.node_interface import NodeID
-from ..convert.page_info import PageInfo
-import string
-import random
-
 from .sql_builder import sql_builder, sql_finalize
-
+from .utils import print_json
 
 
 def one_node_factory(sqla_model) -> Field:
     node = table_factory(sqla_model)
-    return Field(
-        node, args={"nodeId": Argument(NodeID)}, resolver=resolver, description=""
-    )
+    return Field(node, args={"nodeId": Argument(NodeID)}, resolver=resolver, description="")
 
 
 def resolver(_, info: ResolveInfo, **kwargs):
@@ -51,5 +35,3 @@ def resolver(_, info: ResolveInfo, **kwargs):
     # Stash result on context so enable dumb resolvers to not fail
     context["result"] = result
     return result
-
-

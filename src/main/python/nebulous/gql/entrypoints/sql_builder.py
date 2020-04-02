@@ -1,28 +1,13 @@
-from sqlalchemy import func, select
-from sqlalchemy.sql.expression import literal, literal_column
-
-from ..alias import Argument, Field, ResolveInfo, ConnectionType
-from ..convert.node_interface import NodeID
-from ..convert.sql_resolver import resolve_one
-from ..convert.table import table_factory
-from ..parse_info import parse_resolve_info
-from .utils import print_json, print_query
+import random
+import string
 import typing
 
-from ..alias import EdgeType, ObjectType, ScalarType, TableType, ConnectionType
-from ..convert.cursor import Cursor
-from ..convert.node_interface import NodeID
-from ..convert.page_info import PageInfo
-import string
-import random
-
+from ..alias import ConnectionType, ScalarType, TableType
 
 
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
     parent_field = field["parent"]
-    relation_from_parent = getattr(
-        parent_field["return_type"].sqla_model, field["name"]
-    ).property
+    relation_from_parent = getattr(parent_field["return_type"].sqla_model, field["name"]).property
     local_table_name = field["return_type"].sqla_model.table_name
 
     join_clause = []
@@ -40,7 +25,7 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     local_table_name = field["return_type"].sqla_model.table_name
     pkey_cols = list(local_table.primary_key.columns)
 
-    if not hasattr(pkey_eq, '__iter__'):
+    if not hasattr(pkey_eq, "__iter__"):
         pkey_eq = [pkey_eq]
 
     res = []
@@ -70,9 +55,7 @@ def sql_builder(tree, parent_name=None):
         select_clause = []
         for field in tree["fields"]:
             if isinstance(field["return_type"], ScalarType):
-                select_clause.append(
-                    (field["name"], getattr(sqla_model, field["name"]).name)
-                )
+                select_clause.append((field["name"], getattr(sqla_model, field["name"]).name))
             else:
                 select_clause.append((field["name"], sql_builder(field, block_name)))
 
@@ -104,15 +87,9 @@ def sql_builder(tree, parent_name=None):
 
             for subfield in subfields:
                 if isinstance(subfield["return_type"], ScalarType):
-                    elem = (
-                        subfield["name"],
-                        getattr(sqla_model, subfield["name"]).name,
-                    )
+                    elem = (subfield["name"], getattr(sqla_model, subfield["name"]).name)
                 else:
-                    elem = (
-                        subfield["name"],
-                        sql_builder(subfield, block_name)
-                    )
+                    elem = (subfield["name"], sql_builder(subfield, block_name))
                 if field["name"] == "nodes":
                     nodes_selects.append(elem)
                 elif field["name"] == "edges":
@@ -136,11 +113,7 @@ select
 
 
 def single_block(
-    block_name: str,
-    table_name,
-    pkey_clause,
-    join_clause,
-    select_clause: typing.List[str],
+    block_name: str, table_name, pkey_clause, join_clause, select_clause: typing.List[str]
 ):
     block = f"""
 (
@@ -202,7 +175,6 @@ def connection_block(
     """
 
     return block
-
 
 
 def random_string(length=8):

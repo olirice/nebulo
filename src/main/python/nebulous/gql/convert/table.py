@@ -75,8 +75,8 @@ def relationship_to_attr_name(relationship: RelationshipProperty) -> str:
     """ """
     return (
         relationship.key
-#        + "By"
-#        + "And".join([snake_to_camel(col.name) for col in relationship.local_columns])
+        #        + "By"
+        #        + "And".join([snake_to_camel(col.name) for col in relationship.local_columns])
     )
 
 

@@ -6,7 +6,7 @@ from functools import lru_cache
 from sqlalchemy import asc, cast, desc, func, literal, literal_column, select, tuple_
 from sqlalchemy.sql.operators import gt, lt
 
-from ..alias import Argument, Field, Int, List, NonNull, ConnectionType 
+from ..alias import Argument, ConnectionType, Field, Int, List, NonNull
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .cursor import Cursor

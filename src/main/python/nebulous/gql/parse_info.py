@@ -18,6 +18,7 @@ def field_to_type(field):
         return field_to_type(field.of_type)
     return field
 
+
 def is_list(field) -> bool:
     """Recursively unwraps nested Field, List, and NonNull
     and identifies if the return type should be a list"""
@@ -28,7 +29,6 @@ def is_list(field) -> bool:
     if isinstance(field, NonNull):
         return is_list(field.of_type)
     return False
-
 
 
 def parse_field_ast(field_ast, field_def, schema, parent):
@@ -52,15 +52,17 @@ def parse_field_ast(field_ast, field_def, schema, parent):
             selection_field = field_type.fields[selection_name]
             sub_fields.append(parse_field_ast(selection_ast, selection_field, schema, parent=self))
 
-    self.update({
-        "alias": field_ast.alias or field_ast.name.value,
-        "name": field_ast.name.value,
-        "return_type": field_type,
-        "parent": parent,
-        "args": args,
-        "fields": sub_fields,
-        "is_list": field_is_list
-    })
+    self.update(
+        {
+            "alias": field_ast.alias or field_ast.name.value,
+            "name": field_ast.name.value,
+            "return_type": field_type,
+            "parent": parent,
+            "args": args,
+            "fields": sub_fields,
+            "is_list": field_is_list,
+        }
+    )
 
     return self
 
