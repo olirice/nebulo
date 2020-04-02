@@ -20,7 +20,7 @@ def test_round_trip_node_id(gql_exec_builder):
 
     gql_query = f"""
     {{
-        account(NodeID: "{node_id}") {{
+        account(nodeId: "{node_id}") {{
             nodeId
         }}
     }}

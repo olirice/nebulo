@@ -21,7 +21,7 @@ def test_query_one_field(gql_exec_builder):
     node_id = to_global_id(name="account", _id=account_id)
     gql_query = f"""
     {{
-        account(NodeID: "{node_id}") {{
+        account(nodeId: "{node_id}") {{
             id
         }}
     }}
@@ -39,7 +39,7 @@ def test_query_multiple_fields(gql_exec_builder):
     node_id = to_global_id(name="account", _id=account_id)
     gql_query = f"""
     {{
-        account(NodeID: "{node_id}") {{
+        account(nodeId: "{node_id}") {{
             id
             name
             created_at

@@ -39,7 +39,7 @@ def skip_temporary():
         node_id = to_global_id(name="account", _id=account_id)
         gql_query = f"""
         {{
-            account(NodeID: "{node_id}") {{
+            account(nodeId: "{node_id}") {{
                 id
                 offersById {{
                     nodes {{

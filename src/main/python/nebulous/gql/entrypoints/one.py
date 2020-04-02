@@ -11,7 +11,7 @@ from .utils import print_json, print_query
 
 def one_node_factory(sqla_model) -> Field:
     node = table_factory(sqla_model)
-    return Field(node, args={"NodeID": Argument(NodeID)}, resolver=resolver, description="")
+    return Field(node, args={"nodeId": Argument(NodeID)}, resolver=resolver, description="")
 
 
 def resolver(_, info: ResolveInfo, **kwargs):
@@ -23,7 +23,7 @@ def resolver(_, info: ResolveInfo, **kwargs):
     tree = parse_resolve_info(info)
     # print(json.dumps(tree, indent=2, cls=Encoder))
 
-    node_model_name, node_model_id = tree["args"]["NodeID"]
+    node_model_name, node_model_id = tree["args"]["nodeId"]
     assert sqla_model.__table__.name == node_model_name
 
     # Apply node argument
