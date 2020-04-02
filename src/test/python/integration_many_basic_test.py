@@ -23,7 +23,7 @@ def test_query_multiple_fields(gql_exec_builder):
             nodes {{
                 id
                 name
-                created_at
+                createdAt
             }}
         }}
     }}

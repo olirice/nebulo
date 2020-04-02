@@ -3,6 +3,7 @@ import string
 import typing
 
 from ..alias import ConnectionType, ScalarType, TableType
+from ..convert.node_interface import NodeID
 
 
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
@@ -35,11 +36,28 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     return res
 
 
+def to_node_id(sqla_model) -> str:
+    # sqla_model = field["return_type"].sqla_model
+    table_name = sqla_model.table_name
+    pkey_cols = list(sqla_model.primary_key.columns)
+    columns_str = ", ".join([col.name for col in pkey_cols])
+    return f"(({columns_str}))"
+
+
+def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
+    return_type = field["return_type"]
+    if return_type == NodeID:
+        return (field["name"], to_node_id(sqla_model))
+    return (field["name"], getattr(sqla_model, field["name"]).name)
+
+
+def build_relationship(field, block_name):
+    return (field["name"], sql_builder(field, block_name))
+
+
 def sql_builder(tree, parent_name=None):
     return_type = tree["return_type"]
     sqla_model = return_type.sqla_model
-
-    # from ..convert.connection import ConnectionType
 
     if isinstance(return_type, TableType):
         block_name = random_string()
@@ -55,9 +73,9 @@ def sql_builder(tree, parent_name=None):
         select_clause = []
         for field in tree["fields"]:
             if isinstance(field["return_type"], ScalarType):
-                select_clause.append((field["name"], getattr(sqla_model, field["name"]).name))
+                select_clause.append(build_scalar(field, sqla_model))
             else:
-                select_clause.append((field["name"], sql_builder(field, block_name)))
+                select_clause.append(build_relationship(field, block_name))
 
         return single_block(
             block_name=block_name,
@@ -83,13 +101,13 @@ def sql_builder(tree, parent_name=None):
             if field["name"] == "nodes":
                 subfields = field["fields"]
             elif field["name"] == "edges":
-                subfields = [x for x in field["fields"] if x["name"] == "edges"][0]
+                subfields = [x for x in field["fields"] if x["name"] == "node"][0]["fields"]
 
             for subfield in subfields:
                 if isinstance(subfield["return_type"], ScalarType):
-                    elem = (subfield["name"], getattr(sqla_model, subfield["name"]).name)
+                    elem = build_scalar(subfield, sqla_model)
                 else:
-                    elem = (subfield["name"], sql_builder(subfield, block_name))
+                    elem = build_relationship(subfield, block_name)
                 if field["name"] == "nodes":
                     nodes_selects.append(elem)
                 elif field["name"] == "edges":

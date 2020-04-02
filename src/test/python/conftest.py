@@ -10,9 +10,10 @@ from nebulous.gql.alias import Schema
 from nebulous.gql.gql_database import sqla_models_to_query_object
 from nebulous.sql import table_base
 from nebulous.sql.reflection_utils import (
-    camelize_classname,
-    camelize_collection,
-    pluralize_and_camelize_collection,
+    rename_columns,
+    rename_table,
+    rename_to_many_collection,
+    rename_to_one_collection,
 )
 from nebulous.sql.sql_database import SQLDatabase
 from nebulous.user_config import UserConfig
@@ -78,9 +79,9 @@ def schema_builder(session, engine):
             engine,
             reflect=True,
             schema="public",
-            classname_for_table=camelize_classname,
-            name_for_scalar_relationship=camelize_collection,
-            name_for_collection_relationship=pluralize_and_camelize_collection,
+            classname_for_table=rename_table,
+            name_for_scalar_relationship=rename_to_one_collection,
+            name_for_collection_relationship=rename_to_many_collection,
         )
 
         tables = list(TableBase.classes)

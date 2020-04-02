@@ -42,7 +42,7 @@ def test_query_multiple_fields(gql_exec_builder):
         account(nodeId: "{node_id}") {{
             id
             name
-            created_at
+            createdAt
         }}
     }}
     """
@@ -50,4 +50,4 @@ def test_query_multiple_fields(gql_exec_builder):
     assert result.errors is None
     assert result.data["account"]["id"] == account_id
     assert result.data["account"]["name"] == "oliver"
-    assert isinstance(result.data["account"]["created_at"], str)
+    assert isinstance(result.data["account"]["createdAt"], str)
