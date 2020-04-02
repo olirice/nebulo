@@ -1,3 +1,5 @@
+import json
+
 from nebulous.gql.convert.node_interface import to_global_id
 
 SQL_UP = """
@@ -32,34 +34,54 @@ INSERT INTO offer (currency, account_id) VALUES
 """
 
 
-def skip_temporary():
-    def test_query_one_to_many(gql_exec_builder):
-        executor = gql_exec_builder(SQL_UP)
-        account_id = 2
-        node_id = to_global_id(name="account", _id=account_id)
-        gql_query = f"""
-        {{
-            account(nodeId: "{node_id}") {{
-                id
-                offersById {{
-                    nodes {{
-                        id
-                        currency
-                    }}
+def test_query_one_to_many(gql_exec_builder):
+    executor = gql_exec_builder(SQL_UP)
+    account_id = 2
+    node_id = to_global_id(table_name="account", values=[account_id])
+    gql_query = f"""
+    {{
+        account(nodeId: "{node_id}") {{
+            id
+            offersByAccountId {{
+                nodes {{
+                    id
+                    currency
                 }}
             }}
         }}
-        """
-        result = executor(gql_query)
-        import json
+    }}
+    """
+    result = executor(gql_query)
 
-        print(json.dumps(result.data, indent=2))
-        assert result.errors is None
-        assert result.data["account"]["id"] == account_id
+    print(json.dumps(result.data, indent=2))
+    assert result.errors is None
+    assert result.data["account"]["id"] == account_id
 
-        offers_by_id = result.data["account"]["offersById"]
-        currencies = {x["currency"] for x in offers_by_id["nodes"]}
-        assert "usd" in currencies and "gbp" in currencies
+    offers_by_id = result.data["account"]["offersByAccountId"]
+    currencies = {x["currency"] for x in offers_by_id["nodes"]}
+    assert "usd" in currencies and "gbp" in currencies
 
-        # Fails because sql resolver not applying join correctly
-        assert len(offers_by_id["nodes"]) == 2
+    # Fails because sql resolver not applying join correctly
+    assert len(offers_by_id["nodes"]) == 2
+
+
+def test_query_many_to_one(gql_exec_builder):
+    executor = gql_exec_builder(SQL_UP)
+    account_id = 2
+    node_id = to_global_id(table_name="account", values=[account_id])
+    gql_query = """
+    {
+      allOffers {
+	nodes {
+	  id
+	  accountByAccountId {
+	    name
+	  }
+	}
+      }
+    }
+    """
+    result = executor(gql_query)
+
+    print(json.dumps(result.data, indent=2))
+    assert result.errors is None

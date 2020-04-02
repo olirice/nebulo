@@ -5,7 +5,7 @@ import typing
 from nebulous.gql.convert.cursor import to_cursor_sql
 from nebulous.gql.convert.node_interface import to_global_id_sql
 
-from ..alias import ConnectionType, CursorType, ScalarType, TableType
+from ..alias import ConnectionType, ScalarType, TableType
 from ..convert.node_interface import NodeID
 
 
@@ -42,17 +42,16 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
 def to_after_clause(field) -> typing.List[str]:
     local_table = field["return_type"].sqla_model
     local_table_name = field["return_type"].sqla_model.table_name
+
     pkey_cols = list(local_table.primary_key.columns)
+
     args = field["args"]
     cursor = args.get("after", None)
-
     if cursor is None:
         return "true"
-
-    if not hasattr(pkey_eq, "__iter__"):
-        pkey_eq = [pkey_eq]
-
     cursor_table, cursor_values = cursor
+    # if not hasattr(cursorpkey_eq, "__iter__"):
+    #    pkey_eq = [pkey_eq]
 
     if cursor_table != local_table_name:
         raise ValueError("Invalid after cursor")
@@ -60,7 +59,7 @@ def to_after_clause(field) -> typing.List[str]:
     left = "(" + ", ".join([x.name for x in pkey_cols]) + ")"
     right = "(" + ", ".join(cursor_values) + ")"
 
-    return left + " = " + right
+    return left + " > " + right
 
 
 def to_limit_clause(field) -> int:
@@ -88,8 +87,6 @@ def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
     return_type = field["return_type"]
     if return_type == NodeID:
         return (field["name"], to_global_id_sql(sqla_model))
-    if return_type == CursorType:
-        return (field["name"], to_cursor_sql(sqla_model))
     return (field["name"], getattr(sqla_model, field["name"]).name)
 
 
@@ -158,6 +155,11 @@ def row_block(field, parent_name=None):
     return block
 
 
+def to_order_clause(field):
+    sqla_model = field["return_type"].sqla_model
+    return ", ".join([x.name for x in sqla_model.primary_key.columns])
+
+
 def connection_block(field, parent_name):
     return_type = field["return_type"]
     sqla_model = return_type.sqla_model
@@ -172,14 +174,19 @@ def connection_block(field, parent_name):
     filter_conditions = to_conditions_clause(field)
     limit = to_limit_clause(field)
     after = to_after_clause(field)
+    order = to_order_clause(field)
+    cursor = to_cursor_sql(sqla_model)
 
     nodes_selects = []
     edge_node_selects = []
     for cfield in field["fields"]:
-        if cfield["name"] == "nodes":
+        if cfield["name"] in "nodes":
             subfields = cfield["fields"]
         elif cfield["name"] == "edges":
             subfields = [x for x in cfield["fields"] if x["name"] == "node"][0]["fields"]
+        elif cfield["name"] == "pageInfo":
+            # pageInfo is always retrieved from the database
+            continue
 
         for subfield in subfields:
             if isinstance(subfield["return_type"], ScalarType):
@@ -195,23 +202,34 @@ def connection_block(field, parent_name):
 
     block = f"""
 (
-    with {block_name} as (
+    with {block_name}_p1 as (
         select *
         from {table_name}
         where 
             ({"and".join(join_conditions) or 'true'})
             and ({"and".join(filter_conditions) or 'true'})
             and ({after or 'true'})
+        order by
+            {order}
         limit
-            {min(limit, 10)}
+            {min(limit, 10) + 1}
+    ),
+    {block_name} as (
+        select row_number() over () as row_num, *
+        from {block_name}_p1
+        limit {min(limit, 10)}
+    ),
+    has_next_page as (
+        select (select count(*) from {block_name}) > (select count(*) from {block_name}) as has_next
     )
+
     select
         jsonb_build_object(
             'pageInfo', json_build_object(
-                'hasNextPage', null,
-                'hasPreviousPage', null,
-                'startCursor', null,
-                'endCursor', null
+                'hasNextPage', (select has_next from has_next_page),
+                'hasPreviousPage', {'true' if after else 'false'},
+                'startCursor', (select {cursor} from {block_name} order by row_num asc limit 1),
+                'endCursor', (select {cursor} from {block_name} order by row_num desc limit 1)
             ),
             'nodes', json_agg(
                 jsonb_build_object(
@@ -220,7 +238,7 @@ def connection_block(field, parent_name):
             ),
             'edges', json_agg(
                 jsonb_build_object(
-                    'cursor', null, 
+                    'cursor', {cursor}, 
                     'node', json_build_object(
                         {", ".join([f"'{name}', {expr}" for name, expr in edge_node_selects])}
                     )
@@ -228,7 +246,7 @@ def connection_block(field, parent_name):
             )
         )
     from
-        {block_name}
+        {block_name} 
 ) 
     """
 

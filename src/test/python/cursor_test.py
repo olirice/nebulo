@@ -1,3 +1,5 @@
+from nebulous.gql.convert.cursor import to_cursor
+
 SQL_UP = """
 CREATE TABLE account (
     id serial primary key,
@@ -32,6 +34,27 @@ def test_get_cursor(gql_exec_builder):
     assert result.errors is None
     cursor = result.data["allAccounts"]["edges"][2]["cursor"]
     assert cursor is not None
+
+
+def test_invalid_cursor(gql_exec_builder):
+    executor = gql_exec_builder(SQL_UP)
+
+    cursor = to_cursor("wrong_name", [1])
+    # Query for 1 item after the cursor
+    gql_query = f"""
+    {{
+        allAccounts(first: 1, after: "{cursor}") {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert "invalid" in result.errors[0].message.lower()
 
 
 def test_retrieve_1_after_cursor(gql_exec_builder):
