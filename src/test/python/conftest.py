@@ -11,6 +11,7 @@ from nebulous.gql.gql_database import sqla_models_to_query_object
 from nebulous.server.flask import create_app
 from nebulous.sql import table_base
 from nebulous.sql.reflection_utils import (
+    rename_columns,
     rename_table,
     rename_to_many_collection,
     rename_to_one_collection,
@@ -78,6 +79,7 @@ def schema_builder(session, engine):
     def build(sql: str):
         session.execute(sql)
         session.commit()
+        rename_columns()
         TableBase.prepare(
             engine,
             reflect=True,
@@ -88,7 +90,6 @@ def schema_builder(session, engine):
         )
 
         tables = list(TableBase.classes)
-        print(tables)
         query_object = sqla_models_to_query_object(tables)
         schema = Schema(query_object)
         return schema
@@ -119,15 +120,8 @@ def app_builder(engine, gql_exec_builder):
         connection = None
         schema = "public"
         echo_queries = False
-        demo = False
 
-        app = create_app(
-            connection=connection,
-            schema=schema,
-            echo_queries=echo_queries,
-            demo=demo,
-            engine=engine,
-        )
+        app = create_app(connection=connection, schema=schema, echo_queries=echo_queries, engine=engine)
         return app
 
     yield build

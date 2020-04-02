@@ -8,12 +8,11 @@ from nebulous.sql.sql_database import SQLDatabase
 __all__ = ["create_app"]
 
 
-def create_app(connection: str, schema: str, echo_queries: bool, demo: bool, engine=None):
+def create_app(connection: str, schema: str, echo_queries: bool, engine=None):
     app = Flask(__name__)
     app.config["connection"] = connection
     app.config["schema"] = schema
     app.config["echo_queries"] = echo_queries
-    app.config["demo"] = demo
     app.config["engine"] = engine
 
     app = register_database(app)
@@ -27,7 +26,6 @@ def register_database(app):
         connection=app.config["connection"],
         schema=app.config["schema"],
         echo_queries=app.config["echo_queries"],
-        demo=app.config["demo"],
         engine=app.config["engine"],
     )
     app.config["database"] = sql_db
@@ -53,10 +51,7 @@ def register_routes(app):
             name="graphql",
             schema=app.config["graphql_schema"],
             graphiql=True,
-            get_context=lambda: {
-                "session": app.config["database"].session,
-                "database": app.config["database"],
-            },
+            get_context=lambda: {"session": app.config["database"].session, "database": app.config["database"]},
         ),
     )
     return app

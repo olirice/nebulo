@@ -33,7 +33,7 @@ ScalarType = GraphQLScalarType
 
 
 class HasSQLAModel:
-    sqla_model = None
+    sqla_table = None
 
 
 class ObjectType(GraphQLObjectType, HasSQLAModel):

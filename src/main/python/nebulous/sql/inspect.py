@@ -1,11 +1,10 @@
 from functools import lru_cache
 from typing import List
 
+from nebulous.sql.table_base import TableBase
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.schema import PrimaryKeyConstraint, UniqueConstraint
-
-from .table_base import TableBase
 
 
 @lru_cache()

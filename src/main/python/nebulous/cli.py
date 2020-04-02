@@ -14,7 +14,6 @@ def main(**kwargs):
 @click.option("-h", "--host", default="localhost")
 @click.option("-s", "--schema", default=None)
 @click.option("-e", "--echo-queries", is_flag=True, default=False)
-@click.option("--demo/--no-demo", is_flag=True, default=False)
-def run(connection, schema, echo_queries, demo, host, port):
-    app = create_app(connection, schema, echo_queries, demo)
+def run(connection, schema, echo_queries, host, port):
+    app = create_app(connection, schema, echo_queries)
     app.run(host=host, port=port)
