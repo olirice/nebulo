@@ -2,6 +2,7 @@
 from typing import List
 
 from sqlalchemy.sql.sqltypes import TypeEngine
+from sqlalchemy import text
 
 
 class SQLFunction:
@@ -20,11 +21,29 @@ class SQLFunction:
         self.return_type = return_type
 
 
-def get_function_names(connection, schema=None):
-    return ["authenticate"]
+def get_function_names(connection, schema: str):
+
+    query = text(
+        """
+    select routine_name --, specific_name,
+    from
+        information_schema.routines funcs
+    where
+        routine_schema = :schema
+        and external_language <> 'C'
+        and 'USER-DEFINED' <> all(select data_type
+                                  from information_schema.parameters
+                                  where parameters.specific_name=funcs.specific_name)
+    """
+    )
+
+    rows = connection.execute(query, {"schema": schema}).fetchall()
+    function_names = [x[0] for x in rows]
+
+    return function_names
 
 
-def reflect_function(connection, function_name: str, schema: str = "*"):
+def reflect_function(connection, function_name: str, schema: str):
     """Connection is an engine"""
 
     dialect = connection.dialect
@@ -52,7 +71,8 @@ def reflect_function(connection, function_name: str, schema: str = "*"):
 
         # User Defined Types
 
-    query = f"""
+    query = text(
+        """
         SELECT
                 pg_proc.oid,
                 pg_proc.proname sql_func_name,
@@ -73,14 +93,17 @@ def reflect_function(connection, function_name: str, schema: str = "*"):
             AND (pg_proc.proargtypes[0] IS NULL
                 OR pg_proc.proargtypes[0] <> 'pg_catalog.cstring'::pg_catalog.regtype)
 
-            AND pg_proc.proname ilike '{function_name}'
-            AND pg_namespace.nspname like '{"public"}'
+            AND pg_proc.proname ilike :function_name
+            AND pg_namespace.nspname = :schema
                 and lanname <> 'c'
             AND pg_catalog.pg_function_is_visible(pg_proc.oid);
     """
+    )
     print(function_name, schema)
 
-    oid, sql_func_name, return_type, param_names, param_types = connection.execute(query).first()
+    oid, sql_func_name, return_type, param_names, param_types = connection.execute(
+        query, {"schema": schema, "function_name": function_name}
+    ).first()
     param_types = [reflect_type(x) for x in param_types]
     return_type = reflect_type(return_type)
 

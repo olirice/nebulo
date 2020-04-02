@@ -18,6 +18,7 @@ class SQLDatabase:
     def __init__(self, config: UserConfig):
         # Configure SQLAlchemy
         self.engine = create_engine(config.connection, echo=config.echo_queries)
+        self.schema = config.schema
         self.base = TableBase
         self.base.prepare(self.engine, reflect=True, schema=config.schema)
         self.session = scoped_session(sessionmaker(bind=self.engine))
@@ -28,5 +29,22 @@ class SQLDatabase:
     @property
     @lru_cache()
     def functions(self):
-        function_names = get_function_names(self.engine, schema="public")
-        return [reflect_function(self.engine, x) for x in function_names]
+        function_names = get_function_names(self.engine, schema=self.schema)
+        function_names = ["authenticate"]
+        print(function_names)
+        reflected_functions = []
+        for function_name in function_names:
+            try:
+                ref_fun = reflect_function(self.engine, function_name, schema=self.schema)
+                reflected_functions.append(ref_fun)
+            except Exception as exc:
+                continue
+                # graphene does not provide a specific exception type for this
+                msg = str(exc)
+                print(msg)
+                continue
+                if True:  # "" in msg:
+                    print("Warning:", msg)
+                else:
+                    raise exc
+        return reflected_functions

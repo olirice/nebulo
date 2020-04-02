@@ -16,9 +16,9 @@ def main(**kwargs):
 @click.option("-c", "--connection", default="sqlite:///")
 @click.option("-p", "--port", default=5018)
 @click.option("-s", "--schema", default="public")
-@click.option("-q", "--graphql_route", default="/graphql")
+@click.option("-q", "--graphql-route", default="/graphql")
 @click.option("--graphiql/--no-graphiql", is_flag=True, default=True)
-@click.option("-e", "--echo_queries", is_flag=True, default=False)
+@click.option("-e", "--echo-queries", is_flag=True, default=False)
 def run(**kwargs):
     # Set up configuration object
     config = UserConfig(**kwargs)

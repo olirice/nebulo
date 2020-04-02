@@ -1,6 +1,7 @@
 from sqlalchemy import func, literal_column, select, type_coerce
 from sqlalchemy.orm import column_property
 from sqlalchemy.types import TEXT
+from sqlalchemy import text
 
 
 class ComputedColumnsMixin:
@@ -28,11 +29,12 @@ class ComputedColumnsMixin:
     """
 
     @classmethod
-    def prepare(cls, engine=None, reflect=False, schema=None, *args, **kwargs):
+    def prepare(cls, engine=None, reflect=False, schema="public", *args, **kwargs):
         """Extend automap base to reflect computed columns"""
         super().prepare(engine, reflect, schema, *args, **kwargs)
         computed_col_list = engine.execute(
-            f"""
+            text(
+                """
             with parameter_count as (
                 select
                     specific_name,
@@ -59,11 +61,13 @@ class ComputedColumnsMixin:
                 parameters.data_type = 'USER-DEFINED'
                 -- Only lookup cases when the tables row is the only parameter
                 and parameter_count.freq = 1
-                and routines.specific_schema='{schema}'
+                and routines.specific_schema=:schema
             ORDER BY
                 parameters.udt_name,
                 routines.routine_name
         """
+            ),
+            {"schema": schema},
         ).fetchall()
 
         # TODO(OR): update query to include return type for type_coerce below
