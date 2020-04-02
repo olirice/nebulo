@@ -35,19 +35,33 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     # Apply node argument
     sqla_table = sqla_model.__table__
 
-    cte = select([sqla_table]).where(sqla_table.c.id == node_model_id).cte()
+    top_alias = sqla_table.alias()
 
     # Apply argument filters
     # Argument is not optional in this case
     node_alias = tree["alias"]
     from nebulous.gql.convert2.table import resolve_one
 
-    query = select(
-        [func.json_build_object(literal(node_alias), resolve_one(tree=tree, parent_query=cte))]
-    ).alias()
+    query = (
+        select(
+            [
+                func.json_build_object(
+                    literal(node_alias), resolve_one(tree=tree, parent_query=top_alias)
+                )
+            ]
+        )
+        .where(top_alias.c.id == node_model_id)
+        .alias()
+    )
 
     query_str = query.compile(compile_kwargs={"literal_binds": True})
-    print("SQLSTR", query_str)
+    query_str = str(query_str)
+
+    import sqlparse
+
+    print()
+    print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
+    print()
 
     result = session.query(query).all()
     context["result"] = result[0][0]

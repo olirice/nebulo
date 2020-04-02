@@ -50,7 +50,7 @@ typemap = {
 
 
 if typing.TYPE_CHECKING:
-    pass
+    from nebulous.sql.table_base import TableBase
 
 
 @lru_cache()
@@ -71,9 +71,12 @@ def convert_composite(composite) -> typing.Union[Field, InputField]:
     raise NotImplementedError("Composite fields are not yet supported")
 
 
-def relationship_is_nullable(relationship: RelationshipProperty) -> bool:
+def relationship_is_nullable(relationship: RelationshipProperty, source: TableBase) -> bool:
     """Checks if a sqlalchemy orm relationship is nullable"""
-    return not any([col.nullable for col in relationship.local_columns])
+    for local_col, remote_col in relationship.local_remote_pairs:
+        if local_col.nullable or remote_col.nullable:
+            return True
+    return False
 
 
 def relationship_to_attr_name(relationship: RelationshipProperty) -> str:
@@ -104,7 +107,7 @@ def table_factory(sqla_model):
             for relationship in sqla_model.relationships:
                 direction = relationship.direction
                 to_sqla_model = relationship.mapper.class_
-                is_nullable = relationship_is_nullable(relationship)
+                is_nullable = relationship_is_nullable(relationship, sqla_model)
 
                 # Name of the attribute on the model
                 attr_key = relationship_to_attr_name(relationship)
@@ -115,6 +118,18 @@ def table_factory(sqla_model):
                     _type = table_factory(to_sqla_model)
                     _type = NonNull(_type) if not is_nullable else _type
                     attrs[attr_key] = Field(_type, resolver=default_resolver)
+
+                elif direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
+                    from .connection import connection_factory, connection_args_factory
+
+                    connection = connection_factory(sqla_model)
+                    connection_args = connection_args_factory(sqla_model)
+                    attrs[attr_key] = Field(
+                        connection if is_nullable else NonNull(connection),
+                        args=connection_args,
+                        resolver=default_resolver,
+                    )
+
         return attrs
 
     return_type = TableType(
@@ -129,7 +144,7 @@ def encode(text_to_encode, encoding="base64"):
     return func.encode(cast(text_to_encode, BYTEA()), cast(encoding, sqlalchemy.Text()))
 
 
-def resolve_one(tree, parent_query: "cte"):
+def resolve_one(tree, parent_query: "cte", mode="ONE"):  # , filters: typing.Dict[str, typing.Any]):
     """Resolves a single record from a table"""
     return_type = tree["return_type"]
     sqla_model = return_type.sqla_model
@@ -141,6 +156,12 @@ def resolve_one(tree, parent_query: "cte"):
         relationship_to_attr_name(rel): rel
         for rel in sqla_model.relationships
         if rel.direction == interfaces.MANYTOONE
+    }
+
+    to_many_relation_map = {
+        relationship_to_attr_name(rel): rel
+        for rel in sqla_model.relationships
+        if rel.direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY)
     }
 
     fields = tree["fields"]
@@ -169,34 +190,72 @@ def resolve_one(tree, parent_query: "cte"):
             )
         # Handle ManyToOne relationships
         elif field_name in to_one_relation_map.keys():
-            # Now we need a new table alias for the table we're joining against
-            # pre-joined against the current table
-            # Since we know it will return exactly 1 row, we can pass it back
-            # into resolve_one
             relation = to_one_relation_map[field_name]
-
             # Table we're joinig to
             joined_table = list(relation.remote_side)[0].table
-            joined_alias = joined_table.alias()
 
             # Apply join as filters
-            joined_query = apply_left_join(
-                left_query=query,
-                right_query=joined_alias,
+            where_clause = relation_to_where_clause(
+                left_query=parent_query,
+                right_query=joined_table,
                 left_tab_name=sqla_model.__table__.name,
                 right_tab_name=joined_table.name,
                 relation=relation,
             )
+
             builder.extend(
-                [literal(field_name), resolve_one(tree_field, parent_query=joined_query)]
+                [
+                    literal(field_name),
+                    select([resolve_one(tree_field, parent_query=joined_table)])
+                    .where(*where_clause)
+                    .label("q"),
+                ]
             )
+
+            # Handle ToMany relationships
+            """
+            Notes:
+            
+            Need a separate resolver for connections that delegates back to 
+            resolve_one
+
+            also need to move node_id resolver, and pageinfo resolver on their own.
+            """
+
+        elif field_name in to_many_relation_map.keys():
+            relation = to_many_relation_map[field_name]
+            # Table we're joinig to
+            joined_table = list(relation.remote_side)[0].table
+
+            # Apply join as filters
+            where_clause = relation_to_where_clause(
+                left_query=parent_query,
+                right_query=joined_table,
+                left_tab_name=sqla_model.__table__.name,
+                right_tab_name=joined_table.name,
+                relation=relation,
+            )
+
+            builder.extend(
+                [
+                    literal(field_name),
+                    select([resolve_one(tree_field, parent_query=joined_table, mode="MANY")])
+                    .where(*where_clause)
+                    .label("q"),
+                ]
+            )
+
         else:
             print("Field named:", field_name, "not known")
 
-    return func.json_build_object(*builder)
+    return (
+        func.json_build_object(*builder)
+        if mode == "ONE"
+        else func.to_json(func.array_agg(func.json_build_object(*builder)))
+    )
 
 
-def apply_left_join(
+def relation_to_where_clause(
     left_query, right_query, left_tab_name: str, right_tab_name: str, relation
 ) -> "FilteredQuery":
     """
@@ -217,11 +276,7 @@ def apply_left_join(
     left_names = [x.name for x in left_columns]
     right_names = [x.name for x in right_columns]
 
-    q = select([right_query]).where(
-        *[
-            getattr(left_query.c, left_name) == getattr(right_query.c, right_name)
-            for left_name, right_name in zip(left_names, right_names)
-        ]
-    )
-
-    return q.alias()
+    return [
+        getattr(left_query.c, left_name) == getattr(right_query.c, right_name)
+        for left_name, right_name in zip(left_names, right_names)
+    ]

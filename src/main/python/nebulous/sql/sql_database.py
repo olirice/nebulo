@@ -61,10 +61,30 @@ class SQLDatabase:
 
         self.session.execute(
             """
+        drop table if exists organization;
+        """
+        )
+
+        self.session.execute(
+            """
+        create table organization (
+            id serial primary key, --integer primary key autoincrement,
+            org_name text not null
+        );
+            """
+        )
+
+        self.session.execute(
+            """
         create table account (
-            id integer primary key autoincrement,
+            id serial primary key, --integer primary key autoincrement,
             name text not null,
-            age int
+            age int,
+            organization_id int,
+
+            constraint fk_account_organizationunt_id
+                foreign key (organization_id)
+                references organization (id)
         );
         """
         )
@@ -72,7 +92,7 @@ class SQLDatabase:
         self.session.execute(
             """
         create table offer (
-            id integer primary key autoincrement,
+            id serial primary key, --integer primary key autoincrement,
             currency text,
             account_id int not null,
             created_at timestamp  not null,
@@ -86,10 +106,17 @@ class SQLDatabase:
 
         self.session.execute(
             """
-        insert into account (id, name, age) values
-            (1, 'oliver', 29),
-            (2, 'rachel', 29),
-            (3, 'buddy', 20)
+        insert into organization (id, org_name) values
+            (default, 'oli_corp');
+        """
+        )
+
+        self.session.execute(
+            """
+        insert into account (id, name, age, organization_id) values
+            (1, 'oliver', 29, 1),
+            (2, 'rachel', 29, 1),
+            (3, 'buddy', 20, 1)
         ;
         """
         )
@@ -97,11 +124,11 @@ class SQLDatabase:
         self.session.execute(
             """
         insert into offer (id, currency, account_id, created_at) values
-            (1, 'abc', 1, datetime()),
-            (2, 'def', 1, datetime()),
-            (3, 'jkl', 2, datetime()),
-            (4, 'mno', 2, datetime()),
-            (5, 'pqr', 3, datetime())
+            (1, 'abc', 1, now()),
+            (2, 'def', 1, now()),
+            (3, 'jkl', 2, now()),
+            (4, 'mno', 2, now()),
+            (5, 'pqr', 3, now())
         ;
         """
         )
