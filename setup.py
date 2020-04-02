@@ -26,7 +26,8 @@ setup(
         "flask",
         "flask-graphql",
         "sqlalchemy_utils",
-        "psycopg2",
+        "psycopg2-binary",
         "pytest",
+        "sqlparse==0.3.0",
     ],
 )
