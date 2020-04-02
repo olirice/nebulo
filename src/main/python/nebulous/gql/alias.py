@@ -48,7 +48,7 @@ class EdgeType(ObjectType, HasSQLAModel):
     pass
 
 
-class CursorType(ScalarType):
+class CursorType(GraphQLScalarType):
     pass
 
 

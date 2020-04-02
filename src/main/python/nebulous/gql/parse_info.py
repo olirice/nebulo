@@ -1,7 +1,7 @@
 import typing
 
 from graphql.execution.values import get_argument_values
-from nebulous.gql.alias import Field, List, NonNull, ResolveInfo
+from nebulous.gql.alias import Field, List, NonNull, ObjectType, ResolveInfo, Schema
 
 __all__ = ["parse_resolve_info"]
 
@@ -19,7 +19,8 @@ def field_to_type(field):
 
 
 class ASTNode:
-    def __init__(self, field_ast, field_def, schema, parent: "ASTNode"):
+    def __init__(self, field_ast: Field, field_def: ObjectType, schema: Schema, parent: typing.Optional["ASTNode"]):
+
         args = get_argument_values(arg_defs=field_def.args, arg_asts=field_ast.arguments)
         selection_set = field_ast.selection_set
         field_type = field_to_type(field_def)
@@ -27,11 +28,9 @@ class ASTNode:
         self.alias = (field_ast.alias.value if field_ast.alias else None) or field_ast.name.value
         self.name = field_ast.name.value
         self.return_type = field_type
-        self.parent: ASTNode = parent
-        self.args = args
-        self.path = parent.path + [self.name] if parent is not None else ["root"]
-
-        # print(self.path)
+        self.parent: typing.Optional[ASTNode] = parent
+        self.args: typing.Dict[str, typing.Any] = args
+        self.path: typing.List[str] = parent.path + [self.name] if parent is not None else ["root"]
 
         sub_fields = []
         if selection_set:
@@ -57,7 +56,7 @@ class ASTNode:
         return path[-1]
 
 
-def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
+def parse_resolve_info(info: ResolveInfo) -> ASTNode:
     """Converts execution ResolveInfo into a dictionary
     hierarchy
 
@@ -87,5 +86,6 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
     parent_type = info.parent_type
     parent_lookup_name = field_ast.name.value
     current_field = parent_type.fields[parent_lookup_name]
+
     parsed_info = ASTNode(field_ast, current_field, schema, parent=None)
     return parsed_info

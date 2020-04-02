@@ -1,10 +1,21 @@
+# pylint: disable=unsubscriptable-object, invalid-name
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import List
+from typing import TYPE_CHECKING, Any, List
 
 from nebulous.sql.table_base import TableBase
+from sqlalchemy import Column
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.schema import PrimaryKeyConstraint, UniqueConstraint
+
+if TYPE_CHECKING:
+    RelationshipPropertyType = RelationshipProperty[Any]
+    ColumnType = Column[Any]
+else:
+    RelationshipPropertyType = RelationshipProperty
+    ColumnType = Column
 
 
 @lru_cache()
@@ -20,7 +31,7 @@ def get_unique_constraints(sqla_model: TableBase) -> List[UniqueConstraint]:
 
 
 @lru_cache()
-def get_relationships(sqla_model: TableBase) -> List[RelationshipProperty]:
+def get_relationships(sqla_model: TableBase) -> List[RelationshipPropertyType]:
     """Relationships with other tables"""
     return list(sql_inspect(sqla_model).relationships)
 
@@ -29,3 +40,9 @@ def get_relationships(sqla_model: TableBase) -> List[RelationshipProperty]:
 def get_primary_key(sqla_model: TableBase) -> List[PrimaryKeyConstraint]:
     """Primary key"""
     return sqla_model.__table__.primary_key
+
+
+@lru_cache()
+def get_primary_key_columns(sqla_model: TableBase) -> List[ColumnType]:
+    """Primary key"""
+    return [x for x in sqla_model.__table__.primary_key.columns]

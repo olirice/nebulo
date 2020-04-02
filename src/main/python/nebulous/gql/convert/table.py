@@ -1,4 +1,4 @@
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,unsubscriptable-object
 from __future__ import annotations
 
 import typing
@@ -37,10 +37,16 @@ typemap = {
 if typing.TYPE_CHECKING:
     from nebulous.sql.table_base import TableBase
 
+    ColumnType = Column[typing.Any]
+    RelationshipPropertyType = RelationshipProperty[typing.Any]
+else:
+    ColumnType = Column
+    RelationshipPropertyType = RelationshipProperty
+
 
 @lru_cache()
 def convert_column(
-    column: Column, output_type: typing.Union[Field, InputField] = Field
+    column: ColumnType, output_type: typing.Union[Field, InputField] = Field
 ) -> typing.Union[Field, InputField]:
     """Converts a sqlalchemy column into a graphql field or input field"""
     gql_type = typemap.get(type(column.type), String)
@@ -62,7 +68,7 @@ def convert_composite(composite) -> typing.Union[Field, InputField]:
 
 
 @lru_cache()
-def relationship_is_nullable(relationship: RelationshipProperty, source: TableBase) -> bool:
+def relationship_is_nullable(relationship: RelationshipPropertyType, source: TableBase) -> bool:
     """Checks if a sqlalchemy orm relationship is nullable"""
     for local_col, remote_col in relationship.local_remote_pairs:
         if local_col.nullable or remote_col.nullable:
@@ -71,7 +77,7 @@ def relationship_is_nullable(relationship: RelationshipProperty, source: TableBa
 
 
 @lru_cache()
-def relationship_to_attr_name(relationship: RelationshipProperty) -> str:
+def relationship_to_attr_name(relationship: RelationshipPropertyType) -> str:
     """ """
     return relationship.key
 
@@ -118,9 +124,7 @@ def table_factory(sqla_model):
 
         return attrs
 
-    return_type = TableType(
-        name=name, fields=build_attrs, interfaces=[NodeInterface], description=""
-    )
+    return_type = TableType(name=name, fields=build_attrs, interfaces=[NodeInterface], description="")
     return_type.sqla_model = sqla_model
 
     return return_type

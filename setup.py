@@ -19,7 +19,7 @@ setup(
     include_package_data=True,
     entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
     install_requires=[
-        "sqlalchemy==1.3.11",
+        "sqlalchemy==1.3.15",
         "psycopg2-binary==2.8.4",
         "graphql-core==2.2.1",
         "flask==1.1.1",

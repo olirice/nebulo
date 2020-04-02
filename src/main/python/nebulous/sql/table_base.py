@@ -2,19 +2,17 @@
 A base class to derive sql tables from
 """
 
-from typing import Any, Dict, Tuple
 
 from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base
 
 
-def build_base():
-    return automap_base(metadata=MetaData())
-
-
-class TableBase(build_base()):
-    """Base class for application sql tables"""
+class Table:
+    """Base class for application sql tables that will contain mixins"""
 
     __abstract__ = True
-    __table_args__: Tuple[Any, Any] = ()
-    __mapper_args__: Dict[str, Any] = {}
+
+
+Meta = MetaData()
+
+TableBase = automap_base(metadata=Meta, cls=Table)

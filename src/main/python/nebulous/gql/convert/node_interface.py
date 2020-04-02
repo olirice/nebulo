@@ -8,7 +8,7 @@ from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import text
 
 if typing.TYPE_CHECKING:
-    pass
+    from sqlalchemy.sql.compiler import StrSQLCompiler
 
 
 def to_global_id(table_name: str, values: typing.List[typing.Any]) -> str:
@@ -34,15 +34,16 @@ def from_global_id(global_id: str) -> typing.Tuple[str, typing.List[str]]:
     return table_name, values
 
 
-def to_global_id_sql(sqla_model) -> "sql_selector":
+def to_global_id_sql(sqla_model) -> StrSQLCompiler:
     table_name = get_table_name(sqla_model)
     pkey_cols = list(sqla_model.__table__.primary_key.columns)
 
     selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
 
     str_to_encode = f"'{table_name}' || '@' || " + selector
-
-    return to_base64_sql(text(str_to_encode)).compile(compile_kwargs={"literal_binds": True})
+    ret_val = to_base64_sql(text(str_to_encode)).compile(compile_kwargs={"literal_binds": True})
+    print("ret_val", ret_val, type(ret_val))
+    return ret_val
 
 
 NodeID = ScalarType(
@@ -56,9 +57,7 @@ NodeID = ScalarType(
 NodeInterface = InterfaceType(
     "NodeInterface",
     description="An object with a nodeId",
-    fields={
-        "nodeId": Field(NonNull(NodeID), description="The global id of the object.", resolver=None)
-    },
+    fields={"nodeId": Field(NonNull(NodeID), description="The global id of the object.", resolver=None)},
     # Maybe not necessary
     resolve_type=lambda *args, **kwargs: None,
 )

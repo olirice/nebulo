@@ -1,4 +1,6 @@
 # pylint: disable=invalid-name
+from __future__ import annotations
+
 import random
 import string
 import typing
@@ -6,7 +8,10 @@ import typing
 from nebulous.gql.alias import ConnectionType, ScalarType, TableType
 from nebulous.gql.convert.cursor import to_cursor_sql
 from nebulous.gql.convert.node_interface import NodeID, to_global_id_sql
-from nebulous.sql.inspect import get_primary_key, get_table_name
+from nebulous.sql.inspect import get_primary_key_columns, get_table_name
+
+if typing.TYPE_CHECKING:
+    from sqlalchemy.sql.compiler import StrSQLCompiler
 
 
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
@@ -18,16 +23,14 @@ def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
     for parent_col, local_col in relation_from_parent.local_remote_pairs:
         parent_col_name = parent_col.name
         local_col_name = local_col.name
-        join_clause.append(
-            f"{parent_block_name}.{parent_col_name} = {local_table_name}.{local_col_name}"
-        )
+        join_clause.append(f"{parent_block_name}.{parent_col_name} = {local_table_name}.{local_col_name}")
     return join_clause
 
 
 def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
-    pkey_cols = list(get_primary_key(local_table).columns)
+    pkey_cols = get_primary_key_columns(local_table)
 
     if not hasattr(pkey_eq, "__iter__"):
         pkey_eq = [pkey_eq]
@@ -39,11 +42,11 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     return res
 
 
-def to_after_clause(field) -> typing.List[str]:
+def to_after_clause(field) -> str:
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
 
-    pkey_cols = list(get_primary_key(local_table).columns)
+    pkey_cols = get_primary_key_columns(local_table)
 
     args = field.args
     cursor = args.get("after", None)
@@ -81,7 +84,7 @@ def to_conditions_clause(field) -> typing.List[str]:
     return res
 
 
-def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
+def build_scalar(field, sqla_model) -> typing.Tuple[str, typing.Union[str, StrSQLCompiler]]:
     return_type = field.return_type
     if return_type == NodeID:
         return (field.alias, to_global_id_sql(sqla_model))
@@ -154,7 +157,7 @@ def row_block(field, parent_name=None):
 
 def to_order_clause(field):
     sqla_model = field.return_type.sqla_model
-    return ", ".join([x.name for x in get_primary_key(sqla_model).columns])
+    return ", ".join([x.name for x in get_primary_key_columns(sqla_model)])
 
 
 def check_has_total(field) -> bool:

@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 import re
-import typing
 from typing import Type
 
 from nebulous.sql.table_base import TableBase
@@ -18,25 +17,22 @@ def rename_table(base: Type[TableBase], tablename: str, table: Table) -> str:
     return to_camelcase(tablename)
 
 
-def rename_to_one_collection(base, local_cls, referred_cls, constraint):
+def rename_to_one_collection(base, local_cls, referred_cls, constraint) -> str:
     referred_name = referred_cls.__name__
     camel_name = to_camelcase(referred_name)
-
     return camel_name + "By" + "And".join(snake_to_camel(col.name) for col in constraint.columns)
 
 
-def rename_to_many_collection(base, local_cls, referred_cls, constraint):
+def rename_to_many_collection(base, local_cls, referred_cls, constraint) -> str:
     "Produce an 'uncamelized', 'pluralized' class name, e.g. "
     "'SomeTerm' -> 'some_terms'"
     referred_name = referred_cls.__name__
     pluralized = to_plural(referred_name)
     camel_name = to_camelcase(pluralized)
-
-    # print(constraint, dir(constraint))
     return camel_name + "By" + "And".join(snake_to_camel(col.name) for col in constraint.columns)
 
 
-def rename_columns() -> typing.NoReturn:
+def rename_columns() -> None:
     @event.listens_for(Table, "column_reflect")
     def camelize_column_on_reflection(inspector, table, column_info):
         """Listen for when columns are reflected and adjust the SQLA ORM
