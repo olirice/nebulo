@@ -21,11 +21,13 @@
 
 **Instant GraphQL API for PostgreSQL**
 
-Nebulo [reflects](https://en.wikipedia.org/wiki/Reflection_(computer_programming)) a highly performant [GraphQL](https://graphql.org/learn/) API from an existing [PostgreSQL](https://www.postgresql.org/) database.
+[Reflect](https://en.wikipedia.org/wiki/Reflection_(computer_programming)) a highly performant [GraphQL](https://graphql.org/learn/) API from an existing [PostgreSQL](https://www.postgresql.org/) database.
 
+Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases wtih 0 code, and can also be added to existing [SQLAlchemy](https://www.sqlalchemy.org/) projects.
 
+In contrast to existing options in the python ecosystem, Nebulo optimizes underlying SQL queries to solve the [N+1 query problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) and minimize database IO. The result is a blazingly fast API with consistent performance for arbitrarily nested queries.
 
-**WARNING: pre-alpha software**
+**WARNING: Pre-Alpha Software**
 
 ## TL;DR
 
