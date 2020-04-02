@@ -31,7 +31,7 @@ def is_list(field) -> bool:
 
 
 
-def parse_field_ast(field_ast, field_def, schema):
+def parse_field_ast(field_ast, field_def, schema, parent):
     """Converts a """
     args = get_argument_values(
         arg_defs=field_def.args,
@@ -43,21 +43,26 @@ def parse_field_ast(field_ast, field_def, schema):
     field_type = field_to_type(field_def)
     field_is_list = is_list(field_def)
 
+    self = {}
+
     sub_fields = []
     if selection_set:
         for selection_ast in selection_set.selections:
             selection_name = selection_ast.name.value
             selection_field = field_type.fields[selection_name]
-            sub_fields.append(parse_field_ast(selection_ast, selection_field, schema))
+            sub_fields.append(parse_field_ast(selection_ast, selection_field, schema, parent=self))
 
-    return {
+    self.update({
         "alias": field_ast.alias or field_ast.name.value,
         "name": field_ast.name.value,
         "return_type": field_type,
+        "parent": parent,
         "args": args,
         "fields": sub_fields,
         "is_list": field_is_list
-    }
+    })
+
+    return self
 
 
 def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
@@ -71,6 +76,7 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
         "args":  {
             "first": 10
         },
+        "parent": <reference to parent field or None>
         "fields": [
             # Same structure again, for each field selected
             # in the query
@@ -90,5 +96,5 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
     parent_type = info.parent_type
     parent_lookup_name = field_ast.name.value
     current_field = parent_type.fields[parent_lookup_name]
-    parsed_info = parse_field_ast(field_ast, current_field, schema)
+    parsed_info = parse_field_ast(field_ast, current_field, schema, parent=None)
     return parsed_info
