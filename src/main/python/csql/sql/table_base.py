@@ -2,25 +2,26 @@
 A base class to derive sql tables from
 """
 
+import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
-from sqlalchemy import Column, event
+from sqlalchemy import event
 from sqlalchemy import inspect as sql_inspect
-from sqlalchemy.orm import mapper
-from sqlalchemy.orm.relationships import RelationshipProperty
+from sqlalchemy.orm import ColumnProperty, RelationshipProperty, mapper
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy_utils import generic_repr
 
-from csql.sql.computed_column_mixin import ComputedColumnsMixin
-from csql.sql.ddl_mixin import OmitMixin
-from csql.sql.gql_base_mixin import GQLBaseMixin
 
 from .base import Base
 from .utils import classproperty
 
+# from csql.sql.gql_base_mixin import GQLBaseMixin
+
 
 @generic_repr
-class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
+# class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
+class TableBase(Base):
     """Base class for application sql tables"""
 
     __abstract__ = True
@@ -33,8 +34,9 @@ class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
         return cls.__table__.name
 
     @classproperty
-    def columns(cls) -> List[Column]:  # pylint: disable=no-self-argument
+    def columns(cls) -> List[ColumnProperty]:  # pylint: disable=no-self-argument
         """All columns in table"""
+        # return list(sql_inspect(cls).column_attrs.values())
         return list(cls.__table__.columns)
 
     @classproperty
@@ -70,6 +72,18 @@ class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
                 raise KeyError(f"Key {key} does not exist on model {self.table_name}")
 
     computed_columns = []
+
+    def to_dict(self):
+        """Return the resource as a dictionary.
+        """
+        result_dict = {}
+        for column in self.__table__.columns.keys():  # pylint: disable=no-member
+            value = result_dict[column] = getattr(self, column, None)
+            if isinstance(value, Decimal):
+                result_dict[column] = float(result_dict[column])
+            elif isinstance(value, datetime.datetime):
+                result_dict[column] = value.isoformat()
+        return result_dict
 
 
 @event.listens_for(mapper, "before_configured", once=True)
