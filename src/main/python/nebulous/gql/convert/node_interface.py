@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import typing
 
+import sqlalchemy
+from sqlalchemy import cast, literal
+
 from ..alias import Field, InterfaceType, NonNull, ScalarType
-from ..string_encoding import from_base64, to_base64
+from ..string_encoding import from_base64, to_base64, to_encoding_in_sql
 
 if typing.TYPE_CHECKING:
     pass
@@ -48,3 +51,9 @@ NodeInterface = InterfaceType(
     # Maybe not necessary
     resolve_type=lambda *args, **kwargs: None,
 )
+
+
+def resolve_node_id(query, sqla_model):
+    return to_encoding_in_sql(
+        literal(sqla_model.__table__.name) + literal(":") + cast(query.c.id, sqlalchemy.String())
+    )

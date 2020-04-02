@@ -3,17 +3,88 @@ from __future__ import annotations
 
 import typing
 
-from sqlalchemy.sql.elements import UnaryExpression
-from sqlalchemy.sql.operators import asc_op, desc_op
+import sqlalchemy
+from sqlalchemy import asc, cast, desc, literal
 
 from ..alias import ScalarType
-from ..string_encoding import from_base64, to_base64
+from ..string_encoding import from_base64, to_base64, to_encoding_in_sql
 
 __all__ = ["Cursor"]
 
 
 if typing.TYPE_CHECKING:
     pass
+
+
+DIRECTION_TO_STR = {asc: "asc", desc: "desc"}
+STR_TO_DIRECTION = {v: k for k, v in DIRECTION_TO_STR.items()}
+
+
+def from_cursor(
+    cursor: str
+) -> typing.Tuple[str, typing.List[str], typing.List[typing.Tuple[str, "asc/desc"]]]:
+    """Parses a cursor from form
+    offer[id:desc,age:asc](4)
+    """
+    cursor_str = from_base64(cursor)
+    print(cursor_str)
+
+    # e.g. 'offer'
+    sqla_model_name, remain = cursor_str.split("[", 1)
+    print(cursor_str, sqla_model_name, remain)
+
+    # e.g. 'id:desc,age:asc'
+    ordering_str, remain = remain.split("]", 1)
+    ordering_elements = ordering_str.split(",")
+    ordering: typing.Tuple[str, "asc/desc"] = []
+    for ordering_element in ordering_elements:
+        ordering_col_name, ordering_direction_str = ordering_element.split(":")
+        ordering_direction = STR_TO_DIRECTION[ordering_direction_str]
+        ordering.append((ordering_col_name, ordering_direction))
+
+    print(cursor_str, sqla_model_name, ordering, remain)
+    # e.g. '4'
+    pkey_values_as_str: typing.List[str] = remain[1:-1].split(",")
+
+    print(sqla_model_name, pkey_values_as_str, ordering)
+
+    return sqla_model_name, pkey_values_as_str, ordering
+
+
+Cursor = ScalarType(
+    "Cursor", serialize=str, parse_value=from_cursor, parse_literal=lambda x: from_cursor(x.value)
+)
+
+
+def resolve_cursor(query, ordering: typing.Tuple[str, "asc/desc"], sqla_model):
+    """
+    # The 4 is the offer's primary key
+    offer[id:desc,age:asc](4)
+    """
+    # The columns we need to track in order to identify a unique location during pagination
+    dir_map = {asc: "asc", desc: "desc"}
+
+    content = literal(sqla_model.__table__.name) + literal("[")
+
+    order_component = literal(
+        ",".join([col_name + ":" + dir_map[direction] for col_name, direction in ordering])
+    )
+
+    content += order_component
+    content += literal("](")
+
+    columns = list(sqla_model.primary_key.columns)
+    column_str_builder = []
+    for column in columns:
+        column_str_builder.append(cast(getattr(query.c, column.name), sqlalchemy.String()))
+        column_str_builder.append(literal(","))
+    # Remove the final comma. Never realized how useful ''.join is until you can't use it..
+    column_str_builder = column_str_builder[:-1]
+
+    for element in column_str_builder:
+        content += element
+
+    return to_encoding_in_sql(content)
 
 
 def to_cursor(sqla_model, sqla_record, ordering: typing.List["UnaryExpr"]) -> str:
@@ -29,31 +100,3 @@ def to_cursor(sqla_model, sqla_record, ordering: typing.List["UnaryExpr"]) -> st
     values = [x.element.name + "," + str(pkey_value) + op_to_str(x) for x in ordering]
     to_encode = ":".join([model_name, *values])
     return to_base64(to_encode)
-
-
-def from_cursor(cursor: str):
-    cursor_str = from_base64(cursor)
-    sqla_model_name, pkey_value, *ordering_str_list = cursor_str.split(":", 2)
-    return sqla_model_name, pkey_value, ordering_str_list
-
-
-Cursor = ScalarType(
-    "Cursor", serialize=str, parse_value=from_cursor, parse_literal=lambda x: from_cursor(x.value)
-)
-
-
-def op_to_str(op: UnaryExpression) -> str:
-    modifier = op.modifier
-    if modifier == asc_op:
-        return "A"  # ascending
-    if modifier == desc_op:
-        return "D"  # descending
-    raise ValueError("Unknown direction operator")
-
-
-def str_to_op(op_str: str) -> UnaryExpression:
-    if op_str == "A":
-        return asc_op
-    if op_str == "D":
-        return desc_op
-    raise ValueError("Unknown direction str")

@@ -1,7 +1,7 @@
 from .alias import ResolveInfo
 
 
-def default_resolver(obj, info: ResolveInfo, **kwargs):
+def default_resolver(_, info: ResolveInfo, **kwargs):
     """Expects the final, complete result to exist in context['result']
     and uses the current path to retrieve and return the expected result for
     the current location in the query

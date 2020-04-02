@@ -4,8 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.sql.expression import literal
 
 from ..alias import Field, ResolveInfo
-from ..convert.connection import connection_args_factory, connection_factory
-from ..convert.sql_resolver import resolve_connection
+from ..convert.connection import connection_args_factory, connection_factory, resolve_connection
 from ..parse_info import parse_resolve_info
 
 
