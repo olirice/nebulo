@@ -7,6 +7,7 @@ from ..convert.sql_resolver import resolve_one
 from ..convert.table import table_factory
 from ..parse_info import parse_resolve_info
 from .utils import print_json, print_query
+import typing
 
 
 def one_node_factory(sqla_model) -> Field:
@@ -23,20 +24,189 @@ def cte_resolver(_, info: ResolveInfo, **kwargs):
     tree = parse_resolve_info(info)
     # print(tree)
 
-    standard_query = build_standard_query(tree, None)
-    query = build_json_query(tree, standard_query)
+    # standard_query = build_standard_query(tree, None)
+    # query = build_json_query(tree, standard_query)
+    query = finalize(tree["name"], sql_builder(tree))
+    print(query)
+    result = session.execute(query).fetchone()[0]
 
-    print_query(query)
+    # print_query(query)
 
-    compiled_query = query.compile(compile_kwargs={"literal_binds": False})
-    bind_params = compiled_query.params
-    result = session.execute(query, bind_params).fetchone()[0]
+    # compiled_query = query.compile(compile_kwargs={"literal_binds": False})
+    # bind_params = compiled_query.params
+    # result = session.execute(query, bind_params).fetchone()[0]
 
     print_json(result)
 
     # Stash result on context so enable dumb resolvers to not fail
     context["result"] = result
     return result
+
+
+def lpad_str(string, pad=0):
+    lines = string.split("\n")
+    return "\n".join([" " * pad + x for x in lines])
+
+
+def sql_builder(tree, parent_name=None):
+    fields = tree["fields"]
+    return_type = tree["return_type"]
+    sqla_model = return_type.sqla_model
+    relation_keys = {rel.key for rel in sqla_model.relationships}
+
+    from ..alias import EdgeType, ObjectType, ScalarType, TableType, ConnectionType
+    from ..convert.cursor import Cursor
+    from ..convert.node_interface import NodeID
+    from ..convert.page_info import PageInfo
+
+    # from ..convert.connection import ConnectionType
+
+    if isinstance(return_type, TableType):
+        block_name = random_string()
+        table_name = sqla_model.table_name
+        pkey_col_name = list(sqla_model.primary_key.columns)[0].name
+        if parent_name is None:
+            _, where_eq_pkey = tree["args"]["nodeId"]
+        else:
+            # _, where_eq_pkey = (relationship column from parent)
+            raise NotImplementedError()
+
+        select_clause = []
+        for field in tree["fields"]:
+            if isinstance(field["return_type"], ScalarType):
+                select_clause.append(
+                    (field["name"], getattr(sqla_model, field["name"]).name)
+                )
+            else:
+                select_clause.append((field["name"], sql_builder(field, block_name)))
+
+            # TODO(OR): Handle recursive single node
+        return single_block(
+            block_name=block_name,
+            table_name=table_name,
+            pkey_col_name=pkey_col_name,
+            where_eq_pkey=where_eq_pkey,
+            select_clause=select_clause,
+        )
+
+    if isinstance(return_type, ConnectionType):
+        block_name = random_string()
+        table_name = sqla_model.table_name
+        pkey_col_name = list(sqla_model.primary_key.columns)[0].name
+        if parent_name is None:
+            join_conditions = ["true"]
+        else:
+            # TODO(OR): Generic
+            join_conditions = [f"{parent_name}.id = {table_name}.account_id"]
+
+        filter_conditions = []
+
+        nodes_selects = []
+        edge_node_selects = []
+        for field in tree["fields"]:
+            working = []
+            if field["name"] == "nodes":
+                subfields = field["fields"]
+            elif field["name"] == "edges":
+                subfields = [x for x in field["fields"] if x["name"] == "edges"][0]
+
+            for subfield in subfields:
+                if isinstance(subfield["return_type"], ScalarType):
+                    elem = (
+                        subfield["name"],
+                        getattr(sqla_model, subfield["name"]).name,
+                    )
+                    if field["name"] == "nodes":
+                        nodes_selects.append(elem)
+                    elif field["name"] == "edges":
+                        edge_node_selects.append(elem)
+
+        return connection_block(
+            block_name=block_name,
+            table_name=table_name,
+            join_conditions=join_conditions,
+            filter_conditions=filter_conditions,
+            nodes_selects=nodes_selects,
+            edge_node_selects=edge_node_selects,
+        )
+
+
+def finalize(return_name, expr):
+    return f"""
+select
+    jsonb_build_object('{return_name}', ({expr}))
+    """
+
+
+def single_block(
+    block_name: str,
+    table_name,
+    pkey_col_name,
+    where_eq_pkey,
+    select_clause: typing.List[str],
+    level=0,
+):
+    block = f"""
+(
+    with {block_name} as (
+        select *
+        from {table_name}
+        where {pkey_col_name} = {where_eq_pkey} -- <NodeID> or <outer table ref clause>
+    )
+    select
+        jsonb_build_object({", ".join([f"'{name}', {expr}" for name, expr in select_clause])})
+    from
+        {block_name}
+) 
+    """
+
+    return lpad_str(block, level * 8)
+
+
+def connection_block(
+    block_name: str,
+    table_name: str,
+    join_conditions: typing.List[str],
+    filter_conditions: typing.List[str],
+    nodes_selects: typing.List[typing.Tuple[str, "expr"]],
+    edge_node_selects: typing.List[typing.Tuple[str, "expr"]],
+    level=0,
+):
+    block = f"""
+(
+    with {block_name} as (
+        select *
+        from {table_name}
+        where {"and".join(join_conditions) or 'true'} and {"and".join(filter_conditions) or 'true'}
+    )
+    select
+        jsonb_build_object(
+            'pageInfo', json_build_object(
+                'hasNextPage', null,
+                'hasPreviousPage', null,
+                'startCursor', null,
+                'endCursor', null
+            ),
+            'nodes', json_agg(
+                jsonb_build_object(
+                    {", ".join([f"'{name}', {expr}" for name, expr in nodes_selects])}
+                )
+            ),
+            'edges', json_agg(
+                jsonb_build_object(
+                    'cursor', null, 
+                    'node', json_build_object(
+                        {", ".join([f"'{name}', {expr}" for name, expr in edge_node_selects])}
+                    )
+                )
+            )
+        )
+    from
+        {block_name}
+) 
+    """
+
+    return lpad_str(block, level * 8)
 
 
 def unnest_maybe_nested_fields(tree):
@@ -158,7 +328,7 @@ def build_field(field, cte: "selectable", sqla_model) -> "json_sql_expression":
     from ..convert.node_interface import NodeID
     from ..convert.page_info import PageInfo
 
-    if isinstance(return_type, TableType): #field_name == "node":
+    if isinstance(return_type, TableType):  # field_name == "node":
         subfield_json_content = func.jsonb_build_object()
         for subfield in field["fields"]:
             json_subfield = build_field(subfield, cte, sqla_model)
@@ -216,6 +386,7 @@ def build_standard_query(tree, join_callable: "callable" = None):
     if join_callable is not None:
         for w_clause in join_callable(source):
             standard_query.append_whereclause(w_clause)
+
     standard_query = standard_query.cte(random_string())
     return standard_query
 
