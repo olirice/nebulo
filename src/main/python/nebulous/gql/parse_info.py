@@ -18,6 +18,18 @@ def field_to_type(field):
         return field_to_type(field.of_type)
     return field
 
+def is_list(field) -> bool:
+    """Recursively unwraps nested Field, List, and NonNull
+    and identifies if the return type should be a list"""
+    if isinstance(field, List):
+        return True
+    if isinstance(field, Field):
+        return is_list(field.type)
+    if isinstance(field, NonNull):
+        return is_list(field.of_type)
+    return False
+
+
 
 def parse_field_ast(field_ast, field_def, schema):
     """Converts a """
@@ -29,6 +41,7 @@ def parse_field_ast(field_ast, field_def, schema):
     selection_set = field_ast.selection_set
 
     field_type = field_to_type(field_def)
+    field_is_list = is_list(field_def)
 
     sub_fields = []
     if selection_set:
@@ -43,6 +56,7 @@ def parse_field_ast(field_ast, field_def, schema):
         "return_type": field_type,
         "args": args,
         "fields": sub_fields,
+        "is_list": field_is_list
     }
 
 
@@ -76,4 +90,5 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
     parent_type = info.parent_type
     parent_lookup_name = field_ast.name.value
     current_field = parent_type.fields[parent_lookup_name]
-    return parse_field_ast(field_ast, current_field, schema)
+    parsed_info = parse_field_ast(field_ast, current_field, schema)
+    return parsed_info

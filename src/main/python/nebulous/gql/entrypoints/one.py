@@ -124,7 +124,9 @@ def get_info_fields_requiring_subqueries(tree):
             subquery_fields.append(tree_field)
     return subquery_fields
 
+
 import typing
+
 
 def get_where_appender(relation, local: "selectable"):
     def apply_remote_side(remote: "selectable") -> typing.List["whereclause"]:
@@ -139,30 +141,54 @@ def get_where_appender(relation, local: "selectable"):
 
 
 def get_field_named(tree, field_name, default=None) -> typing.Optional[typing.Dict]:
-    field_arr = [x for x in tree['fields'] if x['name'] == field_name]
+    field_arr = [x for x in tree["fields"] if x["name"] == field_name]
     if len(field_arr) == 0:
         return default
     return field_arr[0]
 
 
+def build_field(field, cte: "selectable", sqla_model) -> "json_sql_expression":
 
-def field_to_selector(tree, cte: 'selectable') -> 'json_sql_expression':
-    return_type = tree["return_type"]
+    return_type = field["return_type"]
+    field_name = field["name"]
 
-    from ..alias import EdgeType, ObjectType
+    from ..alias import EdgeType, ObjectType, ScalarType
     from ..convert.cursor import Cursor
     from ..convert.node_interface import NodeID
     from ..convert.page_info import PageInfo
 
+    if isinstance(return_type, ScalarType):
+        return func.jsonb_build_object(
+            literal(field["alias"]), getattr(cte.c, field["name"])
+        )
+
+    if isinstance(return_type, ConnectionType):
+
+        subquery_json_content = func.jsonb_build_object()
+
+        for subquery_field in field["fields"]:
+            # nodes, edges, pageinfo, totalcount
+            subquery_field_name = subquery_field["name"]
+            if subquery_field_name in ("nodes", "edges"):
+                relation_attribute = getattr(sqla_model, field_name)
+                relation = relation_attribute.property
+                join_callable = get_where_appender(relation, cte)
+                json_subquery = build_query(
+                    tree=subquery_field, join_callable=join_callable
+                )
+                subquery_json_content = subquery_json_content.op("||")(json_subquery)
+            else:
+                # handle pageinfo etc
+                raise NotImplementedError(f"on type {return_type}")
+
+        return func.jsonb_build_object(literal(field["alias"]), subquery_json_content)
+
+    raise NotImplementedError(f"on type {return_type}")
+
     if isinstance(return_type, ObjectType):
         builder = []
-        for field in tree['fields']:
-            builder.append(
-                literal(field['alias']),
-                field_to_selector(field, cte)
-            )
-            
-        
+        for field in tree["fields"]:
+            builder.append(literal(field["alias"]), field_to_selector(field, cte))
 
     if isinstance(return_type, Cursor):
         raise NotImplementedError()
@@ -170,20 +196,15 @@ def field_to_selector(tree, cte: 'selectable') -> 'json_sql_expression':
     if isinstance(return_type, NodeID):
         raise NotImplementedError()
 
-    if not isinstance(return_type, ConnectionType):
-        return func.to_jsonb(literal_column(cte.name))
-    
     builder = []
-    nodes_field = get_field_named(tree, 'nodes')
+    nodes_field = get_field_named(tree, "nodes")
     if nodes_field is not None:
-        #build_nodes(nodes_field, cte)
+        # build_nodes(nodes_field, cte)
         pass
-    
-
 
 
 def build_query(
-        tree, join_callable: "callable" = None
+    tree, join_callable: "callable" = None
 ):  # , source: "Selector" = None):
     """Queries are broken down into 2 steps. First we collect the keys
     in a standard query, and then sele"""
@@ -191,6 +212,7 @@ def build_query(
     return_alias = tree["alias"]
 
     return_type = tree["return_type"]
+    return_list = tree["is_list"]
     sqla_model = return_type.sqla_model
     sqla_table = sqla_model.__table__
 
@@ -198,45 +220,38 @@ def build_query(
     # source = source or sqla_table.alias()
     source = sqla_table.alias()
 
-
     # TODO(OR): Add nodeId, cursor, pageInfo to this etc
-    #req_cols = collect_required_columns(tree, source)
+    # req_cols = collect_required_columns(tree, source)
 
     # Build Filters
     # TODO(OR): Apply the filters
 
-    #standard_query = select(req_cols)
+    # standard_query = select(req_cols)
     standard_query = select(source.c)
     if join_callable is not None:
         for w_clause in join_callable(source):
             standard_query.append_whereclause(w_clause)
     standard_query = standard_query.cte(random_string())
-    
+
     # Build JSON Fields Excluding Any That Require a subquery
     # Return all fields as scalars
-    #sql_json_content = build_json_selector(tree, standard_query)
-    #sql_json_content = literal("'{}'::jsonb")
-    sql_json_content = func.to_jsonb(literal_column(standard_query.name))
-    #build_json_selector(tree, standard_query)
+    sql_json_content = func.jsonb_build_object()
 
-    # Now we can descend to lower levels because we have a standard query with keys
-    subquery_fields = get_info_fields_requiring_subqueries(tree)
+    fields = tree["fields"]
+    for field in fields:
+        sql_json_field = build_field(field, cte=standard_query, sqla_model=sqla_model)
+        sql_json_content = sql_json_content.op("||")(sql_json_field)
 
-    for subquery_field in subquery_fields:
-        subquery_field_name = subquery_field["name"]
-        relation_attribute = getattr(sqla_model, subquery_field_name)
-        relation = relation_attribute.property
-        #print(relation, relation.key, relation.local_remote_pairs)
-        join_callable = get_where_appender(relation, standard_query)
-        json_subquery = build_query(tree=subquery_field, join_callable=join_callable)
-        sql_json_content = sql_json_content.op("||")(json_subquery)
-
-    json_query = select(
-        [func.jsonb_build_object(literal(return_alias), sql_json_content)]
+    return select(
+        [
+            func.jsonb_build_object(
+                literal(return_alias),
+                func.jsonb_agg(sql_json_content) if return_list else sql_json_content,
+            )
+        ]
     ).select_from(
         standard_query
-    ).limit(1) # .alias(random_string())
-    return json_query
+    )  # .alias(random_string())
 
 
 def resolver(_, info: ResolveInfo, **kwargs):
