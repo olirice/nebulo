@@ -13,8 +13,8 @@ def resolver(_, info: ResolveInfo, **kwargs):
     query = sql_finalize(tree.name, sql_builder(tree))
     result = session.execute(query).fetchone()[0]
 
-    print(query)
-    print(json.dumps(result, indent=2))
+    #print(query)
+    #print(json.dumps(result, indent=2))
 
     # Stash result on context to enable dumb resolvers to not fail
     context["result"] = result

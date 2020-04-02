@@ -43,9 +43,11 @@ def test_query_one_to_many(gql_exec_builder):
         account(nodeId: "{node_id}") {{
             id
             offersByAccountId {{
-                nodes {{
-                    id
-                    currency
+                edges {{
+                    node {{
+                        id
+                        currency
+                    }}
                 }}
             }}
         }}
@@ -58,11 +60,11 @@ def test_query_one_to_many(gql_exec_builder):
     assert result.data["account"]["id"] == account_id
 
     offers_by_id = result.data["account"]["offersByAccountId"]
-    currencies = {x["currency"] for x in offers_by_id["nodes"]}
+    currencies = {x["node"]["currency"] for x in offers_by_id["edges"]}
     assert "usd" in currencies and "gbp" in currencies
 
     # Fails because sql resolver not applying join correctly
-    assert len(offers_by_id["nodes"]) == 2
+    assert len(offers_by_id["edges"]) == 2
 
 
 def test_query_many_to_one(gql_exec_builder):
@@ -72,12 +74,14 @@ def test_query_many_to_one(gql_exec_builder):
     gql_query = """
     {
       allOffers {
-	nodes {
-	  id
-	  accountByAccountId {
-	    name
-	  }
-	}
+        edges {
+            node {
+                id
+                accountByAccountId {
+                    name
+                }
+            }
+        }
       }
     }
     """

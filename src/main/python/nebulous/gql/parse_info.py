@@ -32,7 +32,7 @@ class ASTNode:
         self.args = args
         self.path = parent.path + [self.name] if parent is not None else ["root"]
 
-        print(self.path)
+        # print(self.path)
 
         sub_fields = []
         if selection_set:

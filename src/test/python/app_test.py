@@ -36,10 +36,12 @@ def test_app_serves_graphql_query(client_builder):
     query = f"""
     {{
         allAccounts {{
-            nodes {{
-                id
-                name
-                createdAt
+            edges {{
+                node {{
+                    id
+                    name
+                    createdAt
+                }}
             }}
         }}
     }}
@@ -48,4 +50,4 @@ def test_app_serves_graphql_query(client_builder):
     assert resp.status == "200 OK"
     payload = json.loads(resp.data)
     assert "data" in payload
-    assert len(payload["data"]["allAccounts"]["nodes"]) == 4
+    assert len(payload["data"]["allAccounts"]["edges"]) == 4
