@@ -1,10 +1,13 @@
-from typing import List
+from __future__ import annotations
+
+from typing import List, TYPE_CHECKING
 from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
 from graphene import relay
 import graphene
 
-from csql.sqla import SQLDatabase
-from csql.user_config import UserConfig
+if TYPE_CHECKING:
+    from csql.sqla import SQLDatabase
+    from csql.user_config import UserConfig
 
 
 class GQLDatabase:

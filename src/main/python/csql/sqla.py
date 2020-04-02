@@ -1,8 +1,11 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
 
-from csql.user_config import UserConfig
+if TYPE_CHECKING:
+    from csql.user_config import UserConfig
 
 
 class SQLDatabase:
@@ -15,4 +18,3 @@ class SQLDatabase:
 
         # SQLA Tables
         self.models = list(self.base.classes)
-

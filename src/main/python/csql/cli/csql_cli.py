@@ -1,10 +1,8 @@
 import click
-from flask import Flask
-from flask_graphql import GraphQLView
-
 from csql.user_config import UserConfig
 from csql.sqla import SQLDatabase
 from csql.gql import GQLDatabase
+from csql.server.flask import FlaskServer
 
 
 @click.group()
@@ -23,7 +21,6 @@ def main(**kwargs):
 def run(**kwargs):
     # Set up configuration object
     config = UserConfig(**kwargs)
-    click.echo(config)
 
     # Connect and refelct SQL database
     sql_db = SQLDatabase(config)
@@ -31,22 +28,8 @@ def run(**kwargs):
     # Reflect SQL to GQL
     gql_db = GQLDatabase(sql_db, config)
 
-    # Configure Flask
-    app = Flask(__name__)
-    app.debug = True
+    # Build flask webserver
+    server = FlaskServer(gql_db, sql_db, config)
 
-    app.add_url_rule(
-        config.graphql_route,
-        view_func=GraphQLView.as_view(
-            name="graphql",
-            schema=gql_db.schema,
-            graphiql=config.graphiql,
-            get_context=lambda: {"session": sql_db.session},
-        ),
-    )
-
-    @app.teardown_appcontext
-    def shutdown_session(exception=None):
-        sql_db.session.remove()
-
-    app.run(port=config.port)
+    # Serve
+    server.run()
