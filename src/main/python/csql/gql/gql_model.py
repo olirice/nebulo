@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from csql.sql.table_base import TableBase
 
 
-def reflection_factory(table: TableBase) -> ReflectedGQLModel:
+def model_reflection_factory(table: TableBase) -> ReflectedGQLModel:
     tablename: str = table.table_name
     metaclass = type("Meta", (), {"model": table, "interfaces": (relay.Node,)})
 
@@ -26,7 +26,19 @@ def reflection_factory(table: TableBase) -> ReflectedGQLModel:
     if hasattr(table, "team_name"):
         extra_attrs["team_name"] = ORMField(description="name o da thing")
 
-    return type(tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs))
+    # Comment Defined Descriptions
+    for sql_column in table.columns:
+        if hasattr(sql_column, "comment"):
+            sql_comment: str = sql_column.comment or ""
+            for sql_comment_line in sql_comment.split("\n"):
+                key = "@description"
+                if sql_comment_line.startswith(key):
+                    description = sql_comment_line.replace(key, "", 1).lstrip()
+                    extra_attrs[sql_column.name] = ORMField(description=description)
+
+    output = type(tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs))
+
+    return output
 
 
 class ReflectedGQLModel(SQLAlchemyObjectType):

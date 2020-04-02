@@ -7,6 +7,8 @@ from graphene import relay
 from graphql_relay import from_global_id
 import graphene
 
+from .function import function_reflection_factory, ReflectedGQLFunction
+
 if TYPE_CHECKING:
     from csql.sql.sql_database import SQLDatabase
     from csql.user_config import UserConfig
@@ -19,8 +21,13 @@ class GQLDatabase:
         self.config = config
         # GQL Tables
         self.gql_models: List[ReflectedGQLModel] = [x.to_graphql() for x in sqldb.models]
+
+         
+        self.gql_functions: List[ReflectedGQLFunction] = [function_reflection_factory(x) for x in sqldb.functions]
+
         # GQL Schema
         self.schema = graphene.Schema(query=self.query_class, mutation=self.mutation_class)
+
 
     @property
     @lru_cache()
@@ -66,6 +73,13 @@ class GQLDatabase:
             key = f"update_{graphene_table._meta.name}"
             value = table.update_class.Field()
             entity_attrs[key] = value
+
+        for function in self.gql_functions:
+            key = f"call_{function.sql_function_name}"
+            value = function.call_class.Field()
+            print('Function', value, key)
+            entity_attrs[key] = value
+
 
         all_attrs = {**relay_attrs, **entity_attrs}
 

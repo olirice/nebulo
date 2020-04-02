@@ -14,10 +14,11 @@ from sqlalchemy_utils import generic_repr
 from .base import Base
 from .utils import classproperty
 from csql.sql.gql_base_mixin import GQLBaseMixin
+from csql.sql.computed_column_mixin import ComputedColumnsMixin
 
 
 @generic_repr
-class TableBase(GQLBaseMixin, Base):
+class TableBase(GQLBaseMixin, ComputedColumnsMixin, Base):
     """Base class for application sql tables"""
 
     __abstract__ = True
@@ -66,4 +67,32 @@ class TableBase(GQLBaseMixin, Base):
             else:
                 # TODO(OR): Library error class
                 raise KeyError(f"Key {key} does not exist on model {self.table_name}")
+
+
+from sqlalchemy import event
+from sqlalchemy.orm import mapper
+
+
+@event.listens_for(mapper, "before_configured", once=True)
+def apply_column_tooling():
+    """This is a bad idea"""
+    # print("before")
+    # import pdb
+    # pdb.set_trace()
+
+    pass
+
+
+@event.listens_for(mapper, "after_configured", once=True)
+def apply_column_tooling():
+    """This is a bad idea"""
+    tables = [x for x in TableBase.__subclasses__()]
+
+    for table in tables:
+        for column in table.columns:
+            comment: str = column.comment or ""
+            # if "@ommit" in comment:
+            #    delattr(table, column.name)
+            #    print(f"Omitted {column.name}")
+    # print(tables)
 

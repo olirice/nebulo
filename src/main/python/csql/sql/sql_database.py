@@ -7,6 +7,9 @@ if TYPE_CHECKING:
     from csql.user_config import UserConfig
 
 from csql.sql.table_base import TableBase
+from functools import lru_cache
+
+from .reflection.functions import get_function_names, reflect_function
 
 
 class SQLDatabase:
@@ -19,3 +22,10 @@ class SQLDatabase:
 
         # SQLA Tables
         self.models = list(self.base.classes)
+
+
+    @property
+    @lru_cache()
+    def functions(self):
+        function_names =  get_function_names(self.engine, schema='public')
+        return [reflect_function(self.engine, x) for x in function_names]
