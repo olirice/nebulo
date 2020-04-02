@@ -9,9 +9,24 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from nebulous.sql.table_base import TableBase
 
 from .reflection.functions import get_function_names, reflect_function
+from .reflection_utils import (
+    camelize_classname,
+    pluralize_collection,
+    pluralize_and_camelize_collection,
+    camelize_collection,
+)
 
 if TYPE_CHECKING:
     from nebulous.user_config import UserConfig
+
+
+from .reflection_utils import to_camelcase
+from sqlalchemy import event
+
+
+def camelize_reflected_columns(inspector, table, column_info):
+    """Reflect columns in camelcase"""
+    column_info["key"] = to_camelcase(column_info["name"])
 
 
 class SQLDatabase:
@@ -21,6 +36,7 @@ class SQLDatabase:
             self.engine = engine
         else:
             self.engine = create_engine(config.connection, echo=config.echo_queries)
+
         self.session = scoped_session(sessionmaker(bind=self.engine))
 
         if config.demo:
@@ -32,11 +48,17 @@ class SQLDatabase:
 
         self.schema = config.schema
         self.base = TableBase
-        self.base.prepare(self.engine, reflect=True, schema=config.schema)
-        # Meta.reflect(self.engine, schema=self.schema)
-
+        self.base.prepare(
+            self.engine,
+            reflect=True,
+            classname_for_table=camelize_classname,
+            name_for_scalar_relationship=camelize_collection,
+            name_for_collection_relationship=pluralize_and_camelize_collection,
+            schema=config.schema,
+        )
         # SQLA Tables
-        self.models = list(self.base.classes)
+        self.models = self.base.classes
+
 
     @property
     @lru_cache()
@@ -64,13 +86,14 @@ class SQLDatabase:
 
         self.session.execute(
             """
+        drop table if exists organization_entity;
         drop table if exists organization;
         """
         )
 
         self.session.execute(
             """
-        create table organization (
+        create table organization_entity (
             id serial primary key, --integer primary key autoincrement,
             org_name text not null
         );
@@ -85,9 +108,9 @@ class SQLDatabase:
             age int,
             organization_id int,
 
-            constraint fk_account_organizationunt_id
+            constraint fk_account_organization_q25555ds
                 foreign key (organization_id)
-                references organization (id)
+                references organization_entity (id)
         );
         """
         )
@@ -109,7 +132,7 @@ class SQLDatabase:
 
         self.session.execute(
             """
-        insert into organization (id, org_name) values
+        insert into organization_entity (id, org_name) values
             (default, 'oli_corp');
         """
         )
