@@ -5,7 +5,8 @@ from sqlalchemy.sql.expression import literal
 
 from ..alias import Argument, Field, ResolveInfo
 from ..convert.node_interface import NodeID
-from ..convert.table import resolve_one, table_factory
+from ..convert.sql_resolver import resolve_one
+from ..convert.table import table_factory
 from ..parse_info import parse_resolve_info
 
 
@@ -14,13 +15,12 @@ class Encoder(json.JSONEncoder):
         return str(o)
 
 
-def single_node_factory(sqla_model) -> Field:
-    name = sqla_model.__table__.name
+def one_node_factory(sqla_model) -> Field:
     node = table_factory(sqla_model)
-    return Field(node, args={"NodeID": Argument(NodeID)}, resolver=entry_resolver, description="")
+    return Field(node, args={"NodeID": Argument(NodeID)}, resolver=resolver, description="")
 
 
-def entry_resolver(obj, info: ResolveInfo, **kwargs):
+def resolver(_, info: ResolveInfo, **kwargs):
     context = info.context
     session = context["session"]
 
@@ -53,15 +53,14 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
         .alias()
     )
 
-    query_str = query.compile(compile_kwargs={"literal_binds": True})
-    query_str = str(query_str)
-
-    # print()
+    # import sqlparse
+    # query_str = query.compile(compile_kwargs={"literal_binds": True})
+    # query_str = str(query_str)
     # print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
-    # print()
 
     result = session.query(query).all()
-    context["result"] = result[0][0]
+    result = result[0][0]
+    context["result"] = result
 
     # Stash result on context so enable dumb resolvers to not fail
     # pretty_result = json.dumps(result, indent=2, cls=Encoder)

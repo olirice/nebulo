@@ -16,6 +16,7 @@ from ..alias import (
     ObjectType,
 )
 from ..casing import snake_to_camel
+from ..default_resolver import default_resolver
 from .cursor import Cursor
 from .page_info import PageInfo
 from .total_count import TotalCount
@@ -38,10 +39,10 @@ def connection_factory(sqla_model):
 
     def build_attrs():
         return {
-            "nodes": Field(NonNull(List(table))),
-            "edges": Field(NonNull(List(NonNull(edge)))),
-            "pageInfo": Field(NonNull(PageInfo)),
-            "totalCount": Field(NonNull(TotalCount)),
+            "nodes": Field(NonNull(List(table)), resolver=default_resolver),
+            "edges": Field(NonNull(List(NonNull(edge))), resolver=default_resolver),
+            "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
+            "totalCount": Field(NonNull(TotalCount), resolver=default_resolver),
         }
 
     return_type = ObjectType(name=name, fields=build_attrs, description="")

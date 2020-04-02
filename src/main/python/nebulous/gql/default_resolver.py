@@ -18,4 +18,5 @@ def default_resolver(obj, info: ResolveInfo, **kwargs):
     remain_result = final_result
     for elem in path:
         remain_result = remain_result[elem]
+
     return remain_result

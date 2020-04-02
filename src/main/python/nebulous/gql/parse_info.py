@@ -53,7 +53,7 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
     {
         "alias": *alias*,
         "name": *name*,
-        "return_type_name": *return_type_name*,
+        "return_type": *return_type*,
         "args":  {
             "first": 10
         },

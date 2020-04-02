@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .alias import ObjectType, Schema
-from .entrypoints.single_node import single_node_factory
+from .casing import snake_to_camel
+from .entrypoints.many import many_node_factory
+from .entrypoints.one import one_node_factory
 
 if TYPE_CHECKING:
     from nebulous.sql.sql_database import SQLDatabase
@@ -32,7 +34,11 @@ class GQLDatabase:
         # }
 
         query_fields = {
-            **{f"{x.__table__.name}": single_node_factory(x) for x in self.sqldb.models},
+            **{f"{x.__table__.name}": one_node_factory(x) for x in self.sqldb.models},
+            **{
+                f"all{snake_to_camel(x.__table__.name)}": many_node_factory(x)
+                for x in self.sqldb.models
+            },
             # **{
             #    f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
             #    for x in self.sqldb.models
