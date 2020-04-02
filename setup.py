@@ -21,15 +21,16 @@ setup(
         "console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]
     },
     install_requires=[
+        "sqlalchemy==1.3.11",
+        "psycopg2-binary==2.8.4",
+        "graphql-core==2.2.1",
+        "flask==1.1.1",
+        "flask-graphql==2.0.0",
         "click==7.0",
-        "graphql-core",
-        "sqlalchemy",
-        "flask",
-        "flask-graphql",
-        #"sqlalchemy_utils",
-        "psycopg2-binary",
-        "sqlparse==0.3.0",
-        "inflect",
+        "inflect==3.0.2",
     ],
-    extras_require={"test": ["pre-commit", "pytest", "pytest-cov", "pytest-benchmark"]},
+    extras_require={
+        "test": ["pytest", "pytest-cov"],
+        "dev": ['pylint', 'black']
+        },
 )
