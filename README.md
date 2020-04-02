@@ -10,10 +10,16 @@
     <a href="https://badge.fury.io/py/nebulo"><img src="https://badge.fury.io/py/nebulo.svg" alt="PyPI version" height="18"></a>
 </p>
 
-**Documentation**: [https://olirice.github.io/nebulo/](https://olirice.github.io/nebulo/)
+
+---
+
+**Documentation**: <a href="https://olirice.github.io/nebulo" target="_blank">https://olirice.github.io/nebulo</a>
+
+**Source Code**: <a href="https://github.com/olirice/nebulo" target="_blank">https://github.com/olirice/nebulo</a>
+
+---
 
 **Instant GraphQL API for PostgreSQL**
-
 
 Nebulo [reflects](https://en.wikipedia.org/wiki/Reflection_(computer_programming)) a highly performant [GraphQL](https://graphql.org/learn/) API from an existing [PostgreSQL](https://www.postgresql.org/) database.
 
@@ -48,6 +54,6 @@ Pip install the nebulo CLI
 $ pip install nebulo
 ```
 
-Next, check out the [quickstart](quickstart.md) guide for a small end-to-end example.
+Next, check out the [quickstart](https://olirice.github.io/nebulo/quickstart/) guide for a small end-to-end example.
 
 <p align="center">&mdash;&mdash;  &mdash;&mdash;</p>
