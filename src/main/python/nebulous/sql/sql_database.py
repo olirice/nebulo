@@ -126,7 +126,7 @@ class SQLDatabase:
         insert into offer (id, currency, account_id, created_at) values
             (1, 'abc', 1, now()),
             (2, 'def', 1, now()),
-            (3, 'jkl', 2, now()),
+            (3, 'pqr', 2, now()),
             (4, 'mno', 2, now()),
             (5, 'pqr', 3, now())
         ;

@@ -17,7 +17,6 @@ from ..alias import (
 )
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
-from .cursor import Cursor
 from .page_info import PageInfo
 from .total_count import TotalCount
 
@@ -59,9 +58,9 @@ def connection_args_factory(sqla_model):
 
     return {
         "first": Argument(Int, default_value=10, description="", out_name=None),
-        "last": Argument(Int),
-        "before": Argument(Cursor),
-        "after": Argument(Cursor),
-        "condition": Argument(condition),
+        # "last": Argument(Int),
+        # "before": Argument(Cursor),
+        # "after": Argument(Cursor),
+        # "condition": Argument(condition),
         "orderBy": Argument(List(ordering)),
     }

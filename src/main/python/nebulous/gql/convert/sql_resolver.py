@@ -4,7 +4,7 @@ from __future__ import annotations
 import typing
 
 import sqlalchemy
-from sqlalchemy import cast, func, select
+from sqlalchemy import asc, cast, desc, func, literal, select
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import interfaces
 from sqlalchemy.sql.expression import literal
@@ -154,7 +154,11 @@ def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "Cond
                     edge_builder.extend(
                         [
                             literal(edge_field_alias),
-                            resolve_cursor(query, tree["return_type"].sqla_model),
+                            resolve_cursor(
+                                query,
+                                ordering=order_by or [],
+                                sqla_model=tree["return_type"].sqla_model,
+                            ),
                         ]
                     )
 
@@ -177,9 +181,28 @@ def resolve_node_id(query, sqla_model):
     )
 
 
-def resolve_cursor(query, sqla_model):
-    return encode(
-        literal(sqla_model.__table__.name)
-        + literal(":cursor:")
-        + cast(query.c.id, sqlalchemy.String())
+def resolve_cursor(query, ordering: typing.Tuple[str, "asc/desc"], sqla_model):
+    """
+    # The 4 is the offer's primary key
+    offer[id:desc,age:asc](4)
+    """
+    # The columns we need to track in order to identify a unique location during pagination
+    dir_map = {asc: "asc", desc: "desc"}
+
+    content = literal(sqla_model.__table__.name) + literal("[")
+
+    order_component = literal(
+        ",".join([col_name + ":" + dir_map[direction] for col_name, direction in ordering])
     )
+
+    content += order_component
+    content += literal("](")
+
+    columns = list(sqla_model.primary_key.columns)
+    for column in columns:
+        content += cast(getattr(query.c, column.name), sqlalchemy.String())
+        content += literal(",")
+
+    content += literal(")")
+
+    return encode(content)
