@@ -5,8 +5,9 @@ import typing
 
 from sqlalchemy import asc, desc, text
 
+from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
+
 from ..alias import CursorType
-from ..string_encoding import from_base64, to_base64, to_base64_sql
 
 __all__ = ["Cursor"]
 
@@ -20,7 +21,7 @@ STR_TO_DIRECTION = {v: k for k, v in DIRECTION_TO_STR.items()}
 
 
 def from_cursor(
-    cursor: str
+    cursor: str,
 ) -> typing.Tuple[str, typing.List[str], typing.List[typing.Tuple[str, "asc/desc"]]]:
     """Parses a cursor from form
     offer[id:desc,age:asc](4)

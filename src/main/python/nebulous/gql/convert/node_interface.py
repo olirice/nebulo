@@ -4,8 +4,9 @@ import typing
 
 from sqlalchemy import text
 
+from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
+
 from ..alias import Field, InterfaceType, NonNull, ScalarType
-from ..string_encoding import from_base64, to_base64, to_base64_sql
 
 if typing.TYPE_CHECKING:
     pass

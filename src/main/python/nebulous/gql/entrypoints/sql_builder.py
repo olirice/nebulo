@@ -10,9 +10,9 @@ from ..convert.node_interface import NodeID
 
 
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
-    parent_field = field["parent"]
-    relation_from_parent = getattr(parent_field["return_type"].sqla_model, field["name"]).property
-    local_table_name = field["return_type"].sqla_model.table_name
+    parent_field = field.parent
+    relation_from_parent = getattr(parent_field.return_type.sqla_model, field.name).property
+    local_table_name = field.return_type.sqla_model.table_name
 
     join_clause = []
     for parent_col, local_col in relation_from_parent.local_remote_pairs:
@@ -25,8 +25,8 @@ def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
 
 
 def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
-    local_table = field["return_type"].sqla_model
-    local_table_name = field["return_type"].sqla_model.table_name
+    local_table = field.return_type.sqla_model
+    local_table_name = field.return_type.sqla_model.table_name
     pkey_cols = list(local_table.primary_key.columns)
 
     if not hasattr(pkey_eq, "__iter__"):
@@ -40,12 +40,12 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
 
 
 def to_after_clause(field) -> typing.List[str]:
-    local_table = field["return_type"].sqla_model
-    local_table_name = field["return_type"].sqla_model.table_name
+    local_table = field.return_type.sqla_model
+    local_table_name = field.return_type.sqla_model.table_name
 
     pkey_cols = list(local_table.primary_key.columns)
 
-    args = field["args"]
+    args = field.args
     cursor = args.get("after", None)
     if cursor is None:
         return "true"
@@ -63,14 +63,14 @@ def to_after_clause(field) -> typing.List[str]:
 
 
 def to_limit_clause(field) -> int:
-    args = field["args"]
+    args = field.args
     limit = args.get("first", 10)
     return limit
 
 
 def to_conditions_clause(field) -> typing.List[str]:
-    local_table_name = field["return_type"].sqla_model.table_name
-    args = field["args"]
+    local_table_name = field.return_type.sqla_model.table_name
+    args = field.args
 
     conditions = args.get("condition")
 
@@ -84,18 +84,18 @@ def to_conditions_clause(field) -> typing.List[str]:
 
 
 def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
-    return_type = field["return_type"]
+    return_type = field.return_type
     if return_type == NodeID:
-        return (field["name"], to_global_id_sql(sqla_model))
-    return (field["name"], getattr(sqla_model, field["name"]).name)
+        return (field.name, to_global_id_sql(sqla_model))
+    return (field.name, getattr(sqla_model, field.name).name)
 
 
 def build_relationship(field, block_name):
-    return (field["name"], sql_builder(field, block_name))
+    return (field.name, sql_builder(field, block_name))
 
 
 def sql_builder(tree, parent_name=None):
-    return_type = tree["return_type"]
+    return_type = tree.return_type
     sqla_model = return_type.sqla_model
 
     if isinstance(return_type, TableType):
@@ -112,14 +112,14 @@ def sql_finalize(return_name, expr):
 
 
 def row_block(field, parent_name=None):
-    return_type = field["return_type"]
+    return_type = field.return_type
     sqla_model = return_type.sqla_model
 
     block_name = random_string()
     table_name = sqla_model.table_name
     if parent_name is None:
         # If there is no parent, nodeId is mandatory
-        _, pkey_eq = field["args"]["nodeId"]
+        _, pkey_eq = field.args["nodeId"]
         pkey_clause = to_pkey_clause(field, pkey_eq)
         join_clause = ["true"]
     else:
@@ -128,8 +128,8 @@ def row_block(field, parent_name=None):
         pkey_clause = ["true"]
 
     select_clause = []
-    for field in field["fields"]:
-        if isinstance(field["return_type"], ScalarType):
+    for field in field.fields:
+        if isinstance(field.return_type, ScalarType):
             select_clause.append(build_scalar(field, sqla_model))
         else:
             select_clause.append(build_relationship(field, block_name))
@@ -156,12 +156,12 @@ def row_block(field, parent_name=None):
 
 
 def to_order_clause(field):
-    sqla_model = field["return_type"].sqla_model
+    sqla_model = field.return_type.sqla_model
     return ", ".join([x.name for x in sqla_model.primary_key.columns])
 
 
 def connection_block(field, parent_name):
-    return_type = field["return_type"]
+    return_type = field.return_type
     sqla_model = return_type.sqla_model
 
     block_name = random_string()
@@ -179,23 +179,23 @@ def connection_block(field, parent_name):
 
     nodes_selects = []
     edge_node_selects = []
-    for cfield in field["fields"]:
-        if cfield["name"] in "nodes":
-            subfields = cfield["fields"]
-        elif cfield["name"] == "edges":
-            subfields = [x for x in cfield["fields"] if x["name"] == "node"][0]["fields"]
-        elif cfield["name"] == "pageInfo":
+    for cfield in field.fields:
+        if cfield.name in "nodes":
+            subfields = cfield.fields
+        elif cfield.name == "edges":
+            subfields = [x for x in cfield.fields if x.name == "node"][0].fields
+        elif cfield.name == "pageInfo":
             # pageInfo is always retrieved from the database
             continue
 
         for subfield in subfields:
-            if isinstance(subfield["return_type"], ScalarType):
+            if isinstance(subfield.return_type, ScalarType):
                 elem = build_scalar(subfield, sqla_model)
             else:
                 elem = build_relationship(subfield, block_name)
-            if cfield["name"] == "nodes":
+            if cfield.name == "nodes":
                 nodes_selects.append(elem)
-            elif cfield["name"] == "edges":
+            elif cfield.name == "edges":
                 edge_node_selects.append(elem)
 
     # check if cursor is required

@@ -10,7 +10,7 @@ def resolver(_, info: ResolveInfo, **kwargs):
     session = context["session"]
 
     tree = parse_resolve_info(info)
-    query = sql_finalize(tree["name"], sql_builder(tree))
+    query = sql_finalize(tree.name, sql_builder(tree))
     result = session.execute(query).fetchone()[0]
 
     print(query)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from nebulous.name_utils import snake_to_camel, to_plural
+from nebulous.text_utils import snake_to_camel, to_plural
 
 from .alias import ObjectType, Schema
 from .entrypoints.many import many_node_factory

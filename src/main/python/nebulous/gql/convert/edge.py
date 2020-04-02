@@ -1,4 +1,4 @@
-from nebulous.name_utils import snake_to_camel
+from nebulous.text_utils import snake_to_camel
 
 from ..alias import EdgeType, Field
 

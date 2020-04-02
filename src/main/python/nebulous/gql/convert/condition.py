@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulous.name_utils import snake_to_camel
+from nebulous.text_utils import snake_to_camel
 
 from ..alias import InputField, InputObjectType
 from .table import convert_column

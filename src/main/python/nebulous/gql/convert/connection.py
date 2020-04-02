@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulous.name_utils import snake_to_camel
+from nebulous.text_utils import snake_to_camel
 
 from ..alias import Argument, ConnectionType, Field, Int, List, NonNull
 from ..default_resolver import default_resolver

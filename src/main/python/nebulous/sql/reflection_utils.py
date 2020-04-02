@@ -5,8 +5,8 @@ from typing import Type
 
 from sqlalchemy import Table, event
 
-from nebulous.name_utils import snake_to_camel, to_plural
 from nebulous.sql.table_base import TableBase
+from nebulous.text_utils import snake_to_camel, to_plural
 
 
 def to_camelcase(text: str) -> str:

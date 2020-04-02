@@ -19,38 +19,29 @@ def field_to_type(field):
     return field
 
 
-def parse_field_ast(field_ast, field_def, schema, parent):
-    """Converts a """
-    args = get_argument_values(
-        arg_defs=field_def.args,
-        arg_asts=field_ast.arguments,
-        # variables=field_ast.variables
-    )
-    selection_set = field_ast.selection_set
+class ASTNode:
+    def __init__(self, field_ast, field_def, schema, parent: "ASTNode"):
+        args = get_argument_values(arg_defs=field_def.args, arg_asts=field_ast.arguments)
+        selection_set = field_ast.selection_set
+        field_type = field_to_type(field_def)
 
-    field_type = field_to_type(field_def)
+        self.alias = field_ast.alias or field_ast.name.value
+        self.name = field_ast.name.value
+        self.return_type = field_type
+        self.parent: ASTNode = parent
+        self.args = args
+        self.path = parent.path + [self.name] if parent is not None else ["root"]
 
-    self = {}
+        print(self.path)
 
-    sub_fields = []
-    if selection_set:
-        for selection_ast in selection_set.selections:
-            selection_name = selection_ast.name.value
-            selection_field = field_type.fields[selection_name]
-            sub_fields.append(parse_field_ast(selection_ast, selection_field, schema, parent=self))
+        sub_fields = []
+        if selection_set:
+            for selection_ast in selection_set.selections:
+                selection_name = selection_ast.name.value
+                selection_field = field_type.fields[selection_name]
+                sub_fields.append(ASTNode(selection_ast, selection_field, schema, parent=self))
 
-    self.update(
-        {
-            "alias": field_ast.alias or field_ast.name.value,
-            "name": field_ast.name.value,
-            "return_type": field_type,
-            "parent": parent,
-            "args": args,
-            "fields": sub_fields,
-        }
-    )
-
-    return self
+        self.fields = sub_fields
 
 
 def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
@@ -83,5 +74,5 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
     parent_type = info.parent_type
     parent_lookup_name = field_ast.name.value
     current_field = parent_type.fields[parent_lookup_name]
-    parsed_info = parse_field_ast(field_ast, current_field, schema, parent=None)
+    parsed_info = ASTNode(field_ast, current_field, schema, parent=None)
     return parsed_info

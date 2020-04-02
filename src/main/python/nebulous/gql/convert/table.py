@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
 
-from nebulous.name_utils import snake_to_camel
+from nebulous.text_utils import snake_to_camel
 
 from ..alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
 from ..default_resolver import default_resolver
