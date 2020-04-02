@@ -52,12 +52,16 @@ def connection_factory(sqla_model):
 
 def connection_args_factory(sqla_model):
     from .condition import condition_factory
+    from .ordering import ordering_factory
 
     condition = condition_factory(sqla_model)
+    ordering = ordering_factory(sqla_model)
+
     return {
         "first": Argument(Int, default_value=10, description="", out_name=None),
         "last": Argument(Int),
         "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
+        "orderBy": Argument(List(ordering)),
     }

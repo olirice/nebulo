@@ -31,25 +31,25 @@ def resolver(obj, info: ResolveInfo, **kwargs):
     tree = parse_resolve_info(info)
     print(json.dumps(tree, indent=2, cls=Encoder))
 
-    # node_model_name, node_model_id = tree["args"]["NodeID"]
-    # assert sqla_model.__table__.name == node_model_name
-
     # Apply node argument
     sqla_table = sqla_model.__table__
 
-    top_alias = sqla_table.alias()
+    top_alias = select([sqla_table]).alias()
 
     # Apply argument filters
     # Argument is not optional in this case
     node_alias = tree["alias"]
 
-    query = select(
-        [
-            func.json_build_object(
-                literal(node_alias), resolve_connection(tree=tree, parent_query=top_alias)
-            )
-        ]
-    ).alias()
+    select_clause, condition_partials = resolve_connection(tree, parent_query=top_alias)
+
+    # Apply filters, limits, arguments etc... I don't like it either.
+    selector = select([func.json_build_object(literal(node_alias), select_clause)])
+
+    for partial in condition_partials:
+        print("Applying partial")
+        selector = partial(selector)
+
+    query = selector.alias()
 
     import sqlparse
 

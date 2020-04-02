@@ -1,6 +1,8 @@
 # pylint: disable=invalid-name
 from __future__ import annotations
 
+import typing
+
 import sqlalchemy
 from sqlalchemy import cast, func, select
 from sqlalchemy.dialects.postgresql import BYTEA
@@ -73,13 +75,17 @@ def resolve_one(tree, parent_query: "cte", result_wrapper=func.json_build_object
 
             # To Many relationship
             elif relation.direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
-                select_clause = resolve_connection(tree_field, parent_query=joined_table)
-                builder.extend(
-                    [
-                        literal(field_alias),
-                        select([select_clause]).where(*join_conditions).label("w"),
-                    ]
+                select_clause, condition_partials = resolve_connection(
+                    tree_field, parent_query=joined_table
                 )
+                selector = select([select_clause]).where(*join_conditions)
+
+                # Apply filters, limits, arguments etc... I don't like it either.
+                for partial in condition_partials:
+                    print("Applying partial")
+                    selector = partial(selector)
+
+                builder.extend([literal(field_alias), selector.label("w")])
             else:
                 raise NotImplementedError(f"Unknown relationship type {relation.direction}")
 
@@ -89,19 +95,28 @@ def resolve_one(tree, parent_query: "cte", result_wrapper=func.json_build_object
     return result_wrapper(*builder)
 
 
-def resolve_connection(tree, parent_query):
+def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "ConditionPartials"]:
     """Resolves a single record from a table"""
+    condition_partials = []
 
     fields = tree["fields"]
 
     # Apply Argument Filters
-    query = parent_query
+    query = select([parent_query])
+
+    args = tree["args"]
+
+    order_by = args.get("orderBy")
+    if order_by is not None:
+        order_clause = [direction(getattr(query.c, col_name)) for col_name, direction in order_by]
+        query = query.order_by(*order_clause)
 
     # Allowed Args [first, last, ordering?, etc]
-    # args = tree['args']
-    # first = args.get('first')
-    # if first is not None:
-    #    query = query.limit(first)
+    first = args.get("first")
+    if first is not None:
+        query = query.limit(first)
+
+    query = query.alias()
 
     # Always return the table name in each row
     builder = []
@@ -150,14 +165,10 @@ def resolve_connection(tree, parent_query):
         elif field_name == "pageInfo":
             print("Delegating for page info")
 
-        elif field_name == "totalCount":
-            builder.extend(
-                [literal(field_alias), func.count(literal(1, type_=sqlalchemy.Integer()))]
-            )
         else:
             raise NotImplementedError(f"Unreachable. No field {field_name} on connection")
 
-    return func.json_build_object(*builder)
+    return func.json_build_object(*builder), condition_partials
 
 
 def resolve_node_id(query, sqla_model):
