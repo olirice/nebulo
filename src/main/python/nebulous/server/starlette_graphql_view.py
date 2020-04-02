@@ -4,6 +4,7 @@ import typing
 from graphql import graphql as graphql_exec
 from graphql.error import format_error as format_graphql_error
 from graphql.execution.executors.asyncio import AsyncioExecutor
+
 from starlette import status
 from starlette.background import BackgroundTasks
 from starlette.requests import Request

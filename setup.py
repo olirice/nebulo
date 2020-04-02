@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="nebulous",
     version="0.0.1",
-    description="Nebulous Reflect RDBMS to GraphQL API",
+    description="Nebulous: Reflect RDBMS to GraphQL API",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
     license="TBD",
@@ -17,13 +17,19 @@ setup(
     packages=find_packages("src/main/python"),
     package_dir={"": "src/main/python"},
     include_package_data=True,
-    entry_points={
-        "console_scripts": [
-            "nebulous=nebulous.cli.nebulous_cli:main",
-            "neb=nebulous.cli.nebulous_cli:main",
-        ]
-    },
+    entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
     test_suite="nose.collector",
     tests_require=["nose==1.3.7"],
-    install_requires=["pre-commit"],
+    install_requires=[
+        "pre-commit",
+        "click==7.0",
+        "graphql-core-next",
+        "graphql-relay",
+        "stringcase",
+        "sqlalchemy",
+        "flask",
+        "flask-graphql",
+        "sqlalchemy_utils",
+        "psycopg2"
+    ],
 )

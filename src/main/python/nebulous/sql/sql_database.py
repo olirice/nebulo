@@ -3,7 +3,6 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-import databases
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -23,8 +22,6 @@ class SQLDatabase:
 
         if config.demo:
             self.build_demo_schema()
-
-        self.database = databases.Database(config.connection)
 
         # Type reflector can take a string and return the correct sql column type for sqla
         # It also functions with (non-nested) composites, which sqla proper does not

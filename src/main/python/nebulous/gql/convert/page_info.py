@@ -1,0 +1,29 @@
+from ..alias import Boolean, Field, NonNull, ObjectType, ScalarType
+from .base import TableToGraphQLField
+
+__all__ = ["PageInfo"]
+
+CursorType = ScalarType(name="Cursor", serialize=str)  # pylint: disable=invalid-name
+
+
+class PageInfo(TableToGraphQLField):
+
+    type = ObjectType(  # pylint: disable=invalid-name
+        "PageInfo",
+        fields={
+            "hasNextPage": Field(NonNull(Boolean)),
+            "hasPreviousPage": Field(NonNull(Boolean)),
+            "startCursor": Field(NonNull(CursorType)),
+            "endCursor": Field(NonNull(CursorType)),
+        },
+    )
+
+    def resolver(self, obj, info, **user_kwargs):
+        sqla_model = self.sqla_model
+        sqla_model = sqla_model
+        return {
+            "hasNextPage": False,
+            "hasPreviousPage": False,
+            "startCursor": "Unknown",
+            "endCursor": "Unknown",
+        }

@@ -33,7 +33,7 @@ class FlaskServer:
                 name="graphql",
                 schema=self.gql_db.schema,
                 graphiql=self.config.graphiql,
-                get_context=lambda: {"session": self.sql_db.session},
+                get_context=lambda: {"session": self.sql_db.session, "database": self.sql_db},
             ),
         )
 

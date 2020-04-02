@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from graphql import (
     GraphQLArgument,
@@ -16,7 +16,7 @@ from graphql import (
 )
 from stringcase import pascalcase
 
-from .converter import convert_table, table_to_query_all
+from nebulous.gql.converter import table_to_query_all
 
 if TYPE_CHECKING:
     from nebulous.sql.sql_database import SQLDatabase
@@ -30,7 +30,7 @@ class GQLDatabase:
         # GQL Tables
         self.sqldb = sqldb
 
-        self.gql_models: List[GraphQLObjectType] = [convert_table(x) for x in sqldb.models]
+        # self.gql_models: List[GraphQLObjectType] = [convert_table(x) for x in sqldb.models]
 
         # self.gql_functions: List[ReflectedGQLFunction] = [
         #    function_reflection_factory(x) for x in sqldb.functions

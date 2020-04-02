@@ -1,7 +1,7 @@
 import click
 
 from nebulous.gql.gql_database import GQLDatabase
-from nebulous.server.starlette import StarletteServer
+from nebulous.server.flask import FlaskServer
 from nebulous.sql.sql_database import SQLDatabase
 from nebulous.user_config import UserConfig
 
@@ -30,16 +30,5 @@ def run(**kwargs):
     # Reflect SQL to GQL
     gql_db = GQLDatabase(sql_db, config)
 
-    # Build flask webserver
-
-    server = StarletteServer(gql_db, sql_db, config)
-    import uvicorn
-
-    uvicorn.run(server.app, host="0.0.0.0", port=server.config.port, loop="asyncio")
-    # server.run()
-
-    # uvicorn.run(app, host='0.0.0.0', port=8000)
-    # server = FlaskServer(gql_db, sql_db, config)
-
-    # Serve
-    # server.run()
+    app = FlaskServer(gql_db, sql_db, config)
+    app.run()
