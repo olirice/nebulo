@@ -1,49 +1,38 @@
 from __future__ import annotations
 
-from base64 import b64decode as _unbase64
-from base64 import b64encode as _base64
-from typing import TYPE_CHECKING
+import typing
+from functools import partial
 
 from ..alias import ID, Field, InterfaceType, NonNull
+from ..string_encoding import from_base64, to_base64
 from .base import TableToGraphQLField
 
-if TYPE_CHECKING:
-    pass
+if typing.TYPE_CHECKING:
+    from nebulous.sql.table_base import TableBase
 
 
-# __all__ = ["global_id_field", "from_global_id", "NodeInterface", "NodeField"]
-
-
-def base64(string):
-    return _base64(string.encode("utf-8")).decode("utf-8")
-
-
-def unbase64(string):
-    return _unbase64(string).decode("utf-8")
-
-
-def to_global_id(_type, _id):
+def to_global_id(sqla_model, _id):
     """
     Takes a type name and an ID specific to that type name, and returns a
     "global ID" that is unique among all types.
     """
-    return base64(":".join([_type, str(_id)]))
+    return to_base64(":".join([sqla_model.__table__.name, str(_id)]))
 
 
-def from_global_id(global_id):
+def from_global_id(tables: typing.Dict[str, TableBase], global_id: str):
     """
     Takes the "global ID" created by toGlobalID, and returns the type name and ID
     used to create it.
     """
-    unbased_global_id = unbase64(global_id)
+    unbased_global_id = from_base64(global_id)
     _type, _id = unbased_global_id.split(":", 1)
-    return _type, _id
+    return tables[_type], _id
 
 
 NodeInterface = InterfaceType(
     "Node",
     description="An object with a nodeId",
-    fields=lambda: {
+    fields={
         "nodeId": Field(NonNull(ID), description="The global id of the object.", resolver=None)
     },
     # Maybe not necessary
@@ -51,24 +40,24 @@ NodeInterface = InterfaceType(
 )
 
 
-def resolver(self, global_id: str, _info):
-    """Function to map from a global id to an underlying object
-    _info.context['session'] must exist
-    """
-    _, id_ = from_global_id(global_id)
-    context = _info.context
-    session = context["session"]
-    sqla_model = self.sqla_model
-    return session.query(sqla_model).filter(sqla_model.id == id_).one_or_none()
-
-
 class NodeID(TableToGraphQLField):
 
-    type_name = "NodeID"
+    type_name = "ID"
 
-    _type = ID
-
-    def resolver(self, obj, info, **args):
-        print(info.path, info.return_type, "\n\t", obj)
+    @property
+    def _type(self):
         sqla_model = self.sqla_model
-        return to_global_id(sqla_model.__table__.name, obj.id)
+        metadata = sqla_model.metadata
+        tables_dict = metadata.tables
+
+        parse_value = partial(from_global_id, tables=tables_dict)
+
+        # TODO(OR): This is pretty flipping hacky
+        # NodeInterface.fields['nodeId'].resolver = parse_value
+        ID.parse_value = parse_value
+        ID.parse_literal = lambda x: parse_value(global_id=x.value)
+        return ID
+
+    def _resolver(self, obj, info, **args):
+        # sqla_model = self.sqla_model
+        return to_global_id(obj, obj.id)

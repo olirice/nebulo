@@ -24,14 +24,18 @@ except ImportError:
     from graphql.type import GraphQLInputField
 
 
-Field = GraphQLField
 List = GraphQLList
 NonNull = GraphQLNonNull
 Argument = GraphQLArgument
 String = GraphQLString
 Boolean = GraphQLBoolean
 ScalarType = GraphQLScalarType
-ObjectType = GraphQLObjectType
+
+
+class ObjectType(GraphQLObjectType):
+    pass
+
+
 ID = GraphQLID
 InterfaceType = GraphQLInterfaceType
 Int = GraphQLInt
@@ -40,3 +44,13 @@ InputField = GraphQLInputField
 ResolveInfo = ResolveInfo
 EnumType = GraphQLEnumType
 EnumValue = GraphQLEnumValue
+Schema = GraphQLSchema
+
+
+class Field(GraphQLField):
+    sqla_model = None
+
+
+class TableType(ObjectType):
+    sqla_model = None
+    field_to_column = None

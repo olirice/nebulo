@@ -82,11 +82,20 @@ def relationship_to_attr_name(relationship: RelationshipProperty) -> str:
 
 
 def resolve_one_to_relationship(obj, info, relationship_key=None, **kwargs):
-    print(info.path, info.return_type, "\n\t", obj, "\n\t", kwargs)
     return getattr(obj, relationship_key)
 
 
 class Table(TableToGraphQLField):
+    def __init__(self, sqla_model):
+        super().__init__(sqla_model)
+
+        # Attributes point to a concrete sqla type
+        # a relationship
+        # or a connection
+        self.to_one = {}
+        self.connections = {}
+        self.columns = {}
+
     @property
     def type_name(self):
         return snake_to_camel(self.sqla_model.__table__.name)
@@ -105,7 +114,9 @@ class Table(TableToGraphQLField):
             attrs["nodeId"] = node_id.field(nullable=False)
 
             for column in self.sqla_model.columns:
-                attrs[column.name] = convert_column(column)
+                key = column.name
+                attrs[key] = convert_column(column)
+                self.columns[key] = column
 
             for relationship in self.sqla_model.relationships:
                 direction = relationship.direction
@@ -114,7 +125,6 @@ class Table(TableToGraphQLField):
 
                 # Name of the attribute on the model
                 attr_key = relationship_to_attr_name(relationship)
-
                 resolver = partial(resolve_one_to_relationship, relationship_key=relationship.key)
 
                 # TODO(OR): Update so key is set by relevant fields
@@ -123,31 +133,31 @@ class Table(TableToGraphQLField):
                     _type = Table(to_sqla_model).type
                     _type = NonNull(_type) if not is_nullable else _type
                     attrs[attr_key] = Field(_type, resolver=resolver)
+                    self.to_one[attr_key] = relationship
 
                 elif direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
                     model_connection = Connection(to_sqla_model)
                     attrs[attr_key] = model_connection.field(nullable=is_nullable)
-
+                    self.connections[attr_key] = model_connection
             return attrs
 
         return ObjectType(
             name=self.type_name, fields=build_attrs, interfaces=[NodeInterface], description=""
         )
 
-    def resolver(self, obj, info: ResolveInfo, **user_kwargs):
-        print(info.path, info.return_type, "\n\t", obj, "\n\t", user_kwargs)
+    def _resolver(self, obj, info: ResolveInfo, **kwargs):
         sqla_model = self.sqla_model
         context = info.context
         session = context["session"]
         return_type = info.return_type
 
-        if "nodeId" in user_kwargs:
+        if "nodeId" in kwargs:
             # TODO(OR) validate nodeId is correct type
             return session.query(sqla_model).first()
 
         # If not those 2 conditions, skip and delegate
         # Resolving nodes
-        if user_kwargs:
-            return session.query(sqla_model).limit(user_kwargs["limit"]).all()
+        if kwargs:
+            return session.query(sqla_model).limit(kwargs["limit"]).all()
 
         return session.query(sqla_model).all()

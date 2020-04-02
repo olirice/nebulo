@@ -41,7 +41,7 @@ class TableBase(Base):
     @classproperty
     def constraints(cls) -> List[Constraint]:  # pylint: disable=no-self-argument
         """All constraints on the table"""
-        return sorted(cls.__table__.constraints, key=lambda x: x.__class__.__name__ + x.name)
+        return sorted(cls.__table__.constraints, key=lambda x: str(x))
 
     @classproperty
     def unique_constraints(cls) -> List[UniqueConstraint]:  # pylint: disable=no-self-argument

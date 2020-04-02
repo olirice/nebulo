@@ -19,8 +19,9 @@ from ..alias import (
 )
 from ..casing import snake_to_camel
 from .base import TableToGraphQLField
+from .cursor import Cursor
 from .edge import Edge
-from .page_info import CursorType, PageInfo
+from .page_info import PageInfo
 from .table import Table
 from .total_count import TotalCount
 
@@ -30,8 +31,20 @@ if typing.TYPE_CHECKING:
 
 __all__ = ["Connection"]
 
+ast = {}
+
 
 class Connection(TableToGraphQLField):
+    def __init__(self, sqla_model):
+        super().__init__(sqla_model)
+        self.page_info = PageInfo(sqla_model)
+        self.total_count = TotalCount(sqla_model)
+        self.edge = Edge(sqla_model)
+        self.table = Table(sqla_model)
+        # self.order_by = table_to_order_by(sqla_model)
+        self.condition = table_to_condition(sqla_model)
+        self.cursor = Cursor(sqla_model)
+
     @property
     def type_name(self):
         return f"{snake_to_camel(self.sqla_model.__table__.name)}Connection"
@@ -40,16 +53,12 @@ class Connection(TableToGraphQLField):
     def arguments(self):
         sqla_model = self.sqla_model
         # Input Arguments
-        model_order_by = table_to_order_by(sqla_model)
-        model_condition = table_to_condition(sqla_model)
         args = {
             "first": Argument(Int, default_value=10, description="", out_name=None),
             "last": Argument(Int),
-            "offset": Argument(Int, description="Alternative to cursor pagination"),
-            "before": Argument(CursorType),
-            "after": Argument(CursorType),
-            # "orderBy": Argument(List(NonNull(model_order_by)), default_value=["ID_DESC"]),
-            "condition": Argument(model_condition),
+            "before": Argument(self.cursor.type),
+            "after": Argument(self.cursor.type),
+            "condition": Argument(self.condition),
         }
         return args
 
@@ -57,112 +66,28 @@ class Connection(TableToGraphQLField):
     def _type(self):
         sqla_model = self.sqla_model
 
-        page_info = PageInfo(sqla_model)
-        total_count = TotalCount(sqla_model)
-        edge = Edge(sqla_model)
-        table = Table(sqla_model)
-
         def build_attrs():
             return {
-                "nodes": table.field(as_nonnull_list=True),
-                "pageInfo": page_info.field(nullable=False),
-                "edges": edge.field(nullable=False, as_nonnull_list=True),
-                "totalCount": total_count.field(nullable=False),
+                "nodes": self.table.field(as_nonnull_list=True),
+                "edges": self.edge.field(nullable=False, as_nonnull_list=True),
+                "pageInfo": self.page_info.field(nullable=False),
+                "totalCount": self.total_count.field(nullable=False),
             }
 
         return ObjectType(name=self.type_name, fields=build_attrs, description="")
 
-    def resolver(
-        self,
-        obj,
-        info: ResolveInfo,
-        first=10,
-        last=None,
-        offset=0,
-        before=None,
-        after=None,
-        orderBy=None,
-        condition=None,
-    ):
-        print("Connection", info.path, info.return_type, "\n\t", obj, "\n\t")
-        sqla_model = self.sqla_model
-        context = info.context
-        session = context["session"]
-        return_type = info.return_type
-        sqla_result = session.query(sqla_model).all()
+    def _resolver(self, obj, info: ResolveInfo, **kwargs):
 
-        from sqlalchemy import func
-        from sqlalchemy.sql.expression import literal
+        print("TEST", self.field().sqla_model)
 
-        # Arguments
-        cte_key = ".".join(info.path) + "_args"
-        args_cte = session.query(
-            literal(first).label("first"),
-            literal(last).label("last"),
-            literal(offset).label("offset"),
-            literal(before).label("before"),
-            literal(after).label("after"),
-            # literal(orderBy).label("orderby"),
-        ).cte(cte_key)
-        context[cte_key] = args_cte
+        ast["info"] = info
+        ast["connection"] = self
+        return {}  # {"nodes": {}}  # {
 
-        # Nodes
-        cte_key = ".".join(info.path) + "_nodes"
-        nodes_cte = session.query(self.sqla_model)
-
-        # Apply Conditions
-        if condition is not None:
-            for key, val in condition.items():
-                nodes_cte = nodes_cte.filter(getattr(sqla_model, key) == val)
-
-        # Apply Ordering
-        if orderBy is not None:
-            orderdict = {"ID_DESC": self.sqla_model.id.desc(), "ID_ASC": self.sqla_model.id.asc()}
-            q_orderby = [orderdict[x] for x in orderBy]
-            # For pagination, we must force a constant ordering
-            default_ordering = table_to_default_ordering(sqla_model)
-            q_orderby.extendappend(default_ordering)
-            nodes_cte = nodes_cte.order_by(*q_orderby)
-
-        # Apply Offset
-        if offset is not None:
-            nodes_cte = nodes_cte.offset(offset)
-
-        # Avoid footgun scenario with sane limit clause
-        if offset is not None:
-            nodes_cte = nodes_cte.limit(150)
-        nodes = nodes_cte.cte(cte_key)
-        context[cte_key] = nodes_cte
-        print("Nodes:", session.query(nodes).all())
-
-        # totalCount
-        cte_key = ".".join(info.path) + "_total_count"
-        total_cte = session.query(func.count(self.sqla_model.columns[0]))
-
-        # Apply Conditions
-        if condition is not None:
-            for key, val in condition.items():
-                total_cte = total_cte.filter(getattr(sqla_model, key) == val)
-
-        # Apply Ordering
-        if orderBy is not None:
-            orderdict = {"ID_DESC": self.sqla_model.id.desc(), "ID_ASC": self.sqla_model.id.asc()}
-            q_orderby = [orderdict[x] for x in orderBy]
-            # For pagination, we must force a constant ordering
-            default_ordering = table_to_default_ordering(sqla_model)
-            q_orderby.extendappend(default_ordering)
-            total_cte = total_cte.order_by(*q_orderby)
-
-        total_cte = total_cte.cte(cte_key)
-        context[cte_key] = total_cte
-        print("TotalCount:", session.query(total_cte).all())
-
-        return {
-            "nodes": session.query(nodes).all(),
-            "pageInfo": {},
-            "edges": {},
-            "totalCount": session.query(total_cte).one(),
-        }
+        # "nodes": [],
+        # "edges": {},
+        # "totalCount": None,
+        # }
 
 
 def table_to_default_ordering(sqla_model: TableBase) -> typing.List[UnaryExpression]:

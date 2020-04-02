@@ -2,22 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from graphql import (
-    GraphQLArgument,
-    GraphQLEnumType,
-    GraphQLField,
-    GraphQLID,
-    GraphQLInt,
-    GraphQLList,
-    GraphQLNonNull,
-    GraphQLObjectType,
-    GraphQLSchema,
-    GraphQLString,
-)
-from stringcase import pascalcase
-
-from .alias import ObjectType
-from .convert.connection import Connection
+from .alias import ObjectType, Schema
+from .entrypoints.single_node import single_node_factory
 
 if TYPE_CHECKING:
     from nebulous.sql.sql_database import SQLDatabase
@@ -37,15 +23,20 @@ class GQLDatabase:
         # ]
 
         # GQL Schema
-        self.schema = GraphQLSchema(self.query_object())
+        self.schema = Schema(self.query_object())
 
     def query_object(self):
         """Creates a base query object from available graphql objects/tables"""
+        # query_fields = {
+        #
+        # }
+
         query_fields = {
-            **{
-                f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
-                for x in self.sqldb.models
-            }
+            **{f"{x.__table__.name}": single_node_factory(x) for x in self.sqldb.models},
+            # **{
+            #    f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
+            #    for x in self.sqldb.models
+            # },
         }
 
         query_object = ObjectType(name="Query", fields=lambda: query_fields)

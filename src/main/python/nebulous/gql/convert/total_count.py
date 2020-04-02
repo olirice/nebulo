@@ -10,8 +10,7 @@ class TotalCount(TableToGraphQLField):
 
     _type = Int
 
-    def resolver(self, obj, info, **user_kwargs):
-        print(info.path, info.return_type, "\n\t", obj)
+    def _resolver(self, obj, info, **user_kwargs):
         sqla_model = self.sqla_model
         context = info.context
         session = context["session"]

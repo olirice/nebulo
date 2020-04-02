@@ -12,11 +12,14 @@ if typing.TYPE_CHECKING:
 
 class TableToGraphQLField(ABC):
 
+    registry = {}
+
     _cache = {}
 
     @lru_cache()
     def __init__(self, sqla_model: typing.Type[TableBase]):
         self.sqla_model = sqla_model
+        self.registry[self.type_name] = self
 
     @property
     def type(self):
@@ -36,8 +39,13 @@ class TableToGraphQLField(ABC):
     def arguments(self) -> typing.Dict[str, typing.Union[InputField, InputObjectType]]:
         return {}
 
-    def resolver(self, obj, info: ResolveInfo, **user_kwarg) -> TableBase:
+    @abstractproperty
+    def _resolver(self, obj, info: ResolveInfo, **kwargs) -> typing.Any:
         raise NotImplementedError()
+
+    def resolver(self, obj, info: ResolveInfo, **kwargs) -> typing.Any:
+        print(info.path)
+        return self._resolver(obj, info, **kwargs)
 
     def field(
         self, nullable: bool = True, as_nullable_list: bool = False, as_nonnull_list: bool = False
@@ -58,4 +66,6 @@ class TableToGraphQLField(ABC):
         if as_nonnull_list:
             _type = NonNull(_type)
 
-        return Field(_type, args=self.arguments, resolver=self.resolver)
+        response = Field(_type, args=self.arguments, resolver=self.resolver)
+        response.sqla_model = self.sqla_model
+        return response

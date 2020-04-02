@@ -1,33 +1,38 @@
-from ..alias import Boolean, Field, NonNull, ObjectType, ScalarType
+from ..alias import Boolean, Field, NonNull, ObjectType
+from ..casing import snake_to_camel
 from .base import TableToGraphQLField
+from .cursor import Cursor
 
 __all__ = ["PageInfo"]
 
-CursorType = ScalarType(name="Cursor", serialize=str)  # pylint: disable=invalid-name
-
 
 class PageInfo(TableToGraphQLField):
+    @property
+    def type_name(self):
+        return f"{snake_to_camel(self.sqla_model.__table__.name)}PageInfo"
 
-    type_name = "PageInfo"
+    @property
+    def _type(self):
+        sqla_model = self.sqla_model
+        cursor = Cursor(self.sqla_model)
 
-    _type = ObjectType(  # pylint: disable=invalid-name
-        "PageInfo",
-        fields={
-            "hasNextPage": Field(NonNull(Boolean)),
-            "hasPreviousPage": Field(NonNull(Boolean)),
-            "startCursor": Field(NonNull(CursorType)),
-            "endCursor": Field(NonNull(CursorType)),
-        },
-    )
+        def build_attrs():
+            return {
+                "hasNextPage": Field(NonNull(Boolean)),
+                "hasPreviousPage": Field(NonNull(Boolean)),
+                "startCursor": cursor.field(nullable=False),  # Field(NonNull(Cursor._type)),
+                "endCursor": cursor.field(nullable=False),  # Field(NonNull(Cursor._type)),
+            }
 
-    def resolver(self, obj, info, **user_kwargs):
-        print(info.path, info.return_type, "\n\t", obj, info.context)
+        return ObjectType(name=self.type_name, fields=build_attrs, description="")
+
+    def _resolver(self, obj, info, **user_kwargs):
         sqla_model = self.sqla_model
         sqla_model = sqla_model
 
         return {
             "hasNextPage": False,
             "hasPreviousPage": False,
-            "startCursor": "Unknown",
-            "endCursor": "Unknown",
+            # "startCursor": "Unknown",
+            # "endCursor": "Unknown",
         }
