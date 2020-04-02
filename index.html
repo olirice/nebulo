@@ -52,8 +52,6 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#tldr">TL;DR</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
-    </li>
     </ul>
                     </li>
                 </ul>
@@ -119,8 +117,10 @@
 <p><strong>Source Code</strong>: <a href="https://github.com/olirice/nebulo" target="_blank">https://github.com/olirice/nebulo</a></p>
 <hr />
 <p><strong>Instant GraphQL API for PostgreSQL</strong></p>
-<p>Nebulo <a href="https://en.wikipedia.org/wiki/Reflection_(computer_programming)">reflects</a> a highly performant <a href="https://graphql.org/learn/">GraphQL</a> API from an existing <a href="https://www.postgresql.org/">PostgreSQL</a> database.</p>
-<p><strong>WARNING: pre-alpha software</strong></p>
+<p><a href="https://en.wikipedia.org/wiki/Reflection_(computer_programming)">Reflect</a> a highly performant <a href="https://graphql.org/learn/">GraphQL</a> API from an existing <a href="https://www.postgresql.org/">PostgreSQL</a> database.</p>
+<p>Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases wtih 0 code, and can also be added to existing <a href="https://www.sqlalchemy.org/">SQLAlchemy</a> projects.</p>
+<p>In contrast to existing options in the python ecosystem, Nebulo optimizes underlying SQL queries to solve the <a href="https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping">N+1 query problem</a> and minimize database IO. The result is a blazingly fast API with consistent performance for arbitrarily nested queries.</p>
+<p><strong>WARNING: Pre-Alpha Software</strong></p>
 <h2 id="tldr">TL;DR</h2>
 <p>First, install nebulo</p>
 <div class="codehilite"><pre><span></span><code>$ pip install nebulo
@@ -133,13 +133,6 @@
 
 
 <p>Visit your shiny new GraphQL API at <a href="http://localhost:5018/graphql">http://localhost:5018/graphql</a></p>
-<h2 id="installation">Installation</h2>
-<p><strong>Requirements</strong>: Python 3.7+, PostgreSQL 11+</p>
-<p>Pip install the nebulo CLI</p>
-<div class="codehilite"><pre><span></span><code>$ pip install nebulo
-</code></pre></div>
-
-
 <p>Next, check out the <a href="quickstart/">quickstart</a> guide for a small end-to-end example.</p>
 <p align="center">&mdash;&mdash;  &mdash;&mdash;</p>
               
@@ -195,5 +188,5 @@
 
 <!--
 MkDocs version : 1.1
-Build Date UTC : 2020-04-02 10:07:01
+Build Date UTC : 2020-04-02 10:50:15
 -->
