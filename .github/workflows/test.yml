@@ -5,36 +5,33 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     services:
 
       postgres:
         image: postgres:12
         env:
-          # use localhost for the host here because we are running the job on the VM.
-          # If we were running the job on in a container this would be postgres
           POSTGRES_HOST: localhost
-          POSTGRES_USER: postgres
+          POSTGRES_USER: nebulous_user
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: pytest
+          POSTGRES_DB: nebulous_db
 
         ports:
-        - 5432:5432
-        # needed because the postgres container does not provide a healthcheck
+        - 4442:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.6
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.6
     - name: Install nebulous
       run: |
         sudo apt-get install libpq-dev
         python -m pip install --upgrade pip
         pip install ".[test]"
-        
+
     - name: Run Tests with Coverage
       run: |
         pytest --cov=nebulous src/test
