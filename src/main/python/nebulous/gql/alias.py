@@ -33,6 +33,10 @@ ScalarType = GraphQLScalarType
 
 
 class ObjectType(GraphQLObjectType):
+    sqla_model = None
+
+
+class EdgeType(ObjectType):
     pass
 
 

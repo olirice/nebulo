@@ -1,4 +1,4 @@
-from ..alias import Field, ObjectType
+from ..alias import EdgeType, Field
 from ..casing import snake_to_camel
 
 __all__ = ["edge_factory"]
@@ -13,4 +13,4 @@ def edge_factory(sqla_model):
 
         return {"cursor": Field(Cursor), "node": Field(table_factory(sqla_model))}
 
-    return ObjectType(name=name, fields=build_attrs, description="")
+    return EdgeType(name=name, fields=build_attrs, description="")

@@ -44,7 +44,9 @@ def connection_factory(sqla_model):
             "totalCount": Field(NonNull(TotalCount)),
         }
 
-    return ObjectType(name=name, fields=build_attrs, description="")
+    return_type = ObjectType(name=name, fields=build_attrs, description="")
+    return_type.sqla_model = sqla_model
+    return return_type
 
 
 def connection_args_factory(sqla_model):

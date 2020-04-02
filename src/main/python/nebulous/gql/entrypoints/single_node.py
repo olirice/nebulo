@@ -67,5 +67,7 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     context["result"] = result[0][0]
 
     # Stash result on context so enable dumb resolvers to not fail
-    print(result)
+    pretty_result = json.dumps(result, indent=2, cls=Encoder)
+    print(pretty_result)
+
     return result
