@@ -3,8 +3,9 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+from nebulous.name_utils import snake_to_camel
+
 from ..alias import Argument, ConnectionType, Field, Int, List, NonNull
-from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .cursor import Cursor
 from .page_info import PageInfo

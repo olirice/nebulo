@@ -2,15 +2,9 @@ import re
 
 from sqlalchemy.sql.elements import quoted_name
 
-__all__ = ["camel_to_snake", "snake_to_camel"]
+__all__ = ["snake_to_camel"]
 
-_re_camel_to_snake = re.compile(r"([a-z]|[A-Z]+)(?=[A-Z])")
 _re_snake_to_camel = re.compile(r"(_)([a-z\d])")
-
-
-def camel_to_snake(s):
-    """Convert from CamelCase to snake_case"""
-    return _re_camel_to_snake.sub(r"\1_", s).lower()
 
 
 def snake_to_camel(s: quoted_name, upper: bool = True) -> str:

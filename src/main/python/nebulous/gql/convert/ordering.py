@@ -2,8 +2,9 @@ from functools import lru_cache
 
 from sqlalchemy import asc, desc
 
+from nebulous.name_utils import snake_to_camel
+
 from ..alias import EnumType, EnumValue, InputObjectType
-from ..casing import snake_to_camel
 
 __all__ = ["ordering_factory"]
 

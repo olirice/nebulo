@@ -1,5 +1,6 @@
+from nebulous.name_utils import snake_to_camel
+
 from ..alias import EdgeType, Field
-from ..casing import snake_to_camel
 
 __all__ = ["edge_factory"]
 

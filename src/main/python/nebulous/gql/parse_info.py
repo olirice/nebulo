@@ -19,18 +19,6 @@ def field_to_type(field):
     return field
 
 
-def is_list(field) -> bool:
-    """Recursively unwraps nested Field, List, and NonNull
-    and identifies if the return type should be a list"""
-    if isinstance(field, List):
-        return True
-    if isinstance(field, Field):
-        return is_list(field.type)
-    if isinstance(field, NonNull):
-        return is_list(field.of_type)
-    return False
-
-
 def parse_field_ast(field_ast, field_def, schema, parent):
     """Converts a """
     args = get_argument_values(
@@ -41,7 +29,6 @@ def parse_field_ast(field_ast, field_def, schema, parent):
     selection_set = field_ast.selection_set
 
     field_type = field_to_type(field_def)
-    field_is_list = is_list(field_def)
 
     self = {}
 
@@ -60,7 +47,6 @@ def parse_field_ast(field_ast, field_def, schema, parent):
             "parent": parent,
             "args": args,
             "fields": sub_fields,
-            "is_list": field_is_list,
         }
     )
 
@@ -91,7 +77,6 @@ def parse_resolve_info(info: ResolveInfo) -> typing.Dict:
     """
     # Root info
     field_ast = info.field_asts[0]
-    field_type = info.return_type
     schema = info.schema
 
     # Current field from parent

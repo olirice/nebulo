@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from nebulous.string_utils import to_plural
+from nebulous.name_utils import snake_to_camel, to_plural
 
 from .alias import ObjectType, Schema
-from .casing import snake_to_camel
 from .entrypoints.many import many_node_factory
 from .entrypoints.one import one_node_factory
 

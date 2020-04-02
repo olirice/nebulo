@@ -6,15 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import MetaData
 from sqlalchemy import inspect as sql_inspect
-from sqlalchemy import tuple_
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
 
+from nebulous.sql.classproperty import classproperty
 from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
-
-from .utils import classproperty
 
 
 def build_base():
@@ -59,7 +56,3 @@ class TableBase(build_base(), ComputedColumnsMixin):
     def relationships(cls) -> List[RelationshipProperty]:  # pylint: disable=no-self-argument
         """Relationships with other tables"""
         return list(sql_inspect(cls).relationships)
-
-    @hybrid_property
-    def cursor(self) -> "SQLExpression":
-        return tuple_(*self.primary_key.columns)
