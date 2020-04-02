@@ -9,7 +9,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Quickstart - Nebulous</title>
+  <title>Quickstart - Nebulo</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
 
   <link rel="stylesheet" href="../css/theme.css" />
@@ -38,7 +38,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-        <a href=".." class="icon icon-home"> Nebulous</a>
+        <a href=".." class="icon icon-home"> Nebulo</a>
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
@@ -80,7 +80,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="..">Nebulous</a>
+        <a href="..">Nebulo</a>
       </nav>
 
       
@@ -95,7 +95,7 @@
     <li>Quickstart</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/olirice/nebulous/edit/master/docs/quickstart.md"> Edit on olirice/nebulous</a>
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/quickstart.md"> Edit on olirice/nebulo</a>
       
     </li>
   </ul>
@@ -106,7 +106,7 @@
             <div class="section">
               
                 <h2 id="quickstart">Quickstart</h2>
-<p>For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulous to reflect our GraphQL API. Finally, we'll query from that API.</p>
+<p>For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulo to reflect our GraphQL API. Finally, we'll query from that API.</p>
 <h3 id="database-setup">Database Setup</h3>
 <p>First, we need to define our database schema. We need a table for accounts, and another for blog posts. All blog posts must be associated with an author in the accounts table.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1">-- blog_schema.sql</span>
@@ -137,9 +137,9 @@
 
 
 <h3 id="graphql-schema">GraphQL Schema</h3>
-<p>Now we're ready to reflect our new database schema into a GraphQL schema. The GraphQL schema document describes our API's types, fields, and relationships between entities. If you're new to GraphQL check out their <a href="https://graphql.org/learn/">documentation</a> for more information. </p>
+<p>Now we're ready to reflect our new database schema into a GraphQL schema. The GraphQL schema document describes our API's types, fields, and relationships between entities. If you're new to GraphQL check out their <a href="https://graphql.org/learn/">documentation</a> for more information.</p>
 <p>To inspect the GraphQL schema</p>
-<div class="codehilite"><pre><span></span><code>neb dump-schema -c postgresql://nebulous_user:password@localhost:4443/nebulous_db
+<div class="codehilite"><pre><span></span><code>neb dump-schema -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 </code></pre></div>
 
 
@@ -230,11 +230,11 @@
 <p>Notice that our API detected the foreign key relationship between <code class="codehilite"><span class="err">Account</span></code> and <code class="codehilite"><span class="err">BlogPost</span></code> and created <code class="codehilite"><span class="err">blogPostsByAuthorId</span></code> and <code class="codehilite"><span class="err">accountByAuthorId</span></code> on their base types respectively.</p>
 <h3 id="query-the-api">Query the API</h3>
 <p>To start the API server, execute <code class="codehilite"><span class="err">neb run</span></code> passing in a connection to the database.</p>
-<div class="codehilite"><pre><span></span><code>neb run -c postgresql://nebulous_user:password@localhost:4443/nebulous_db
+<div class="codehilite"><pre><span></span><code>neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 </code></pre></div>
 
 
-<p>In addition to handling GraphQL requests, nebulous also serves the <a href="https://github.com/graphql/graphiql">GraphiQL explorer</a> locally at <a href="http://localhost:5018/graphql">http://localhost:5018/graphql</a>.</p>
+<p>In addition to handling GraphQL requests, nebulo also serves the <a href="https://github.com/graphql/graphiql">GraphiQL explorer</a> locally at <a href="http://localhost:5018/graphql">http://localhost:5018/graphql</a>.</p>
 <p><img alt="graphiql image" src="../images/graphiql.png" /></p>
 <p>Enter your query in GraphiQL and click the arrow icon to execute it.</p>
 <p>You're all done!</p>
