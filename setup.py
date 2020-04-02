@@ -17,7 +17,10 @@ setup(
     packages=find_packages("src/main/python"),
     package_dir={"": "src/main/python"},
     include_package_data=True,
-    entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
+    entry_points={
+        "console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"],
+        "pygments.lexers": ["graphqllexer=nebulous.lexer:GraphQLLexer"],
+    },
     install_requires=[
         "sqlalchemy==1.3.15",
         "psycopg2-binary==2.8.4",
@@ -31,5 +34,6 @@ setup(
         "test": ["pytest", "pytest-cov"],
         "dev": ["pylint", "black", "sqlalchemy-stubs"],
         "nvim": ["neovim", "python-language-server"],
+        "docs": ["mkdocs", "pygments", "pymdown-extensions"],
     },
 )

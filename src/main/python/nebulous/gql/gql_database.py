@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from nebulous.gql.alias import ObjectType, Schema
 from nebulous.gql.entrypoints.many import many_node_factory
 from nebulous.gql.entrypoints.one import one_node_factory
+from nebulous.sql.inspect import get_table_name
 from nebulous.text_utils import snake_to_camel, to_plural
 
 if TYPE_CHECKING:
@@ -28,8 +29,8 @@ class GQLDatabase:
 def sqla_models_to_query_object(sqla_models):
     """Creates a base query object from available graphql objects/tables"""
     query_fields = {
-        **{f"{x.__table__.name}": one_node_factory(x) for x in sqla_models},
-        **{f"all{snake_to_camel(to_plural(x.__table__.name))}": many_node_factory(x) for x in sqla_models},
+        **{f"{snake_to_camel(get_table_name(x), upper=False)}": one_node_factory(x) for x in sqla_models},
+        **{f"all{snake_to_camel(to_plural(get_table_name(x)))}": many_node_factory(x) for x in sqla_models},
     }
 
     query_object = ObjectType(name="Query", fields=lambda: query_fields)

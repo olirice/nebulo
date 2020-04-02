@@ -43,8 +43,8 @@ def connection_args_factory(sqla_model):
 
     return {
         "first": Argument(Int, description="", out_name=None),
-        "last": Argument(Int),
-        "before": Argument(Cursor),
+        # "last": Argument(Int),
+        # "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
     }

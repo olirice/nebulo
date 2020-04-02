@@ -1,0 +1,19 @@
+site_name: Nebulous
+site_description: Instant GraphQL API from PostgreSQL Database
+
+theme:
+    name: 'readthedocs'
+
+repo_name: olirice/nebulous
+repo_url: https://github.com/olirice/nebulous
+
+nav:
+    - Introduction: 'index.md'
+    - Quickstart: 'quickstart.md'
+    - Performance: 'performance.md'
+    - Roadmap: 'roadmap.md'
+
+markdown_extensions:
+  - codehilite
+  - admonition
+  - pymdownx.inlinehilite
