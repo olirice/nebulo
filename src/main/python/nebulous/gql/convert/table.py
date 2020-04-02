@@ -10,22 +10,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import RelationshipProperty, interfaces
 
-from ..alias import (
-    Argument,
-    EnumType,
-    EnumValue,
-    Field,
-    InputField,
-    InputObjectType,
-    Int,
-    List,
-    NonNull,
-    ObjectType,
-    ResolveInfo,
-    ScalarType,
-    String,
-    TableType,
-)
+from ..alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .node_interface import NodeID, NodeInterface

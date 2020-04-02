@@ -1,16 +1,10 @@
-import json
-
 from sqlalchemy import func, select
 from sqlalchemy.sql.expression import literal
 
 from ..alias import Field, ResolveInfo
 from ..convert.connection import connection_args_factory, connection_factory, resolve_connection
 from ..parse_info import parse_resolve_info
-
-
-class Encoder(json.JSONEncoder):
-    def default(self, o):
-        return str(o)
+from .utils import print_json, print_query
 
 
 def many_node_factory(sqla_model) -> Field:
@@ -46,18 +40,11 @@ def resolver(obj, info: ResolveInfo, **kwargs):
 
     query = selector.alias()
 
-    import sqlparse
-
-    query_str = query.compile(compile_kwargs={"literal_binds": True})
-    query_str = str(query_str)
-    print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
+    print_query(query)
 
     result = session.query(query).all()
+    print_json(result)
     result = result[0][0]
     context["result"] = result
-
-    # Stash result on context so enable dumb resolvers to not fail
-    pretty_result = json.dumps(result, indent=2, cls=Encoder)
-    # print(pretty_result)
 
     return result

@@ -3,18 +3,7 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from ..alias import (
-    Argument,
-    EnumType,
-    EnumValue,
-    Field,
-    InputField,
-    InputObjectType,
-    Int,
-    List,
-    NonNull,
-    ObjectType,
-)
+from ..alias import InputField, InputObjectType
 from ..casing import snake_to_camel
 from .table import convert_column
 

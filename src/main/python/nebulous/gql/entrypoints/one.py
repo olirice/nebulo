@@ -1,5 +1,3 @@
-import json
-
 from sqlalchemy import func, select
 from sqlalchemy.sql.expression import literal
 
@@ -8,29 +6,12 @@ from ..convert.node_interface import NodeID
 from ..convert.sql_resolver import resolve_one
 from ..convert.table import table_factory
 from ..parse_info import parse_resolve_info
-
-
-class Encoder(json.JSONEncoder):
-    def default(self, o):
-        return str(o)
+from .utils import print_json, print_query
 
 
 def one_node_factory(sqla_model) -> Field:
     node = table_factory(sqla_model)
     return Field(node, args={"NodeID": Argument(NodeID)}, resolver=resolver, description="")
-
-
-def print_query(query):
-    import sqlparse
-
-    compiled_query = query.compile(compile_kwargs={"literal_binds": True})
-    print(sqlparse.format(str(compiled_query), reindent=True, keyword_case="upper"))
-    return
-
-
-def print_result(result):
-    pretty_result = json.dumps(result, indent=2, cls=Encoder)
-    print(pretty_result)
 
 
 def resolver(_, info: ResolveInfo, **kwargs):
@@ -69,13 +50,9 @@ def resolver(_, info: ResolveInfo, **kwargs):
     print_query(query)
 
     result = session.query(query).all()
-    print_result(result)
+    print_json(result)
     result = result[0][0]
     context["result"] = result
-
-    # Stash result on context so enable dumb resolvers to not fail
-    # pretty_result = json.dumps(result, indent=2, cls=Encoder)
-    # print(pretty_result)
 
     return result
 

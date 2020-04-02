@@ -10,15 +10,17 @@ from sqlalchemy import event
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, mapper
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
-from sqlalchemy_utils import generic_repr
 
 from .base import Base
 from .utils import classproperty
 
+# from sqlalchemy_utils import generic_repr
+
+
 # from nebulous.sql.gql_base_mixin import GQLBaseMixin
 
 
-@generic_repr
+# @generic_repr
 # class TableBase(GQLBaseMixin, ComputedColumnsMixin, OmitMixin, Base):
 class TableBase(Base):
     """Base class for application sql tables"""

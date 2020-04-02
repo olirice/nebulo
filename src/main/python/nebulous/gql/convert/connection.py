@@ -3,20 +3,10 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from sqlalchemy import cast, func, literal, literal_column, select
+from sqlalchemy import asc, cast, desc, func, literal, literal_column, select, tuple_
+from sqlalchemy.sql.operators import gt, lt
 
-from ..alias import (
-    Argument,
-    EnumType,
-    EnumValue,
-    Field,
-    InputField,
-    InputObjectType,
-    Int,
-    List,
-    NonNull,
-    ObjectType,
-)
+from ..alias import Argument, Field, Int, List, NonNull, ObjectType
 from ..casing import snake_to_camel
 from ..default_resolver import default_resolver
 from .cursor import Cursor
@@ -69,48 +59,23 @@ def connection_args_factory(sqla_model):
     }
 
 
-def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "ConditionPartials"]:
-    """Resolves a connection types
-
-    Arguments:
-        First, Last, OrderBy, Before, and After are applied to selectors
-        but not to total count
-
-    """
-    from .sql_resolver import resolve_one
-    from .cursor import resolve_cursor
-
-    sqla_model = tree["return_type"].sqla_model
-
-    # Apply Argument Filters
-    base_query = select([parent_query])
-
-    fields = tree["fields"]
-
+def apply_condition_args(query, tree):
     args = tree["args"]
-    print(args)
-
-    # Conditions are applied
-    # To all fields, including totalCount, so they added
-    # to the parent query
-
     # Conditions
     conditions = args.get("condition")
     if conditions is not None:
-        print(conditions)
         for column_name, value in conditions.items():
-            base_query = base_query.where(getattr(base_query.c, column_name) == value)
+            query = query.where(getattr(query.c, column_name) == value)
+    return query
 
-    base_query = base_query.cte()
 
-    # Create a query branch for non-totalCount elements
-    query = select([base_query])
-
+def apply_pagination_args(query, tree):
     # Ordering subqueries
     # Allowed Args [first, last, ordering?, etc]
     # Validate Allowed Argument Combinations
+    args = tree["args"]
+    sqla_model = tree["return_type"].sqla_model
     order_by = args.get("orderBy")
-
     first = args.get("first")
     last = args.get("last")
     before = args.get("before")
@@ -130,10 +95,6 @@ def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "Cond
     mode = "last" if last is not None or before is not None else "first"
     # Restrict page size and/or apply default
     first, last = min(first or 0, 20), min(last or 0, 20)
-
-    from sqlalchemy import tuple_, asc, desc
-    from sqlalchemy.sql.operators import gt, lt
-    from sqlalchemy import asc, desc
 
     if mode == "first":
         if after is not None:
@@ -200,12 +161,34 @@ def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "Cond
         order_clause = [direction(getattr(query.c, col_name)) for col_name, direction in order_by]
         query = query.order_by(*order_clause)
 
+    return query
+
+
+def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "ConditionPartials"]:
+    """Resolves a connection types
+
+    Arguments:
+        First, Last, OrderBy, Before, and After are applied to selectors
+        but not to total count
+
+    """
+    from .sql_resolver import resolve_one
+    from .cursor import resolve_cursor
+
+    # Apply Argument Filters
+    base_query = select([parent_query])
+    base_query = apply_condition_args(tree, base_query)
+    base_query = base_query.cte()
+
+    # Create a query branch for non-totalCount elements
+    query = select([base_query])
+    query = apply_pagination_args(query, tree)
     query = query.alias()
 
     # Always return the table name in each row
     builder = []
 
-    for tree_field in fields:
+    for tree_field in tree["fields"]:
         field_name = tree_field["name"]
         field_alias = tree_field["alias"]
 
@@ -235,6 +218,7 @@ def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "Cond
                     )
                 if edge_field["name"] == "cursor":
                     edge_field_alias = edge_field["alias"]
+                    order_by = tree["args"].get("orderBy")
                     edge_builder.extend(
                         [
                             literal(edge_field_alias),
@@ -251,7 +235,18 @@ def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "Cond
             )
 
         elif field_name == "pageInfo":
-            print("Delegating for page info")
+            page_builder = []
+            page_fields = tree_field["fields"]
+            for page_field in page_fields:
+                page_field_name = page_field["name"]
+                page_field_alias = page_field["alias"]
+
+            # Keeping flake8 happy
+            page_builder = page_builder
+            page_field_name = page_field_name
+            page_field_alias = page_field_alias
+
+            raise NotImplementedError("pageInfo is not implemented yet")
 
         elif field_name == "totalCount":
             builder.extend(

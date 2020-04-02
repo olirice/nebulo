@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from sqlalchemy import func, literal, select
 from sqlalchemy.orm import interfaces
-from sqlalchemy.sql.expression import literal
 
 from .node_interface import resolve_node_id
 from .table import relationship_to_attr_name

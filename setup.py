@@ -18,8 +18,6 @@ setup(
     package_dir={"": "src/main/python"},
     include_package_data=True,
     entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
-    test_suite="nose.collector",
-    tests_require=["nose==1.3.7"],
     install_requires=[
         "pre-commit",
         "click==7.0",
@@ -28,6 +26,7 @@ setup(
         "flask",
         "flask-graphql",
         "sqlalchemy_utils",
-        "psycopg2"
+        "psycopg2",
+        "pytest"
     ],
 )

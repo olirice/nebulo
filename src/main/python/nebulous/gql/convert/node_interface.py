@@ -29,7 +29,7 @@ def from_global_id(global_id: str):
         unbased_global_id = from_base64(global_id)
         _type, _id = unbased_global_id.split(":", 1)
         _id = int(_id)
-    except Exception as exc:
+    except Exception:
         raise ValueError(f"Bad input: invalid NodeID {global_id}")
     return _type, _id
 

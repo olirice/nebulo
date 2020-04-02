@@ -15,9 +15,12 @@ if TYPE_CHECKING:
 
 
 class SQLDatabase:
-    def __init__(self, config: UserConfig):
+    def __init__(self, config: UserConfig, engine: None):
         # Configure SQLAlchemy
-        self.engine = create_engine(config.connection, echo=config.echo_queries)
+        if engine:
+            self.engine = engine
+        else:
+            self.engine = create_engine(config.connection, echo=config.echo_queries)
         self.session = scoped_session(sessionmaker(bind=self.engine))
 
         if config.demo:
