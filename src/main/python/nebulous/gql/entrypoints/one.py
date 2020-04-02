@@ -23,7 +23,8 @@ def cte_resolver(_, info: ResolveInfo, **kwargs):
     tree = parse_resolve_info(info)
     # print(tree)
 
-    query = build_query(tree, None)
+    standard_query = build_standard_query(tree, None)
+    query = build_json_query(tree, standard_query)
 
     print_query(query)
 
@@ -152,29 +153,47 @@ def build_field(field, cte: "selectable", sqla_model) -> "json_sql_expression":
     return_type = field["return_type"]
     field_name = field["name"]
 
-    from ..alias import EdgeType, ObjectType, ScalarType
+    from ..alias import EdgeType, ObjectType, ScalarType, TableType
     from ..convert.cursor import Cursor
     from ..convert.node_interface import NodeID
     from ..convert.page_info import PageInfo
+
+    if isinstance(return_type, TableType): #field_name == "node":
+        subfield_json_content = func.jsonb_build_object()
+        for subfield in field["fields"]:
+            json_subfield = build_field(subfield, cte, sqla_model)
+            subfield_json_content = subfield_json_content.op("||")(json_subfield)
+        return func.jsonb_build_object(literal(field["alias"]), subfield_json_content)
 
     if isinstance(return_type, ScalarType):
         return func.jsonb_build_object(
             literal(field["alias"]), getattr(cte.c, field["name"])
         )
+    print(field_name)
 
     if isinstance(return_type, ConnectionType):
 
         subquery_json_content = func.jsonb_build_object()
 
         for subquery_field in field["fields"]:
+            relation_attribute = getattr(sqla_model, field_name)
+            relation = relation_attribute.property
+            join_callable = get_where_appender(relation, cte)
+            standard_query = build_standard_query(
+                tree=subquery_field, join_callable=join_callable
+            )
+
             # nodes, edges, pageinfo, totalcount
             subquery_field_name = subquery_field["name"]
-            if subquery_field_name in ("nodes", "edges"):
-                relation_attribute = getattr(sqla_model, field_name)
-                relation = relation_attribute.property
-                join_callable = get_where_appender(relation, cte)
-                json_subquery = build_query(
-                    tree=subquery_field, join_callable=join_callable
+            if subquery_field_name == "nodes":
+                json_subquery = build_json_query(
+                    tree=subquery_field, standard_query=standard_query
+                )
+                subquery_json_content = subquery_json_content.op("||")(json_subquery)
+
+            elif subquery_field_name == "edges":
+                json_subquery = build_json_query(
+                    tree=subquery_field, standard_query=standard_query
                 )
                 subquery_json_content = subquery_json_content.op("||")(json_subquery)
             else:
@@ -183,27 +202,53 @@ def build_field(field, cte: "selectable", sqla_model) -> "json_sql_expression":
 
         return func.jsonb_build_object(literal(field["alias"]), subquery_json_content)
 
-    raise NotImplementedError(f"on type {return_type}")
-
-    if isinstance(return_type, ObjectType):
-        builder = []
-        for field in tree["fields"]:
-            builder.append(literal(field["alias"]), field_to_selector(field, cte))
-
-    if isinstance(return_type, Cursor):
-        raise NotImplementedError()
-
-    if isinstance(return_type, NodeID):
-        raise NotImplementedError()
-
-    builder = []
-    nodes_field = get_field_named(tree, "nodes")
-    if nodes_field is not None:
-        # build_nodes(nodes_field, cte)
-        pass
+    raise NotImplementedError(f"on type {return_type}, {field_name}")
 
 
-def build_query(
+def build_standard_query(tree, join_callable: "callable" = None):
+    return_type = tree["return_type"]
+    sqla_model = return_type.sqla_model
+    sqla_table = sqla_model.__table__
+    source = sqla_table.alias()
+    from sqlalchemy import tuple_
+
+    standard_query = select(source.c + [tuple_(source.c.id).label("cursor")])
+    if join_callable is not None:
+        for w_clause in join_callable(source):
+            standard_query.append_whereclause(w_clause)
+    standard_query = standard_query.cte(random_string())
+    return standard_query
+
+
+def build_json_selector(tree, standard_query) -> "non-selected-json-expression":
+    sqla_model = tree["return_type"].sqla_model
+    sql_json_content = func.jsonb_build_object()
+
+    fields = tree["fields"]
+    for field in fields:
+        sql_json_field = build_field(field, cte=standard_query, sqla_model=sqla_model)
+        sql_json_content = sql_json_content.op("||")(sql_json_field)
+    return sql_json_content
+
+
+def build_json_query(tree, standard_query):
+    """Queries are broken down into 2 steps. First we collect the keys
+    in a standard query, and then sele"""
+    return_alias = tree["alias"]
+    return_list = tree["is_list"]
+
+    sql_json_content = build_json_selector(tree, standard_query)
+    return select(
+        [
+            func.jsonb_build_object(
+                literal(return_alias),
+                func.jsonb_agg(sql_json_content) if return_list else sql_json_content,
+            )
+        ]
+    ).select_from(standard_query)
+
+
+def build_query_fail(
     tree, join_callable: "callable" = None
 ):  # , source: "Selector" = None):
     """Queries are broken down into 2 steps. First we collect the keys
@@ -219,9 +264,6 @@ def build_query(
     # What are we selecting from?
     # source = source or sqla_table.alias()
     source = sqla_table.alias()
-
-    # TODO(OR): Add nodeId, cursor, pageInfo to this etc
-    # req_cols = collect_required_columns(tree, source)
 
     # Build Filters
     # TODO(OR): Apply the filters

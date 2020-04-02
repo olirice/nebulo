@@ -4,7 +4,8 @@ A base class to derive sql tables from
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, tuple_
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty
@@ -57,3 +58,7 @@ class TableBase(build_base(), ComputedColumnsMixin):
     def relationships(cls) -> List[RelationshipProperty]:  # pylint: disable=no-self-argument
         """Relationships with other tables"""
         return list(sql_inspect(cls).relationships)
+
+    @hybrid_property
+    def cursor(self) -> 'SQLExpression':
+        return tuple_(*self.primary_key.columns)

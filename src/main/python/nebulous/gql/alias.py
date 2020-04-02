@@ -31,14 +31,14 @@ String = GraphQLString
 Boolean = GraphQLBoolean
 ScalarType = GraphQLScalarType
 
-
-class ObjectType(GraphQLObjectType):
+class HasSQLAModel:
     sqla_model = None
 
-class ConnectionType(GraphQLObjectType): pass
+class ObjectType(GraphQLObjectType, HasSQLAModel): pass
 
-class EdgeType(ObjectType):
-    pass
+class ConnectionType(GraphQLObjectType, HasSQLAModel): pass
+
+class EdgeType(ObjectType, HasSQLAModel): pass
 
 
 ID = GraphQLID

@@ -13,4 +13,6 @@ def edge_factory(sqla_model):
 
         return {"cursor": Field(Cursor), "node": Field(table_factory(sqla_model))}
 
-    return EdgeType(name=name, fields=build_attrs, description="")
+    edge = EdgeType(name=name, fields=build_attrs, description="")
+    edge.sqla_model = sqla_model
+    return edge
