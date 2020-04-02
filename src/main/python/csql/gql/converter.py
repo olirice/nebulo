@@ -46,31 +46,8 @@ L = GraphQLList
 NN = GraphQLNonNull
 
 
-# Relay Stuff
-
 if TYPE_CHECKING:
     from csql.sql.sql_database import TableBase
-
-
-def get_node(global_id, _info):
-    """Function to map from a global id to an underlying object
-    _info.context['session'] must exist
-    """
-    type_, id_ = from_global_id(global_id)
-    sqla_model = model_name_to_sqla[type_]
-    context = _info.context
-    # Database session
-    session = context["session"]
-
-    return session.query(sqla_model).filter(sqla_model.id == id_).one_or_none()
-
-
-def get_node_type(obj, _info):
-    """Function to map from an underlying object to the concrete GraphQLObjectType"""
-    return sqla_to_model[type(obj)]
-
-
-node_interface, node_field = node_definitions(get_node, get_node_type)
 
 
 def convert_column(
@@ -83,24 +60,13 @@ def convert_column(
 
 
 def convert_relationship(
-    relationship: RelationshipProperty, **field_kwargs
+    relationship: RelationshipProperty, registry: Registry, **field_kwargs
 ) -> Tuple[GraphQLField, GraphQLField]:
     from sqlalchemy.orm import interfaces
 
-    # from graphql_relay.connection.connection import (
-    #    connection_args,
-    #    connection_definitions,
-    # )
-
     direction = relationship.direction
     to_model = relationship.mapper.class_
-    # to_type = sqla_to_model[to_model]
-
-    model_connection = sqla_to_connection[to_model]
-
-    # This should only be getting resolved once all tables are registered
-    # so it should not fail
-    # model_edge, model_connection = connection_definitions(relationship.key, to_type)
+    model_connection = registry.sqla_to_connection[to_model]
 
     # If this model has 1 counterpart, do not use a list
     if direction == interfaces.MANYTOONE:
@@ -109,7 +75,6 @@ def convert_relationship(
     # If this model could have multiple counterparts, use a list
     elif direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
         return F(L(model_connection))
-
     raise NotImplementedError("Bad relationship")
 
 
@@ -117,20 +82,49 @@ def convert_composite(composite):
     pass
 
 
-model_name_to_sqla = {}
+class Registry:
 
-sqla_to_model = {}
-sqla_to_condition = {}
-sqla_to_connection = {}
-sqla_to_edge = {}
-sqla_to_order_by = {}
-# sqla_to_gql_input = {}
-# sqla_to_gql_patch = {}
+    model_name_to_sqla = {}
 
-CursorType = GraphQLScalarType(name="Cursor", serialize=str)
-DateTimeType = GraphQLScalarType(name="DateTime", serialize=str)
+    sqla_to_model = {}
+    sqla_to_condition = {}
+    sqla_to_connection = {}
+    sqla_to_edge = {}
+    sqla_to_order_by = {}
+    # sqla_to_gql_input = {}
+    # sqla_to_gql_patch = {}
 
-PageInfoType = GraphQLObjectType(
+
+def get_registry() -> Registry:
+    return Registry
+
+
+def get_node(global_id, _info):
+    """Function to map from a global id to an underlying object
+    _info.context['session'] must exist
+    """
+    registry = get_registry()
+    type_, id_ = from_global_id(global_id)
+    sqla_model = registry.model_name_to_sqla[type_]
+    context = _info.context
+    # Database session
+    session = context["session"]
+    return session.query(sqla_model).filter(sqla_model.id == id_).one_or_none()
+
+
+def get_node_type(obj, _info):
+    """Function to map from an underlying object to the concrete GraphQLObjectType"""
+    registry = get_registry()
+    return registry.sqla_to_model[type(obj)]
+
+
+NodeInterface, NodeField = node_definitions(get_node, get_node_type)  # pylint: disable=invalid-name
+
+
+CursorType = GraphQLScalarType(name="Cursor", serialize=str)  # pylint: disable=invalid-name
+DateTimeType = GraphQLScalarType(name="DateTime", serialize=str)  # pylint: disable=invalid-name
+
+PageInfoType = GraphQLObjectType(  # pylint: disable=invalid-name
     "PageInfo",
     fields={
         "hasNextPage": F(NN(GraphQLBoolean)),
@@ -143,6 +137,7 @@ PageInfoType = GraphQLObjectType(
 
 def table_to_model(sqla_model: TableBase) -> GraphQLObjectType:
     result_name = pascalcase(sqla_model.__table__.name)
+    registry = get_registry()
 
     def build_attrs():
         attrs = {}
@@ -152,7 +147,7 @@ def table_to_model(sqla_model: TableBase) -> GraphQLObjectType:
         # TODO(OR): Not the correct key
         for relationship in sqla_model.relationships:
             # TODO(OR): Make suffix depend on columns used in fkey
-            attrs[relationship.key + "ById"] = F(NN(sqla_to_connection[sqla_model]))
+            attrs[relationship.key + "ById"] = F(NN(registry.sqla_to_connection[sqla_model]))
             # convert_relationship(relationship)
 
         # Override id to relay standard
@@ -164,7 +159,7 @@ def table_to_model(sqla_model: TableBase) -> GraphQLObjectType:
         # Defer fields so tables will be registered
         # before relationships are resolved
         fields=build_attrs,
-        interfaces=[node_interface],
+        interfaces=[NodeInterface],
         description="",
     )
     return model
@@ -181,9 +176,10 @@ def table_to_condition(sqla_model: TableBase) -> GraphQLInputObjectType:
 def table_to_edge(sqla_model: TableBase) -> GraphQLObjectType:
     result_name = f"{pascalcase(sqla_model.__table__.name)}Edge"
     sqla_model_type = sqla_model
+    registry = get_registry()
 
     def build_attrs():
-        return {"cursor": F(CursorType), "node": F(sqla_to_model[sqla_model_type])}
+        return {"cursor": F(CursorType), "node": F(registry.sqla_to_model[sqla_model_type])}
 
     return GraphQLObjectType(name=result_name, fields=build_attrs, description="")
 
@@ -191,11 +187,12 @@ def table_to_edge(sqla_model: TableBase) -> GraphQLObjectType:
 def table_to_connection(sqla_model: TableBase) -> GraphQLObjectType:
     result_name = f"{pascalcase(sqla_model.__table__.name)}Connection"
     sqla_model_type = sqla_model
+    registry = get_registry()
 
     def build_attrs():
         return {
-            "nodes": F(NN(L(sqla_to_model[sqla_model_type]))),
-            "edges": F(NN(L(NN(sqla_to_edge[sqla_model_type])))),
+            "nodes": F(NN(L(registry.sqla_to_model[sqla_model_type]))),
+            "edges": F(NN(L(NN(registry.sqla_to_edge[sqla_model_type])))),
             "pageInfo": F(NN(PageInfoType)),
             "totalCount": F(NN(GraphQLInt)),
         }
@@ -211,13 +208,46 @@ def table_to_order_by(sqla_model: TableBase) -> GraphQLInputObjectType:
     )
 
 
+def convert_table(sqla_model: TableBase) -> GraphQLObjectType:
+    # Model
+    # ModelCondition
+    # ModelEdge
+    # ModelConnection
+    # ModelOrderBy
+    # ModelInput
+    # ModelPatch
+
+    sqla_model_type = sqla_model
+    registry = get_registry()
+
+    # type Model
+    model = table_to_model(sqla_model)
+    registry.sqla_to_model[sqla_model_type] = model
+    registry.model_name_to_sqla[model.name] = sqla_model
+
+    # input ModelCondition
+    registry.sqla_to_condition[sqla_model_type] = table_to_condition(sqla_model)
+
+    # type ModelEdge
+    registry.sqla_to_edge[sqla_model_type] = table_to_edge(sqla_model)
+
+    # type ModelConnection
+    registry.sqla_to_connection[sqla_model_type] = table_to_connection(sqla_model)
+
+    # enum ModelOrderBy
+    registry.sqla_to_order_by[sqla_model_type] = table_to_order_by(sqla_model)
+
+    return model
+
+
 async def resolver_query_all(obj, info, **user_kwargs) -> List[TableBase]:
     context = info.context
     # database = context["database"]
     session = context["session"]()
     return_type = info.return_type
+    registry = get_registry()
 
-    sqla_type = [k for k, v in sqla_to_connection.items() if v == return_type][0]
+    sqla_type = [k for k, v in registry.sqla_to_connection.items() if v == return_type][0]
     # query = sqla_type.__table__.select()
     # sqla_result = await database.fetch_all(query)
     sqla_result = session.query(sqla_type).all()
@@ -236,9 +266,10 @@ async def resolver_query_all(obj, info, **user_kwargs) -> List[TableBase]:
 
 def table_to_query_all(sqla_model: TableBase) -> GraphQLObjectType:
     sqla_model_type = sqla_model
-    model_connection = sqla_to_connection[sqla_model_type]
-    model_order_by = sqla_to_order_by[sqla_model_type]
-    model_condition = sqla_to_condition[sqla_model_type]
+    registry = get_registry()
+    model_connection = registry.sqla_to_connection[sqla_model_type]
+    model_order_by = registry.sqla_to_order_by[sqla_model_type]
+    model_condition = registry.sqla_to_condition[sqla_model_type]
 
     return F(
         model_connection,
@@ -253,34 +284,3 @@ def table_to_query_all(sqla_model: TableBase) -> GraphQLObjectType:
         },
         resolver=resolver_query_all,
     )
-
-
-def convert_table(sqla_model: TableBase) -> GraphQLObjectType:
-    # Model
-    # ModelCondition
-    # ModelEdge
-    # ModelConnection
-    # ModelOrderBy
-    # ModelInput
-    # ModelPatch
-
-    sqla_model_type = sqla_model
-
-    # type Model
-    model = table_to_model(sqla_model)
-    sqla_to_model[sqla_model_type] = model
-    model_name_to_sqla[model.name] = sqla_model
-
-    # input ModelCondition
-    sqla_to_condition[sqla_model_type] = table_to_condition(sqla_model)
-
-    # type ModelEdge
-    sqla_to_edge[sqla_model_type] = table_to_edge(sqla_model)
-
-    # type ModelConnection
-    sqla_to_connection[sqla_model_type] = table_to_connection(sqla_model)
-
-    # enum ModelOrderBy
-    sqla_to_order_by[sqla_model_type] = table_to_order_by(sqla_model)
-
-    return model
