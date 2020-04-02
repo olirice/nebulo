@@ -17,7 +17,9 @@ setup(
     packages=find_packages("src/main/python"),
     package_dir={"": "src/main/python"},
     include_package_data=True,
-    entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
+    entry_points={
+        "console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]
+    },
     install_requires=[
         "click==7.0",
         "graphql-core",
@@ -28,9 +30,5 @@ setup(
         "psycopg2-binary",
         "sqlparse==0.3.0",
     ],
-    tests_requirements=[
-        "pre-commit",
-        "pytest",
-        "pytest-cov",
-    ]
+    extras_require={"test": ["pre-commit", "pytest", "pytest-cov"]},
 )
