@@ -31,7 +31,7 @@ setup(
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],
-        "dev": ["pylint", "black", "sqlalchemy-stubs"],
+        "dev": ["pylint", "black", "sqlalchemy-stubs", "pre-commit"],
         "nvim": ["neovim", "python-language-server"],
         "docs": ["mkdocs", "pygments", "pymdown-extensions"],
     },

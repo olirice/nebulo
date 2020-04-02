@@ -7,7 +7,7 @@
     <a href="https://github.com/olirice/nebulo/actions">
         <img src="https://github.com/olirice/nebulo/workflows/pre-commit%20hooks/badge.svg" alt="Pre-commit Status">
     </a>
-    <a href="https://badge.fury.io/py/flupy"><img src="https://badge.fury.io/py/nebulo.svg" alt="PyPI version" height="18"></a>
+    <a href="https://badge.fury.io/py/nebulo"><img src="https://badge.fury.io/py/nebulo.svg" alt="PyPI version" height="18"></a>
 </p>
 
 **Documentation**: [https://olirice.github.io/nebulo/](https://olirice.github.io/nebulo/)
