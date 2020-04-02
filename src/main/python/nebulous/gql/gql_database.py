@@ -16,7 +16,8 @@ from graphql import (
 )
 from stringcase import pascalcase
 
-from nebulous.gql.converter import table_to_query_all
+from .alias import ObjectType
+from .convert.connection import Connection
 
 if TYPE_CHECKING:
     from nebulous.sql.sql_database import SQLDatabase
@@ -31,7 +32,6 @@ class GQLDatabase:
         self.sqldb = sqldb
 
         # self.gql_models: List[GraphQLObjectType] = [convert_table(x) for x in sqldb.models]
-
         # self.gql_functions: List[ReflectedGQLFunction] = [
         #    function_reflection_factory(x) for x in sqldb.functions
         # ]
@@ -41,13 +41,12 @@ class GQLDatabase:
 
     def query_object(self):
         """Creates a base query object from available graphql objects/tables"""
-
         query_fields = {
             **{
-                f"all{pascalcase(x.__table__.name)}s": table_to_query_all(x)
+                f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
                 for x in self.sqldb.models
             }
         }
 
-        query_object = GraphQLObjectType(name="Query", fields=lambda: query_fields)
+        query_object = ObjectType(name="Query", fields=lambda: query_fields)
         return query_object

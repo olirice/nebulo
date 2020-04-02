@@ -23,9 +23,7 @@ setup(
     install_requires=[
         "pre-commit",
         "click==7.0",
-        "graphql-core-next",
-        "graphql-relay",
-        "stringcase",
+        "graphql-core",
         "sqlalchemy",
         "flask",
         "flask-graphql",

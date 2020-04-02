@@ -21,6 +21,7 @@ class PageInfo(TableToGraphQLField):
     )
 
     def resolver(self, obj, info, **user_kwargs):
+        print(info.path, info.return_type, "\n\t", obj)
         sqla_model = self.sqla_model
         sqla_model = sqla_model
 

@@ -1,6 +1,5 @@
-from graphql.pyutils.convert_case import snake_to_camel
-
 from ..alias import Field, ObjectType
+from ..casing import snake_to_camel
 from .base import TableToGraphQLField
 from .page_info import CursorType
 
@@ -15,14 +14,16 @@ class Edge(TableToGraphQLField):
     @property
     def _type(self):
         def build_attrs():
-            from nebulous.gql.converter import table_to_model
+            from .table import Table
 
-            return {"cursor": Field(CursorType), "node": Field(table_to_model(self.sqla_model))}
+            table = Table(self.sqla_model)
+
+            return {"cursor": Field(CursorType), "node": table.field()}
 
         return ObjectType(name=self.type_name, fields=build_attrs, description="")
 
     def resolver(self, obj, info, **user_kwargs):
-        print("Resolving edge")
+        print(info.path, info.return_type, "\n\t", obj)
         sqla_model = self.sqla_model
         context = info.context
         session = context["session"]

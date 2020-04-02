@@ -69,5 +69,6 @@ class NodeID(TableToGraphQLField):
     _type = ID
 
     def resolver(self, obj, info, **args):
+        print(info.path, info.return_type, "\n\t", obj)
         sqla_model = self.sqla_model
         return to_global_id(sqla_model.__table__.name, obj.id)
