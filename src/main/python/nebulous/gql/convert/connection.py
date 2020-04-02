@@ -94,7 +94,9 @@ def apply_pagination_args(query, tree):
 
     mode = "last" if last is not None or before is not None else "first"
     # Restrict page size and/or apply default
-    first, last = min(first or 0, 20), min(last or 0, 20)
+    n_entries_default = 20
+    first = min(first or n_entries_default, n_entries_default)
+    last = min(last or n_entries_default, n_entries_default)
 
     if mode == "first":
         if after is not None:

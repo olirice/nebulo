@@ -1,8 +1,13 @@
+# pylint: disable=redefined-outer-name
 import pytest
+from graphql import graphql as execute_graphql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+from nebulous.gql.alias import Schema
+from nebulous.gql.gql_database import sqla_models_to_query_object
 from nebulous.sql.sql_database import SQLDatabase
+from nebulous.sql.table_base import TableBase
 from nebulous.user_config import UserConfig
 
 from . import TEST_ROOT_DIR
@@ -38,6 +43,36 @@ def session(session_maker):
     _session.execute(SQL_DOWN)
     _session.commit()
     _session.close()
+
+
+@pytest.fixture(scope="function")
+def schema_builder(engine):
+    """Return a function that accepts a sql string
+    and returns graphql schema"""
+
+    def build(sql: str):
+        engine.execute(sql)
+        TableBase.prepare(engine, reflect=True, schema="public")
+        tables = list(TableBase.classes)
+        query_object = sqla_models_to_query_object(tables)
+        schema = Schema(query_object)
+        return schema
+
+    return build
+
+
+@pytest.fixture(scope="function")
+def gql_exec_builder(schema_builder, session):
+    """Return a function that accepts a sql string
+    and returns a graphql executor """
+
+    def build(sql: str):
+        schema = schema_builder(sql)
+        return lambda request_string: execute_graphql(
+            schema=schema, request_string=request_string, context={"session": session}
+        )
+
+    return build
 
 
 @pytest.fixture

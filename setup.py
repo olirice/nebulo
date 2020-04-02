@@ -19,7 +19,6 @@ setup(
     include_package_data=True,
     entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
     install_requires=[
-        "pre-commit",
         "click==7.0",
         "graphql-core",
         "sqlalchemy",
@@ -27,7 +26,11 @@ setup(
         "flask-graphql",
         "sqlalchemy_utils",
         "psycopg2-binary",
-        "pytest",
         "sqlparse==0.3.0",
     ],
+    tests_requirements=[
+        "pre-commit",
+        "pytest",
+        "pytest-cov",
+    ]
 )
