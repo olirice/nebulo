@@ -3,12 +3,10 @@ import random
 import string
 import typing
 
+from nebulous.gql.alias import ConnectionType, ScalarType, TableType
 from nebulous.gql.convert.cursor import to_cursor_sql
-from nebulous.gql.convert.node_interface import to_global_id_sql
+from nebulous.gql.convert.node_interface import NodeID, to_global_id_sql
 from nebulous.sql.inspect import get_primary_key, get_table_name
-
-from ..alias import ConnectionType, ScalarType, TableType
-from ..convert.node_interface import NodeID
 
 
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #

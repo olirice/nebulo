@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import typing
 
+from nebulous.gql.alias import Field, InterfaceType, NonNull, ScalarType
 from nebulous.sql.inspect import get_table_name
 from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import text
-
-from ..alias import Field, InterfaceType, NonNull, ScalarType
 
 if typing.TYPE_CHECKING:
     pass

@@ -12,10 +12,6 @@ from ..alias import CursorType
 __all__ = ["Cursor"]
 
 
-if typing.TYPE_CHECKING:
-    pass
-
-
 DIRECTION_TO_STR = {asc: "asc", desc: "desc"}
 STR_TO_DIRECTION = {v: k for k, v in DIRECTION_TO_STR.items()}
 

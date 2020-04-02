@@ -1,6 +1,5 @@
+from nebulous.gql.alias import EdgeType, Field
 from nebulous.text_utils import snake_to_camel
-
-from ..alias import EdgeType, Field
 
 __all__ = ["edge_factory"]
 

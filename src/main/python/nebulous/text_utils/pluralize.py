@@ -10,6 +10,7 @@ def get_pluralizer() -> engine:
     return engine()
 
 
+@lru_cache()
 def to_plural(text: str) -> str:
     pluralizer = get_pluralizer()
     return pluralizer.plural(text)

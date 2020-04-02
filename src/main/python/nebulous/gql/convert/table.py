@@ -5,6 +5,9 @@ import typing
 from functools import lru_cache
 
 import sqlalchemy
+from nebulous.gql.alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
+from nebulous.gql.convert.node_interface import NodeID, NodeInterface
+from nebulous.gql.default_resolver import default_resolver
 from nebulous.sql.inspect import get_relationships
 from nebulous.text_utils import snake_to_camel
 from sqlalchemy import cast, func, types
@@ -12,10 +15,6 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
-
-from ..alias import Field, InputField, Int, NonNull, ScalarType, String, TableType
-from ..default_resolver import default_resolver
-from .node_interface import NodeID, NodeInterface
 
 DateTimeType = ScalarType(name="DateTime", serialize=str)  # pylint: disable=invalid-name
 

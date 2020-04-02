@@ -13,7 +13,7 @@ from .page_info import PageInfo
 if typing.TYPE_CHECKING:
     pass
 
-__all__ = ["connection_factory"]
+__all__ = ["connection_factory", "connection_args_factory"]
 
 
 @lru_cache()
@@ -24,12 +24,8 @@ def connection_factory(sqla_model):
 
     edge = edge_factory(sqla_model)
 
-    # from .table import table_factory
-    # table = table_factory(sqla_model)
-
     def build_attrs():
         return {
-            # "nodes": Field(NonNull(List(table)), resolver=default_resolver),
             "edges": Field(NonNull(List(NonNull(edge))), resolver=default_resolver),
             "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
             "totalCount": Field(NonNull(Int), resolver=default_resolver),
@@ -45,14 +41,10 @@ def connection_args_factory(sqla_model):
 
     condition = condition_factory(sqla_model)
 
-    # from .ordering import ordering_factory, to_default_ordering
-    # ordering = ordering_factory(sqla_model)
-    # default_ordering = to_default_ordering(sqla_model)
-
     return {
         "first": Argument(Int, description="", out_name=None),
-        # "last": Argument(Int),
-        # "before": Argument(Cursor),
+        "last": Argument(Int),
+        "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
     }

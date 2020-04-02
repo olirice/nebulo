@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from nebulous.gql.alias import ObjectType, Schema
+from nebulous.gql.entrypoints.many import many_node_factory
+from nebulous.gql.entrypoints.one import one_node_factory
 from nebulous.text_utils import snake_to_camel, to_plural
-
-from .alias import ObjectType, Schema
-from .entrypoints.many import many_node_factory
-from .entrypoints.one import one_node_factory
 
 if TYPE_CHECKING:
     from nebulous.sql.sql_database import SQLDatabase

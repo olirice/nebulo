@@ -1,9 +1,8 @@
 from functools import lru_cache
 
+from nebulous.gql.alias import EnumType, EnumValue, InputObjectType
 from nebulous.text_utils import snake_to_camel
 from sqlalchemy import asc, desc
-
-from ..alias import EnumType, EnumValue, InputObjectType
 
 __all__ = ["ordering_factory"]
 

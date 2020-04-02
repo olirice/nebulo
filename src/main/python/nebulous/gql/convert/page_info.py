@@ -1,5 +1,5 @@
-from ..alias import Boolean, Field, NonNull, ObjectType
-from .cursor import Cursor
+from nebulous.gql.alias import Boolean, Field, NonNull, ObjectType
+from nebulous.gql.convert.cursor import Cursor
 
 __all__ = ["PageInfo"]
 

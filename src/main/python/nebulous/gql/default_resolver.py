@@ -1,4 +1,4 @@
-from .alias import ResolveInfo
+from nebulous.gql.alias import ResolveInfo
 
 
 def default_resolver(_, info: ResolveInfo, **kwargs):
