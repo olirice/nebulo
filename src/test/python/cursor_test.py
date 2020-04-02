@@ -68,39 +68,3 @@ def test_retrieve_1_after_cursor(gql_exec_builder):
     """
     result = executor(request_string=gql_query)
     assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 3
-
-
-def test_retrieve_1_before_cursor(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
-    gql_query = f"""
-    {{
-        allAccounts {{
-            edges {{
-                cursor
-                node {{
-                    id
-                }}
-            }}
-        }}
-    }}
-    """
-    result = executor(request_string=gql_query)
-    # Get a cursor to 2nd entry
-    cursor = result.data["allAccounts"]["edges"][1]["cursor"]
-    print(cursor)
-
-    # Query for 1 item after the cursor
-    gql_query = f"""
-    {{
-        allAccounts(last: 1, before: "{cursor}") {{
-            edges {{
-                cursor
-                node {{
-                    id
-                }}
-            }}
-        }}
-    }}
-    """
-    result = executor(request_string=gql_query)
-    assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 1
