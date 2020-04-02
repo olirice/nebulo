@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class SQLDatabase:
-    def __init__(self, config: UserConfig, engine: None):
+    def __init__(self, config: UserConfig, engine= None):
         # Configure SQLAlchemy
         if engine:
             self.engine = engine

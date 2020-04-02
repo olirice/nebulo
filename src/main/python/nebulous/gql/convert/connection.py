@@ -177,7 +177,7 @@ def resolve_connection(tree, parent_query) -> typing.Tuple["SelectClause", "Cond
 
     # Apply Argument Filters
     base_query = select([parent_query])
-    base_query = apply_condition_args(tree, base_query)
+    base_query = apply_condition_args(base_query, tree)
     base_query = base_query.cte()
 
     # Create a query branch for non-totalCount elements
