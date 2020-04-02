@@ -2,10 +2,12 @@ import json
 
 from sqlalchemy import func, select
 from sqlalchemy.sql.expression import literal
+import sqlparse
 
 from ..alias import Argument, Field, ResolveInfo
-from ..convert2.node_interface import NodeID
-from ..convert2.table import table_factory
+from ..convert.node_interface import NodeID
+from ..convert.table import table_factory
+from ..convert.table import resolve_one
 from ..parse_info import parse_resolve_info
 
 
@@ -14,7 +16,7 @@ class Encoder(json.JSONEncoder):
         return str(o)
 
 
-def single_node_factory(sqla_model, registry=None) -> Field:
+def single_node_factory(sqla_model) -> Field:
     name = sqla_model.__table__.name
     node = table_factory(sqla_model)
     return Field(node, args={"NodeID": Argument(NodeID)}, resolver=entry_resolver, description="")
@@ -27,7 +29,7 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     return_type = info.return_type
     sqla_model = return_type.sqla_model
     tree = parse_resolve_info(info)
-    print(json.dumps(tree, indent=2, cls=Encoder))
+    #print(json.dumps(tree, indent=2, cls=Encoder))
 
     node_model_name, node_model_id = tree["args"]["NodeID"]
     assert sqla_model.__table__.name == node_model_name
@@ -40,7 +42,6 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     # Apply argument filters
     # Argument is not optional in this case
     node_alias = tree["alias"]
-    from nebulous.gql.convert2.table import resolve_one
 
     query = (
         select(
@@ -57,17 +58,16 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     query_str = query.compile(compile_kwargs={"literal_binds": True})
     query_str = str(query_str)
 
-    import sqlparse
 
-    print()
-    print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
-    print()
+    #print()
+    #print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
+    #print()
 
     result = session.query(query).all()
     context["result"] = result[0][0]
 
     # Stash result on context so enable dumb resolvers to not fail
-    pretty_result = json.dumps(result, indent=2, cls=Encoder)
-    print(pretty_result)
+    #pretty_result = json.dumps(result, indent=2, cls=Encoder)
+    #print(pretty_result)
 
     return result

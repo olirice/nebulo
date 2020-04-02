@@ -16,6 +16,7 @@ from ..alias import (
     ObjectType,
 )
 from ..casing import snake_to_camel
+from .table import convert_column
 
 if typing.TYPE_CHECKING:
     from nebulous.sql.table_base import TableBase
@@ -25,7 +26,6 @@ __all__ = ["condition_factory"]
 
 @lru_cache()
 def condition_factory(sqla_model: TableBase) -> InputObjectType:
-    from nebulous.gql.convert.table import convert_column
 
     result_name = f"{snake_to_camel(sqla_model.__table__.name)}Condition"
     attrs = {}
