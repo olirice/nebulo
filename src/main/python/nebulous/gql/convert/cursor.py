@@ -27,11 +27,9 @@ def from_cursor(
     offer[id:desc,age:asc](4)
     """
     cursor_str = from_base64(cursor)
-    print(cursor_str)
 
     # e.g. 'offer'
     sqla_model_name, remain = cursor_str.split("[", 1)
-    print(cursor_str, sqla_model_name, remain)
 
     # e.g. 'id:desc,age:asc'
     ordering_str, remain = remain.split("]", 1)
@@ -42,13 +40,9 @@ def from_cursor(
         ordering_direction = STR_TO_DIRECTION[ordering_direction_str]
         ordering.append((ordering_col_name, ordering_direction))
 
-    print(cursor_str, sqla_model_name, ordering, remain)
     # e.g. '4'
-    pkey_values_as_str: typing.List[str] = remain[1:-1].split(",")
-
-    print(sqla_model_name, pkey_values_as_str, ordering)
-
-    return sqla_model_name, pkey_values_as_str, ordering
+    pkey_values_as_str: typing.List[str] = remain[1:].split(",")
+    return sqla_model_name, ordering, pkey_values_as_str
 
 
 Cursor = ScalarType(
@@ -76,6 +70,7 @@ def resolve_cursor(query, ordering: typing.Tuple[str, "asc/desc"], sqla_model):
     columns = list(sqla_model.primary_key.columns)
     column_str_builder = []
     for column in columns:
+        print(column)
         column_str_builder.append(cast(getattr(query.c, column.name), sqlalchemy.String()))
         column_str_builder.append(literal(","))
     # Remove the final comma. Never realized how useful ''.join is until you can't use it..

@@ -68,15 +68,10 @@ def resolve_one(tree, parent_query: "cte", result_wrapper=func.json_build_object
 
             # To Many relationship
             elif relation.direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
-                select_clause, condition_partials = resolve_connection(
-                    tree_field, parent_query=joined_table
-                )
-                selector = select([select_clause]).where(*join_conditions)
+                from .connection import resolve_connection
 
-                # Apply filters, limits, arguments etc... I don't like it either.
-                for partial in condition_partials:
-                    print("Applying partial")
-                    selector = partial(selector)
+                select_clause = resolve_connection(tree_field, parent_query=joined_table)
+                selector = select([select_clause]).where(*join_conditions)
 
                 builder.extend([literal(field_alias), selector.label("w")])
             else:

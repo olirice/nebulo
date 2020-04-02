@@ -28,7 +28,7 @@ def resolver(obj, info: ResolveInfo, **kwargs):
     return_type = info.return_type
     sqla_model = return_type.sqla_model
     tree = parse_resolve_info(info)
-    print(json.dumps(tree, indent=2, cls=Encoder))
+    # print(json.dumps(tree, indent=2, cls=Encoder))
 
     # Apply node argument
     sqla_table = sqla_model.__table__
@@ -39,14 +39,10 @@ def resolver(obj, info: ResolveInfo, **kwargs):
     # Argument is not optional in this case
     node_alias = tree["alias"]
 
-    select_clause, condition_partials = resolve_connection(tree, parent_query=top_alias)
+    select_clause = resolve_connection(tree, parent_query=top_alias)
 
     # Apply filters, limits, arguments etc... I don't like it either.
     selector = select([func.json_build_object(literal(node_alias), select_clause)])
-
-    for partial in condition_partials:
-        print("Applying partial")
-        selector = partial(selector)
 
     query = selector.alias()
 
@@ -62,6 +58,6 @@ def resolver(obj, info: ResolveInfo, **kwargs):
 
     # Stash result on context so enable dumb resolvers to not fail
     pretty_result = json.dumps(result, indent=2, cls=Encoder)
-    print(pretty_result)
+    # print(pretty_result)
 
     return result

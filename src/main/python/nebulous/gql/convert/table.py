@@ -75,6 +75,7 @@ def convert_composite(composite) -> typing.Union[Field, InputField]:
     raise NotImplementedError("Composite fields are not yet supported")
 
 
+@lru_cache()
 def relationship_is_nullable(relationship: RelationshipProperty, source: TableBase) -> bool:
     """Checks if a sqlalchemy orm relationship is nullable"""
     for local_col, remote_col in relationship.local_remote_pairs:
@@ -83,6 +84,7 @@ def relationship_is_nullable(relationship: RelationshipProperty, source: TableBa
     return False
 
 
+@lru_cache()
 def relationship_to_attr_name(relationship: RelationshipProperty) -> str:
     """ """
     return (
