@@ -33,9 +33,7 @@ def model_reflection_factory(table: TableBase) -> ReflectedGQLModel:
                     description = sql_comment_line.replace(key, "", 1).lstrip()
                     extra_attrs[sql_column.name] = ORMField(description=description)
 
-    output = type(
-        tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs)
-    )
+    output = type(tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs))
 
     return output
 
@@ -57,15 +55,13 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
 
         class postAttributes:
             title = graphene.String()
-            body = graphene.String() 
+            body = graphene.String()
         """
         # Class name is not used externally
         class_name = cls.sql_table_name + "Attributes"
         # Copy fields from the graphene model excluding 'id' which can not be user defined
         attrs = {
-            k: v
-            for k, v in cls._meta.fields.items()
-            if k != "id" and isinstance(v, graphene.Field)
+            k: v for k, v in cls._meta.fields.items() if k != "id" and isinstance(v, graphene.Field)
         }
         return type(class_name, (), attrs)
 
@@ -80,9 +76,7 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
             pass
         """
         class_name = cls.sql_table_name + "CreateInput"
-        return type(
-            class_name, (graphene.InputObjectType, cls._mutation_attributes_class), {}
-        )
+        return type(class_name, (graphene.InputObjectType, cls._mutation_attributes_class), {})
 
     @cachedclassproperty
     def creation_class(cls) -> Type:
@@ -95,7 +89,7 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
 
             class Arguments:
                 input = postCreateInput(required=True)
-            
+
             def mutate(inner_self, info, input: postCreateInput]):
                 data = input_to_dictionary(input)
                 # sqlalchemy model
@@ -122,6 +116,7 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
                 mutate_key: lambda x: "This is a placeholder",
             },
         )
+
         # Graphene requires using reserved word input....
         def mutate(_, info, input):
             data = cls.input_to_dictionary(input)
@@ -160,7 +155,7 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
 
             class Arguments:
                 input = postCreateInput(required=True)
-            
+
             def mutate(inner_self, info, input: postUpdateInput]):
                 data = input_to_dictionary(input)
                 db_session = info.context['session']
@@ -195,9 +190,7 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
             db_session = info.context["session"]
 
             # TODO(OR): More assuming that the id field for the table is name "id"
-            existing_row = (
-                db_session.query(cls._meta.model).filter_by(id=data["id"]).one()
-            )
+            existing_row = db_session.query(cls._meta.model).filter_by(id=data["id"]).one()
             existing_row.update(**data)
             db_session.commit()
             db_session.refresh(existing_row)

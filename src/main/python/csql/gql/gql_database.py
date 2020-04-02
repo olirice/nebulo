@@ -19,18 +19,14 @@ class GQLDatabase:
     def __init__(self, sqldb: SQLDatabase, config: UserConfig):
         self.config = config
         # GQL Tables
-        self.gql_models: List[ReflectedGQLModel] = [
-            x.to_graphql() for x in sqldb.models
-        ]
+        self.gql_models: List[ReflectedGQLModel] = [x.to_graphql() for x in sqldb.models]
 
         self.gql_functions: List[ReflectedGQLFunction] = [
             function_reflection_factory(x) for x in sqldb.functions
         ]
 
         # GQL Schema
-        self.schema = graphene.Schema(
-            query=self.query_class, mutation=self.mutation_class
-        )
+        self.schema = graphene.Schema(query=self.query_class, mutation=self.mutation_class)
 
     @property
     @lru_cache()
@@ -44,9 +40,7 @@ class GQLDatabase:
             graphene_table = table
             # List All
             key = f"all_{graphene_table._meta.name}"
-            value = SQLAlchemyConnectionField(
-                graphene_table, sort=graphene_table.sort_argument()
-            )
+            value = SQLAlchemyConnectionField(graphene_table, sort=graphene_table.sort_argument())
             entity_attrs[key] = value
 
             # Single Entity by Relay ID

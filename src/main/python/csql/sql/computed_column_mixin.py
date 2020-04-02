@@ -19,7 +19,7 @@ class ComputedColumnsMixin:
 
     create function upper_user_name( rec user )
     returns varchar
-    as $$ select upper(rec.user_name); $$ 
+    as $$ select upper(rec.user_name); $$
     language sql
     immutable;
 
@@ -37,12 +37,12 @@ class ComputedColumnsMixin:
                 select
                     specific_name,
                     count(*) freq
-                from 
+                from
                     information_schema.parameters
                 group by
                     specific_name
             )
-            
+
             SELECT
                 parameters.udt_name table_type_name,
                 routines.routine_name computed_column_name
@@ -76,10 +76,7 @@ class ComputedColumnsMixin:
                     select(
                         [
                             type_coerce(
-                                getattr(func, col_name)(
-                                    literal_column(table.table_name)
-                                ),
-                                TEXT,
+                                getattr(func, col_name)(literal_column(table.table_name)), TEXT
                             )
                         ]
                     )

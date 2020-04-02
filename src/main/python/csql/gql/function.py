@@ -76,9 +76,7 @@ class ReflectedGQLFunction:
     @cachedclassproperty
     def result_class(cls) -> graphene.ObjectType:
         object_name = cls.sql_function.func_name + "Result1"
-        gql_return_type = sqla_type_to_graphene_type(
-            cls.sql_function.return_type, "result"
-        )
+        gql_return_type = sqla_type_to_graphene_type(cls.sql_function.return_type, "result")
         extra_attrs = {"result": gql_return_type()}
         return type(object_name, (graphene.ObjectType,), extra_attrs)
 
@@ -98,9 +96,7 @@ class ReflectedGQLFunction:
         class_name = cls.sql_function_name + "Input"
         # Copy fields from the graphene model excluding 'id' which can not be user defined
         attrs = {}
-        for arg_type, arg_name in zip(
-            cls.sql_function.arg_types, cls.sql_function.arg_names
-        ):
+        for arg_type, arg_name in zip(cls.sql_function.arg_types, cls.sql_function.arg_names):
             attrs[arg_name] = sqla_type_to_graphene_type(arg_type, arg_name)()
         return type(class_name, (graphene.InputObjectType,), attrs)
 
@@ -111,7 +107,6 @@ class ReflectedGQLFunction:
         class_name = "Call_" + cls.sql_function_name
 
         arguments_key = "Arguments"
-        argument_class_name = cls.sql_function_name + "_result"
         argument_attrs = {"input": cls._mutation_input_class(required=True)}
         inner_argument_cls = type(arguments_key, (), argument_attrs)
 
@@ -137,13 +132,9 @@ class ReflectedGQLFunction:
             sql = select([getattr(func, cls.sql_function_name)(*data.values())])
             py_result = db_session.execute(sql).first()[0]
             print(py_result)
-            return call_base_cls(
-                **{cls.sql_function_name + "_result": {"result": py_result}}
-            )
+            return call_base_cls(**{cls.sql_function_name + "_result": {"result": py_result}})
 
-        return type(
-            f"Call{cls.sql_function_name}", (call_base_cls,), {"mutate": mutate}
-        )
+        return type(class_name, (call_base_cls,), {"mutate": mutate})
 
     @staticmethod
     def input_to_dictionary(graphene_input):

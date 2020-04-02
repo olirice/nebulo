@@ -1,15 +1,18 @@
+# pylint: disable=bad-continuation
 from typing import List
 
 from sqlalchemy.sql.sqltypes import TypeEngine
 
 
 class SQLFunction:
+    """Internal representation of a SQL function"""
+
     def __init__(
         self,
         func_name: str,
         arg_names: List[str],
-        arg_types: List["SQLAType"],
-        return_type: "SQLAType",
+        arg_types: List[TypeEngine],
+        return_type: TypeEngine,
     ):
         self.func_name = func_name
         self.arg_names = arg_names
@@ -47,38 +50,37 @@ def reflect_function(connection, function_name: str, schema: str = "*"):
             comment=None,
         )["type"]
 
-    # User Defined Types
+        # User Defined Types
+
     query = f"""
-	SELECT
-		pg_proc.oid,
-		pg_proc.proname sql_func_name,
-		CASE
-		WHEN pg_proc.proretset
-		THEN 'setof ' || pg_catalog.format_type(pg_proc.prorettype, NULL)
-		ELSE pg_catalog.format_type(pg_proc.prorettype, NULL)
-		END return_type,
-		pg_proc.proargnames param_names,
-		-- Type name as text
-		array(select typname from pg_type, unnest(pg_proc.proargtypes) bc(d) where oid = bc.d) param_types
-	    
-	FROM pg_catalog.pg_proc
-	    JOIN pg_catalog.pg_namespace ON (pg_proc.pronamespace = pg_namespace.oid)
-	    JOIN pg_catalog.pg_language ON (pg_proc.prolang = pg_language.oid)
-	WHERE
-	    pg_proc.prorettype <> 'pg_catalog.cstring'::pg_catalog.regtype
-	    AND (pg_proc.proargtypes[0] IS NULL
-		OR pg_proc.proargtypes[0] <> 'pg_catalog.cstring'::pg_catalog.regtype)
-	    
-	    AND pg_proc.proname ilike '{function_name}'
-	    AND pg_namespace.nspname like '{"public"}'
-		and lanname <> 'c'
-	    AND pg_catalog.pg_function_is_visible(pg_proc.oid);
+        SELECT
+                pg_proc.oid,
+                pg_proc.proname sql_func_name,
+                CASE
+                WHEN pg_proc.proretset
+                THEN 'setof ' || pg_catalog.format_type(pg_proc.prorettype, NULL)
+                ELSE pg_catalog.format_type(pg_proc.prorettype, NULL)
+                END return_type,
+                pg_proc.proargnames param_names,
+                -- Type name as text
+                array(select typname from pg_type, unnest(pg_proc.proargtypes) bc(d) where oid = bc.d) param_types
+
+        FROM pg_catalog.pg_proc
+            JOIN pg_catalog.pg_namespace ON (pg_proc.pronamespace = pg_namespace.oid)
+            JOIN pg_catalog.pg_language ON (pg_proc.prolang = pg_language.oid)
+        WHERE
+            pg_proc.prorettype <> 'pg_catalog.cstring'::pg_catalog.regtype
+            AND (pg_proc.proargtypes[0] IS NULL
+                OR pg_proc.proargtypes[0] <> 'pg_catalog.cstring'::pg_catalog.regtype)
+
+            AND pg_proc.proname ilike '{function_name}'
+            AND pg_namespace.nspname like '{"public"}'
+                and lanname <> 'c'
+            AND pg_catalog.pg_function_is_visible(pg_proc.oid);
     """
     print(function_name, schema)
 
-    oid, sql_func_name, return_type, param_names, param_types = connection.execute(
-        query
-    ).first()
+    oid, sql_func_name, return_type, param_names, param_types = connection.execute(query).first()
     param_types = [reflect_type(x) for x in param_types]
     return_type = reflect_type(return_type)
 
@@ -111,11 +113,11 @@ def reflect_function(connection, function_name: str, schema: str = "*"):
                     WHERE e.enumtypid = t.oid
                     ORDER BY e.oid --), E'\n'
             ) AS tuple_elements,
-		array(select attname from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_name_arr,
-		array(select typ.typname type_name from pg_attribute at1 left join pg_type typ on at1.atttypid = typ.oid where at1.attrelid = (select typrelid from pg_type where typname = t.typname)) attr_type_arr,
-		array(select attnotnull from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_not_null_arr,
-		array(select attrelid from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_id_arr,
-		pg_catalog.obj_description ( t.oid, 'pg_type' ) AS description
+                array(select attname from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_name_arr,
+                array(select typ.typname type_name from pg_attribute at1 left join pg_type typ on at1.atttypid = typ.oid where at1.attrelid = (select typrelid from pg_type where typname = t.typname)) attr_type_arr,
+                array(select attnotnull from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_not_null_arr,
+                array(select attrelid from pg_attribute where attrelid = (select typrelid from pg_type where typname = t.typname) order by attnum) attr_id_arr,
+                pg_catalog.obj_description ( t.oid, 'pg_type' ) AS description
     FROM pg_catalog.pg_type t
     LEFT JOIN pg_catalog.pg_namespace n
         ON n.oid = t.typnamespace
