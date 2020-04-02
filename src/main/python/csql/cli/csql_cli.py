@@ -1,7 +1,7 @@
 import click
 from csql.user_config import UserConfig
-from csql.sql_models.sqla import SQLDatabase
-from csql.gql import GQLDatabase
+from csql.sql.sql_database import SQLDatabase
+from csql.gql.gql_database import GQLDatabase
 from csql.server.flask import FlaskServer
 
 
@@ -27,9 +27,6 @@ def run(**kwargs):
 
     # Reflect SQL to GQL
     gql_db = GQLDatabase(sql_db, config)
-
-    # import pdb
-    # pdb.set_trace()
 
     # Build flask webserver
     server = FlaskServer(gql_db, sql_db, config)

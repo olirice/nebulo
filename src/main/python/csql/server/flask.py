@@ -4,8 +4,8 @@ from flask import Flask
 from flask_graphql import GraphQLView
 
 if TYPE_CHECKING:
-    from csql.gql import GQLDatabase
-    from csql.sqla import SQLDatabase
+    from csql.gql.gql_database import GQLDatabase
+    from csql.sql.sql_database import SQLDatabase
     from csql.user_config import UserConfig
 
 __all__ = ["FlaskServer"]

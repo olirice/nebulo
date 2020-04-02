@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 if TYPE_CHECKING:
     from csql.user_config import UserConfig
 
-from csql.sql_models.table_base import TableBase
+from csql.sql.table_base import TableBase
 
 
 class SQLDatabase:
