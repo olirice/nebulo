@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Tuple, Union
@@ -19,11 +20,32 @@ from graphql import (
     GraphQLSchema,
     GraphQLString,
 )
-from graphql_relay.node.node import from_global_id, global_id_field, node_definitions
 from sqlalchemy import types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import RelationshipProperty
 from stringcase import pascalcase
+
+from .registry import get_registry
+from .relay import NodeInterface, global_id_field
+
+F = GraphQLField
+L = GraphQLList
+NN = GraphQLNonNull
+
+
+CursorType = GraphQLScalarType(name="Cursor", serialize=str)  # pylint: disable=invalid-name
+DateTimeType = GraphQLScalarType(name="DateTime", serialize=str)  # pylint: disable=invalid-name
+
+PageInfoType = GraphQLObjectType(  # pylint: disable=invalid-name
+    "PageInfo",
+    fields={
+        "hasNextPage": F(NN(GraphQLBoolean)),
+        "hasPreviousPage": F(NN(GraphQLBoolean)),
+        "startCursor": F(NN(CursorType)),
+        "endCursor": F(NN(CursorType)),
+    },
+)
+
 
 typemap = {
     types.Integer: GraphQLInt,
@@ -41,18 +63,15 @@ typemap = {
 }
 
 
-F = GraphQLField
-L = GraphQLList
-NN = GraphQLNonNull
-
-
 if TYPE_CHECKING:
     from csql.sql.sql_database import TableBase
+    from .registry import Registry
 
 
 def convert_column(
     column, output_type: Union[GraphQLField, GraphQLInputObjectField] = GraphQLField
 ):
+    """Converts a sqlalchemy column into a graphql field or input field"""
     gql_type = GraphQLString if column.name != "id" else typemap[type(column.type)]
     notnull = not (column.nullable or False)
     return_type = NN(gql_type) if notnull else gql_type
@@ -62,6 +81,8 @@ def convert_column(
 def convert_relationship(
     relationship: RelationshipProperty, registry: Registry, **field_kwargs
 ) -> Tuple[GraphQLField, GraphQLField]:
+
+    """Converts a sqlalchemy relationship into a graphql connection"""
     from sqlalchemy.orm import interfaces
 
     direction = relationship.direction
@@ -79,60 +100,9 @@ def convert_relationship(
 
 
 def convert_composite(composite):
-    pass
-
-
-class Registry:
-
-    model_name_to_sqla = {}
-
-    sqla_to_model = {}
-    sqla_to_condition = {}
-    sqla_to_connection = {}
-    sqla_to_edge = {}
-    sqla_to_order_by = {}
-    # sqla_to_gql_input = {}
-    # sqla_to_gql_patch = {}
-
-
-def get_registry() -> Registry:
-    return Registry
-
-
-def get_node(global_id, _info):
-    """Function to map from a global id to an underlying object
-    _info.context['session'] must exist
-    """
-    registry = get_registry()
-    type_, id_ = from_global_id(global_id)
-    sqla_model = registry.model_name_to_sqla[type_]
-    context = _info.context
-    # Database session
-    session = context["session"]
-    return session.query(sqla_model).filter(sqla_model.id == id_).one_or_none()
-
-
-def get_node_type(obj, _info):
-    """Function to map from an underlying object to the concrete GraphQLObjectType"""
-    registry = get_registry()
-    return registry.sqla_to_model[type(obj)]
-
-
-NodeInterface, NodeField = node_definitions(get_node, get_node_type)  # pylint: disable=invalid-name
-
-
-CursorType = GraphQLScalarType(name="Cursor", serialize=str)  # pylint: disable=invalid-name
-DateTimeType = GraphQLScalarType(name="DateTime", serialize=str)  # pylint: disable=invalid-name
-
-PageInfoType = GraphQLObjectType(  # pylint: disable=invalid-name
-    "PageInfo",
-    fields={
-        "hasNextPage": F(NN(GraphQLBoolean)),
-        "hasPreviousPage": F(NN(GraphQLBoolean)),
-        "startCursor": F(NN(CursorType)),
-        "endCursor": F(NN(CursorType)),
-    },
-)
+    """Converts a sqlalchemy composite field into a graphql object type"""
+    composite = composite
+    raise NotImplementedError("Composite fields are not yet supported")
 
 
 def table_to_model(sqla_model: TableBase) -> GraphQLObjectType:
