@@ -11,13 +11,10 @@ from .entrypoints.one import one_node_factory
 
 if TYPE_CHECKING:
     from nebulous.sql.sql_database import SQLDatabase
-    from nebulous.user_config import UserConfig
 
 
 class GQLDatabase:
-    def __init__(self, sqldb: SQLDatabase, config: UserConfig):
-        self.config = config
-
+    def __init__(self, sqldb: SQLDatabase):
         # GQL Tables
         self.sqldb = sqldb
 
@@ -32,20 +29,12 @@ class GQLDatabase:
 
 def sqla_models_to_query_object(sqla_models):
     """Creates a base query object from available graphql objects/tables"""
-    # query_fields = {
-    #
-    # }
-
     query_fields = {
         **{f"{x.__table__.name}": one_node_factory(x) for x in sqla_models},
         **{
             f"all{snake_to_camel(to_plural(x.__table__.name))}": many_node_factory(x)
             for x in sqla_models
         },
-        # **{
-        #    f"all{pascalcase(x.__table__.name)}s": Connection(x).field()
-        #    for x in self.sqldb.models
-        # },
     }
 
     query_object = ObjectType(name="Query", fields=lambda: query_fields)

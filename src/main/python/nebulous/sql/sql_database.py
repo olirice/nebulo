@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -16,21 +15,20 @@ from .reflection_utils import (
     rename_to_one_collection,
 )
 
-if TYPE_CHECKING:
-    from nebulous.user_config import UserConfig
-
 
 class SQLDatabase:
-    def __init__(self, config: UserConfig, engine: None = None) -> None:
+    def __init__(
+        self, connection: str, schema: str, echo_queries=False, demo=False, engine: None = None
+    ) -> None:
         # Configure SQLAlchemy
         if engine:
             self.engine = engine
         else:
-            self.engine = create_engine(config.connection, echo=config.echo_queries)
+            self.engine = create_engine(connection, echo=echo_queries)
 
         self.session = scoped_session(sessionmaker(bind=self.engine))
 
-        if config.demo:
+        if demo:
             self.build_demo_schema()
 
         # Type reflector can take a string and return the correct sql column type for sqla
@@ -39,12 +37,12 @@ class SQLDatabase:
 
         rename_columns()
 
-        self.schema = config.schema
+        self.schema = schema
         self.base = TableBase
         self.base.prepare(
             self.engine,
             reflect=True,
-            schema=config.schema,
+            schema=schema,
             classname_for_table=rename_table,
             name_for_scalar_relationship=rename_to_one_collection,
             name_for_collection_relationship=rename_to_many_collection,

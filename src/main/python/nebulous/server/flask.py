@@ -1,49 +1,63 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from flask import Flask
 from flask_graphql import GraphQLView
 
-if TYPE_CHECKING:
-    from nebulous.gql.gql_database import GQLDatabase
-    from nebulous.sql.sql_database import SQLDatabase
-    from nebulous.user_config import UserConfig
+from nebulous.gql.gql_database import GQLDatabase
+from nebulous.sql.sql_database import SQLDatabase
 
-__all__ = ["FlaskServer"]
+__all__ = ["create_app"]
 
 
-class FlaskServer:
-    def __init__(self, gql_db: GQLDatabase, sql_db: SQLDatabase, config: UserConfig):
-        self.app = Flask(__name__)
-        self.app.debug = True
-        self.config = config
-        self.gql_db = gql_db
-        self.sql_db = sql_db
-        self.setup()
+def create_app(connection: str, schema: str, echo_queries: bool, demo: bool, engine=None):
+    app = Flask(__name__)
+    app.config["connection"] = connection
+    app.config["schema"] = schema
+    app.config["echo_queries"] = echo_queries
+    app.config["demo"] = demo
+    app.config["engine"] = engine
 
-    def setup(self):
-        self.register_routes()
-        self.register_session_teardown()
+    app = register_database(app)
+    app = register_graphql_schema(app)
+    app = register_routes(app)
+    return app
 
-    def register_routes(self):
-        self.app.add_url_rule(
-            self.config.graphql_route,
-            view_func=GraphQLView.as_view(
-                name="graphql",
-                schema=self.gql_db.schema,
-                graphiql=self.config.graphiql,
-                get_context=lambda: {"session": self.sql_db.session, "database": self.sql_db},
-            ),
-        )
 
-    def register_session_teardown(self):
-        """Close database session when we're done"""
+def register_database(app):
+    sql_db = SQLDatabase(
+        connection=app.config["connection"],
+        schema=app.config["schema"],
+        echo_queries=app.config["echo_queries"],
+        demo=app.config["demo"],
+        engine=app.config["engine"],
+    )
+    app.config["database"] = sql_db
 
-        @self.app.teardown_appcontext
-        def shutdown_session(exception=None):
-            self.sql_db.session.remove()
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        app.config["database"].session.remove()
 
-    def run(self):
-        """Start serving requests from the application"""
-        self.app.run(port=self.config.port, debug=True)
+    return app
+
+
+def register_graphql_schema(app):
+    sql_db = app.config["database"]
+    gql_db = GQLDatabase(sql_db)
+    app.config["graphql_schema"] = gql_db.schema
+    return app
+
+
+def register_routes(app):
+    app.add_url_rule(
+        "/graphql",
+        view_func=GraphQLView.as_view(
+            name="graphql",
+            schema=app.config["graphql_schema"],
+            graphiql=True,
+            get_context=lambda: {
+                "session": app.config["database"].session,
+                "database": app.config["database"],
+            },
+        ),
+    )
+    return app

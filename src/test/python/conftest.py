@@ -1,5 +1,8 @@
 # pylint: disable=redefined-outer-name
+from __future__ import annotations
+
 import importlib
+import typing
 
 import pytest
 from graphql import graphql as execute_graphql
@@ -8,15 +11,16 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from nebulous.gql.alias import Schema
 from nebulous.gql.gql_database import sqla_models_to_query_object
+from nebulous.server.flask import create_app
 from nebulous.sql import table_base
 from nebulous.sql.reflection_utils import (
-    rename_columns,
     rename_table,
     rename_to_many_collection,
     rename_to_one_collection,
 )
-from nebulous.sql.sql_database import SQLDatabase
-from nebulous.user_config import UserConfig
+
+if typing.TYPE_CHECKING:
+    from flask import Flask
 
 CONNECTION_STR = "postgresql://postgres:password@localhost:5432/pytest"
 
@@ -46,7 +50,7 @@ def session_maker(engine):
     yield _session
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def session(session_maker):
     _session = session_maker
     _session.execute(SQL_DOWN)
@@ -61,7 +65,7 @@ def session(session_maker):
     _session.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def schema_builder(session, engine):
     """Return a function that accepts a sql string
     and returns graphql schema"""
@@ -93,7 +97,7 @@ def schema_builder(session, engine):
     return build
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def gql_exec_builder(schema_builder, session):
     """Return a function that accepts a sql string
     and returns a graphql executor """
@@ -108,22 +112,31 @@ def gql_exec_builder(schema_builder, session):
 
 
 @pytest.fixture
-def sqla_db(engine):
-    """An instance of SQLDatabase that is empty"""
-    config = UserConfig(
-        connection=None,
-        schema="public",
-        echo_queries=False,
-        graphql_route="/graphql",
-        graphiql=True,  # Not
-        port=5008,
-        demo=False,
-    )
-    # Do not delete. Used for coverage of __str__
-    print(config)
-    sql_db = SQLDatabase(config, engine=engine)
+def app_builder(engine, gql_exec_builder):
+    def build(sql: str) -> Flask:
+        # Builds the schmema
+        executor = gql_exec_builder(sql)  # pylint: disable=unused-variable
 
-    yield sql_db
+        connection = None
+        schema = "public"
+        echo_queries = False
+        demo = False
 
-    # Disconnect
-    sql_db.session.close()  # pylint: disable=no-member
+        app = create_app(
+            connection=connection,
+            schema=schema,
+            echo_queries=echo_queries,
+            demo=demo,
+            engine=engine,
+        )
+        return app
+
+    yield build
+
+
+@pytest.fixture
+def client_builder(app_builder):
+    def build(sql: str):
+        return app_builder(sql).test_client()
+
+    yield build
