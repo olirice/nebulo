@@ -8,7 +8,9 @@ CursorType = ScalarType(name="Cursor", serialize=str)  # pylint: disable=invalid
 
 class PageInfo(TableToGraphQLField):
 
-    type = ObjectType(  # pylint: disable=invalid-name
+    type_name = "PageInfo"
+
+    _type = ObjectType(  # pylint: disable=invalid-name
         "PageInfo",
         fields={
             "hasNextPage": Field(NonNull(Boolean)),
@@ -21,6 +23,7 @@ class PageInfo(TableToGraphQLField):
     def resolver(self, obj, info, **user_kwargs):
         sqla_model = self.sqla_model
         sqla_model = sqla_model
+
         return {
             "hasNextPage": False,
             "hasPreviousPage": False,

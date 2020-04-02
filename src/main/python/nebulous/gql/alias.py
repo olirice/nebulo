@@ -26,3 +26,4 @@ ScalarType = GraphQLScalarType
 ObjectType = GraphQLObjectType
 ID = GraphQLID
 InterfaceType = GraphQLInterfaceType
+Int = GraphQLInt

@@ -64,7 +64,9 @@ def resolver(self, global_id: str, _info):
 
 class NodeID(TableToGraphQLField):
 
-    type = ID
+    type_name = "NodeID"
+
+    _type = ID
 
     def resolver(self, obj, info, **args):
         sqla_model = self.sqla_model

@@ -44,7 +44,7 @@ class GQLDatabase:
 
         query_fields = {
             **{
-                f"All{pascalcase(x.__table__.name)}s": table_to_query_all(x)
+                f"all{pascalcase(x.__table__.name)}s": table_to_query_all(x)
                 for x in self.sqldb.models
             }
         }
