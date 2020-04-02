@@ -1,4 +1,4 @@
-name: Python application
+name: Nebulous Actions
 
 on: [push]
 
@@ -19,8 +19,6 @@ jobs:
           POSTGRES_DB: pytest
 
         ports:
-        # will assign a random free host port
-        #- 5432/tcp
         - 5432:5432
         # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
@@ -31,13 +29,14 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Install package
+    - name: Install nebulous
       run: |
         sudo apt-get install libpq-dev
         python -m pip install --upgrade pip
         pip install .
         
-    - name: Run Tests
+    - name: Tests with Coverage
       run: |
         pip install pytest
-        pytest
+        pip install pytest-cov
+        pytest --cov=nebulous src/test
