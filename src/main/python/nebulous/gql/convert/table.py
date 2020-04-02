@@ -69,7 +69,6 @@ def convert_column(
         return output_type(return_type)
 
 
-
 @lru_cache()
 def convert_composite(composite) -> typing.Union[Field, InputField]:
     """Converts a sqlalchemy composite field into a graphql object type"""

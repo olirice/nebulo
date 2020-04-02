@@ -2,12 +2,10 @@ import json
 
 from sqlalchemy import func, select
 from sqlalchemy.sql.expression import literal
-import sqlparse
 
 from ..alias import Argument, Field, ResolveInfo
 from ..convert.node_interface import NodeID
-from ..convert.table import table_factory
-from ..convert.table import resolve_one
+from ..convert.table import resolve_one, table_factory
 from ..parse_info import parse_resolve_info
 
 
@@ -29,7 +27,7 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     return_type = info.return_type
     sqla_model = return_type.sqla_model
     tree = parse_resolve_info(info)
-    #print(json.dumps(tree, indent=2, cls=Encoder))
+    # print(json.dumps(tree, indent=2, cls=Encoder))
 
     node_model_name, node_model_id = tree["args"]["NodeID"]
     assert sqla_model.__table__.name == node_model_name
@@ -58,16 +56,15 @@ def entry_resolver(obj, info: ResolveInfo, **kwargs):
     query_str = query.compile(compile_kwargs={"literal_binds": True})
     query_str = str(query_str)
 
-
-    #print()
-    #print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
-    #print()
+    # print()
+    # print(sqlparse.format(query_str, reindent=True, keyword_case="upper"))
+    # print()
 
     result = session.query(query).all()
     context["result"] = result[0][0]
 
     # Stash result on context so enable dumb resolvers to not fail
-    #pretty_result = json.dumps(result, indent=2, cls=Encoder)
-    #print(pretty_result)
+    # pretty_result = json.dumps(result, indent=2, cls=Encoder)
+    # print(pretty_result)
 
     return result
