@@ -1,5 +1,5 @@
+from sqlalchemy import func, literal_column, select, type_coerce
 from sqlalchemy.orm import column_property
-from sqlalchemy import select, func, literal_column, type_coerce
 from sqlalchemy.types import TEXT
 
 
@@ -76,7 +76,10 @@ class ComputedColumnsMixin:
                     select(
                         [
                             type_coerce(
-                                getattr(func, col_name)(literal_column(table.table_name)), TEXT
+                                getattr(func, col_name)(
+                                    literal_column(table.table_name)
+                                ),
+                                TEXT,
                             )
                         ]
                     )

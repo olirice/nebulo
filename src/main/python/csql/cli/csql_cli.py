@@ -1,8 +1,9 @@
 import click
-from csql.user_config import UserConfig
-from csql.sql.sql_database import SQLDatabase
+
 from csql.gql.gql_database import GQLDatabase
 from csql.server.flask import FlaskServer
+from csql.sql.sql_database import SQLDatabase
+from csql.user_config import UserConfig
 
 
 @click.group()

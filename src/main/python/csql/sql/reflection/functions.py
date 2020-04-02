@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy.engine import Connection
+
 from sqlalchemy.sql.sqltypes import TypeEngine
 
 

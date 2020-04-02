@@ -1,15 +1,17 @@
 from __future__ import annotations
+
+from functools import lru_cache
 from typing import TYPE_CHECKING
-from sqlalchemy.orm import scoped_session, sessionmaker
+
 from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+from csql.sql.table_base import TableBase
+
+from .reflection.functions import get_function_names, reflect_function
 
 if TYPE_CHECKING:
     from csql.user_config import UserConfig
-
-from csql.sql.table_base import TableBase
-from functools import lru_cache
-
-from .reflection.functions import get_function_names, reflect_function
 
 
 class SQLDatabase:
@@ -23,9 +25,8 @@ class SQLDatabase:
         # SQLA Tables
         self.models = list(self.base.classes)
 
-
     @property
     @lru_cache()
     def functions(self):
-        function_names =  get_function_names(self.engine, schema='public')
+        function_names = get_function_names(self.engine, schema="public")
         return [reflect_function(self.engine, x) for x in function_names]

@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING, Type
 from functools import lru_cache
-from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
-from graphene import relay
-from graphql_relay import from_global_id
-import graphene
+from typing import TYPE_CHECKING, List
 
-from .function import function_reflection_factory, ReflectedGQLFunction
+import graphene
+from graphene import relay
+from graphene_sqlalchemy import SQLAlchemyConnectionField
+
+from .function import ReflectedGQLFunction, function_reflection_factory
 
 if TYPE_CHECKING:
     from csql.sql.sql_database import SQLDatabase
     from csql.user_config import UserConfig
-    from csql.sql.table_base import TableBase
     from csql.gql.gql_model import ReflectedGQLModel
 
 
@@ -20,14 +19,18 @@ class GQLDatabase:
     def __init__(self, sqldb: SQLDatabase, config: UserConfig):
         self.config = config
         # GQL Tables
-        self.gql_models: List[ReflectedGQLModel] = [x.to_graphql() for x in sqldb.models]
+        self.gql_models: List[ReflectedGQLModel] = [
+            x.to_graphql() for x in sqldb.models
+        ]
 
-         
-        self.gql_functions: List[ReflectedGQLFunction] = [function_reflection_factory(x) for x in sqldb.functions]
+        self.gql_functions: List[ReflectedGQLFunction] = [
+            function_reflection_factory(x) for x in sqldb.functions
+        ]
 
         # GQL Schema
-        self.schema = graphene.Schema(query=self.query_class, mutation=self.mutation_class)
-
+        self.schema = graphene.Schema(
+            query=self.query_class, mutation=self.mutation_class
+        )
 
     @property
     @lru_cache()
@@ -41,7 +44,9 @@ class GQLDatabase:
             graphene_table = table
             # List All
             key = f"all_{graphene_table._meta.name}"
-            value = SQLAlchemyConnectionField(graphene_table, sort=graphene_table.sort_argument())
+            value = SQLAlchemyConnectionField(
+                graphene_table, sort=graphene_table.sort_argument()
+            )
             entity_attrs[key] = value
 
             # Single Entity by Relay ID
@@ -77,12 +82,10 @@ class GQLDatabase:
         for function in self.gql_functions:
             key = f"call_{function.sql_function_name}"
             value = function.call_class.Field()
-            print('Function', value, key)
+            print("Function", value, key)
             entity_attrs[key] = value
-
 
         all_attrs = {**relay_attrs, **entity_attrs}
 
         Mutation = type("Mutation", (graphene.ObjectType,), all_attrs)
         return Mutation
-

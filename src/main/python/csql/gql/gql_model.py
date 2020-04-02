@@ -1,19 +1,16 @@
 from __future__ import annotations
 
-from functools import lru_cache
-from typing import TYPE_CHECKING, List, Type
+from typing import TYPE_CHECKING, Type
 
 import graphene
 from graphene import relay
-from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
+from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphene_sqlalchemy.types import ORMField
 from graphql_relay import from_global_id
 
-from csql.sql.utils import cachedclassproperty, classproperty
+from csql.sql.utils import cachedclassproperty
 
 if TYPE_CHECKING:
-    from csql.sql.sql_database import SQLDatabase
-    from csql.user_config import UserConfig
     from csql.sql.table_base import TableBase
 
 
@@ -36,7 +33,9 @@ def model_reflection_factory(table: TableBase) -> ReflectedGQLModel:
                     description = sql_comment_line.replace(key, "", 1).lstrip()
                     extra_attrs[sql_column.name] = ORMField(description=description)
 
-    output = type(tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs))
+    output = type(
+        tablename, (ReflectedGQLModel,), dict(**{"Meta": metaclass}, **extra_attrs)
+    )
 
     return output
 
@@ -64,7 +63,9 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
         class_name = cls.sql_table_name + "Attributes"
         # Copy fields from the graphene model excluding 'id' which can not be user defined
         attrs = {
-            k: v for k, v in cls._meta.fields.items() if k != "id" and isinstance(v, graphene.Field)
+            k: v
+            for k, v in cls._meta.fields.items()
+            if k != "id" and isinstance(v, graphene.Field)
         }
         return type(class_name, (), attrs)
 
@@ -79,7 +80,9 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
             pass
         """
         class_name = cls.sql_table_name + "CreateInput"
-        return type(class_name, (graphene.InputObjectType, cls._mutation_attributes_class), {})
+        return type(
+            class_name, (graphene.InputObjectType, cls._mutation_attributes_class), {}
+        )
 
     @cachedclassproperty
     def creation_class(cls) -> Type:
@@ -192,7 +195,9 @@ class ReflectedGQLModel(SQLAlchemyObjectType):
             db_session = info.context["session"]
 
             # TODO(OR): More assuming that the id field for the table is name "id"
-            existing_row = db_session.query(cls._meta.model).filter_by(id=data["id"]).one()
+            existing_row = (
+                db_session.query(cls._meta.model).filter_by(id=data["id"]).one()
+            )
             existing_row.update(**data)
             db_session.commit()
             db_session.refresh(existing_row)

@@ -2,19 +2,20 @@
 A base class to derive sql tables from
 """
 
-from typing import Any, Dict, List, Tuple, Callable, Union, Optional, NoReturn
-from inspect import Parameter, Signature
+from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
+from sqlalchemy import Column, event
+from sqlalchemy import inspect as sql_inspect
+from sqlalchemy.orm import mapper
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy import Column, DateTime, func, inspect as sql_inspect
+from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy_utils import generic_repr
+
+from csql.sql.computed_column_mixin import ComputedColumnsMixin
+from csql.sql.gql_base_mixin import GQLBaseMixin
 
 from .base import Base
 from .utils import classproperty
-from csql.sql.gql_base_mixin import GQLBaseMixin
-from csql.sql.computed_column_mixin import ComputedColumnsMixin
 
 
 @generic_repr
@@ -38,7 +39,9 @@ class TableBase(GQLBaseMixin, ComputedColumnsMixin, Base):
     @classproperty
     def constraints(cls) -> List[Constraint]:
         """All constraints on the table"""
-        return sorted(cls.__table__.constraints, key=lambda x: x.__class__.__name__ + x.name)
+        return sorted(
+            cls.__table__.constraints, key=lambda x: x.__class__.__name__ + x.name
+        )
 
     @classproperty
     def unique_constraints(cls) -> List[UniqueConstraint]:
@@ -48,7 +51,9 @@ class TableBase(GQLBaseMixin, ComputedColumnsMixin, Base):
     @classproperty
     def primary_key(cls) -> Optional[PrimaryKeyConstraint]:
         """Primary key for the table"""
-        maybe_empty_pkey = [x for x in cls.constraints if isinstance(x, PrimaryKeyConstraint)]
+        maybe_empty_pkey = [
+            x for x in cls.constraints if isinstance(x, PrimaryKeyConstraint)
+        ]
         return maybe_empty_pkey[0] if maybe_empty_pkey else None
 
     @classproperty
@@ -69,18 +74,12 @@ class TableBase(GQLBaseMixin, ComputedColumnsMixin, Base):
                 raise KeyError(f"Key {key} does not exist on model {self.table_name}")
 
 
-from sqlalchemy import event
-from sqlalchemy.orm import mapper
-
-
 @event.listens_for(mapper, "before_configured", once=True)
 def apply_column_tooling():
     """This is a bad idea"""
     # print("before")
     # import pdb
     # pdb.set_trace()
-
-    pass
 
 
 @event.listens_for(mapper, "after_configured", once=True)
@@ -95,4 +94,3 @@ def apply_column_tooling():
             #    delattr(table, column.name)
             #    print(f"Omitted {column.name}")
     # print(tables)
-

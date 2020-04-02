@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-from functools import lru_cache
-from typing import TYPE_CHECKING, List, Type
+from typing import TYPE_CHECKING, Type
 
 import graphene
-from graphene import relay
-from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
-from graphene_sqlalchemy.types import ORMField
-from graphql_relay import from_global_id
-
 from graphene_sqlalchemy.converter import convert_sqlalchemy_type
 from graphene_sqlalchemy.registry import get_global_registry
-from csql.sql.utils import cachedclassproperty, classproperty
-from sqlalchemy import Column
-from sqlalchemy import select, func, literal, type_coerce
+from graphql_relay import from_global_id
+from sqlalchemy import Column, func, select
+
+from csql.sql.utils import cachedclassproperty
 
 if TYPE_CHECKING:
-    from csql.sql.sql_database import SQLDatabase
-    from csql.user_config import UserConfig
-    from csql.sql.table_base import TableBase
     from csql.sql.reflection.functions import SQLFunction
 
 
@@ -145,7 +137,9 @@ class ReflectedGQLFunction:
             sql = select([getattr(func, cls.sql_function_name)(*data.values())])
             py_result = db_session.execute(sql).first()[0]
             print(py_result)
-            return call_base_cls(**{cls.sql_function_name + "_result": {'result': py_result}})
+            return call_base_cls(
+                **{cls.sql_function_name + "_result": {"result": py_result}}
+            )
 
         return type(
             f"Call{cls.sql_function_name}", (call_base_cls,), {"mutate": mutate}

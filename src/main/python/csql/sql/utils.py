@@ -1,5 +1,5 @@
-from typing import Callable
 from functools import lru_cache
+from typing import Callable
 
 
 class ClassProperty(property):

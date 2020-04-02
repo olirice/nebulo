@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
 from flask import Flask
 from flask_graphql import GraphQLView
 
