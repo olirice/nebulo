@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 import random
 import string
 import typing
@@ -86,8 +87,8 @@ def to_conditions_clause(field) -> typing.List[str]:
 def build_scalar(field, sqla_model) -> typing.Tuple[str, str]:
     return_type = field.return_type
     if return_type == NodeID:
-        return (field.name, to_global_id_sql(sqla_model))
-    return (field.name, getattr(sqla_model, field.name).name)
+        return (field.alias, to_global_id_sql(sqla_model))
+    return (field.alias, getattr(sqla_model, field.name).name)
 
 
 def build_relationship(field, block_name):
@@ -160,6 +161,20 @@ def to_order_clause(field):
     return ", ".join([x.name for x in sqla_model.primary_key.columns])
 
 
+def check_has_total(field) -> bool:
+    "Check if 'totalCount' is requested in the query result set"
+    return any(x.name in 'totalCount' for x in field.fields)
+
+
+def get_selection_alias(field, key: str) -> str:
+    """ Looks up the alias of a selected subfield, or returns subfield.name
+    if no alias is provided """
+    for subfield in field.fields:
+        if subfield.name == key:
+            return subfield.alias or key
+    return key
+
+
 def connection_block(field, parent_name):
     return_type = field.return_type
     sqla_model = return_type.sqla_model
@@ -175,34 +190,58 @@ def connection_block(field, parent_name):
     limit = to_limit_clause(field)
     after = to_after_clause(field)
     order = to_order_clause(field)
+    has_total = check_has_total(field)
+    
     cursor = to_cursor_sql(sqla_model)
 
-    nodes_selects = []
+    totalCount_alias = field.get_subfield_alias(['totalCount'])
+
+    edges_alias = field.get_subfield_alias(['edges'])
+    node_alias = field.get_subfield_alias(['edges', 'node'])
+    cursor_alias = field.get_subfield_alias(['edges', 'cursor'])
+
+    pageInfo_alias = field.get_subfield_alias(['pageInfo'])
+    hasNextPage_alias = field.get_subfield_alias(['pageInfo', 'hasNextPage'])
+    hasPreviousPage_alias = field.get_subfield_alias(['pageInfo', 'hasPreviousPage'])
+    startCursor_alias = field.get_subfield_alias(['pageInfo', 'startCursor'])
+    endCursor_alias = field.get_subfield_alias(['pageInfo', 'endCursor'])
+    
     edge_node_selects = []
     for cfield in field.fields:
-        if cfield.name in "nodes":
-            subfields = cfield.fields
-        elif cfield.name == "edges":
-            subfields = [x for x in cfield.fields if x.name == "node"][0].fields
-        elif cfield.name == "pageInfo":
-            # pageInfo is always retrieved from the database
-            continue
+        if cfield.name == "edges":
+            for edge_field in cfield.fields:
+                if edge_field.name == "node":
+                    for subfield in edge_field.fields:
+                        # Does anything other than NodeID go here?
+                        if isinstance(subfield.return_type, ScalarType):
+                            elem = build_scalar(subfield, sqla_model)
+                        else:
+                            elem = build_relationship(subfield, block_name)
+                        if cfield.name == "edges":
+                            edge_node_selects.append(elem)
+                        # Other than edges, pageInfo, and cursor stuff is
+                        # all handled by default
 
-        for subfield in subfields:
-            if isinstance(subfield.return_type, ScalarType):
-                elem = build_scalar(subfield, sqla_model)
-            else:
-                elem = build_relationship(subfield, block_name)
-            if cfield.name == "nodes":
-                nodes_selects.append(elem)
-            elif cfield.name == "edges":
-                edge_node_selects.append(elem)
 
     # check if cursor is required
 
     block = f"""
 (
-    with {block_name}_p1 as (
+    with total as (
+        select
+            count(*) total_count
+        from
+            {table_name}
+        where
+            -- Join Clause
+            ({"and".join(join_conditions) or 'true'})
+            -- Conditions
+            and ({"and".join(filter_conditions) or 'true'})
+            -- Skip if not requested
+            and {'true' if has_total else 'false'}
+    ),
+
+    {block_name}_p1 as (
         select *
         from {table_name}
         where 
@@ -214,32 +253,41 @@ def connection_block(field, parent_name):
         limit
             {min(limit, 10) + 1}
     ),
+
     {block_name} as (
         select row_number() over () as row_num, *
         from {block_name}_p1
         limit {min(limit, 10)}
     ),
+
     has_next_page as (
         select (select count(*) from {block_name}) > (select count(*) from {block_name}) as has_next
     )
-
+/*
+    has_previous_page as (
+        select 
+            case
+                -- If a cursor is provided, that row appears on the previous page
+                when coalesce(before_cursor, after_cursor) is not null then true
+                -- If no cursor is provided, no previous page
+                else false
+            end has_previous
+    ),
+*/
     select
         jsonb_build_object(
-            'pageInfo', json_build_object(
-                'hasNextPage', (select has_next from has_next_page),
-                'hasPreviousPage', {'true' if after else 'false'},
-                'startCursor', (select {cursor} from {block_name} order by row_num asc limit 1),
-                'endCursor', (select {cursor} from {block_name} order by row_num desc limit 1)
+            '{totalCount_alias}', (select total_count from total),
+
+            '{pageInfo_alias}', json_build_object(
+                '{hasNextPage_alias}', (select has_next from has_next_page),
+                '{hasPreviousPage_alias}', {'true' if after else 'false'},
+                '{startCursor_alias}', (select {cursor} from {block_name} order by row_num asc limit 1),
+                '{endCursor_alias}', (select {cursor} from {block_name} order by row_num desc limit 1)
             ),
-            'nodes', json_agg(
+            '{edges_alias}', json_agg(
                 jsonb_build_object(
-                    {", ".join([f"'{name}', {expr}" for name, expr in nodes_selects])}
-                )
-            ),
-            'edges', json_agg(
-                jsonb_build_object(
-                    'cursor', {cursor}, 
-                    'node', json_build_object(
+                    '{cursor_alias}', {cursor}, 
+                    '{node_alias}', json_build_object(
                         {", ".join([f"'{name}', {expr}" for name, expr in edge_node_selects])}
                     )
                 )

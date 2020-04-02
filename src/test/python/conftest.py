@@ -22,13 +22,13 @@ from nebulous.sql.reflection_utils import (
 if typing.TYPE_CHECKING:
     from flask import Flask
 
-CONNECTION_STR = "postgresql://postgres:password@localhost:5432/pytest"
+CONNECTION_STR = "postgresql://nebulous_user:password@localhost:4442/nebulous_db"
 
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;
     CREATE SCHEMA public;
-    GRANT ALL ON SCHEMA public TO postgres;
+    GRANT ALL ON SCHEMA public TO nebulous_user;
 """
 
 

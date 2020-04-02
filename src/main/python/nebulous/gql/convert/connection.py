@@ -20,18 +20,18 @@ __all__ = ["connection_factory"]
 def connection_factory(sqla_model):
     name = f"{snake_to_camel(sqla_model.__table__.name)}Connection"
 
-    from .table import table_factory
     from .edge import edge_factory
-
-    table = table_factory(sqla_model)
     edge = edge_factory(sqla_model)
+
+    #from .table import table_factory
+    #table = table_factory(sqla_model)
 
     def build_attrs():
         return {
-            "nodes": Field(NonNull(List(table)), resolver=default_resolver),
+            #"nodes": Field(NonNull(List(table)), resolver=default_resolver),
             "edges": Field(NonNull(List(NonNull(edge))), resolver=default_resolver),
             "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
-            # "totalCount": Field(NonNull(TotalCount), resolver=default_resolver),
+            "totalCount": Field(NonNull(Int), resolver=default_resolver),
         }
 
     return_type = ConnectionType(name=name, fields=build_attrs, description="")
@@ -41,11 +41,11 @@ def connection_factory(sqla_model):
 
 def connection_args_factory(sqla_model):
     from .condition import condition_factory
-    from .ordering import ordering_factory, to_default_ordering
-
     condition = condition_factory(sqla_model)
-    ordering = ordering_factory(sqla_model)
-    default_ordering = to_default_ordering(sqla_model)
+
+    #from .ordering import ordering_factory, to_default_ordering
+    #ordering = ordering_factory(sqla_model)
+    #default_ordering = to_default_ordering(sqla_model)
 
     return {
         "first": Argument(Int, description="", out_name=None),
@@ -53,5 +53,4 @@ def connection_args_factory(sqla_model):
         # "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
-        # "orderBy": Argument(List(NonNull(ordering)), default_value=default_ordering),
     }
