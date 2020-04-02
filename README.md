@@ -1,2 +1,2 @@
-# csql
-Reflect SQL Database to GraphQL Server
+# Nebulous
+Reflect Relational Database to GraphQL API Server
