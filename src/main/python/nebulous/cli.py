@@ -1,5 +1,4 @@
 import click
-
 from nebulous.server.flask import create_app
 
 

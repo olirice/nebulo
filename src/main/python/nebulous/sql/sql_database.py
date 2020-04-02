@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from nebulous.sql.table_base import TableBase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-
-from nebulous.sql.table_base import TableBase
 
 from .reflection.functions import get_function_names, reflect_function
 from .reflection_utils import (

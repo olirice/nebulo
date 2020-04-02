@@ -1,7 +1,6 @@
 import typing
 
 from graphql.execution.values import get_argument_values
-
 from nebulous.gql.alias import Field, List, NonNull, ResolveInfo
 
 __all__ = ["parse_resolve_info"]
@@ -48,7 +47,7 @@ class ASTNode:
         for the terminating element in *path* list. If that subfield
         is not in the selection set, return the terminating elements name"""
         if len(path) < 1:
-            raise Exception('Path must contain an element')
+            raise Exception("Path must contain an element")
 
         for subfield in self.fields:
             if subfield.name == path[0]:
@@ -56,8 +55,6 @@ class ASTNode:
                     return subfield.alias or path[0]
                 return subfield.get_subfield_alias(path[1:])
         return path[-1]
-        
-
 
 
 def parse_resolve_info(info: ResolveInfo) -> typing.Dict:

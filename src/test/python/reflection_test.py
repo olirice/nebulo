@@ -1,14 +1,13 @@
 import sqlalchemy as sqla
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-
 from nebulous.sql.table_base import TableBase
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 
 SQL_UP = """
 CREATE TABLE public.refl_numer (
     col_0 int primary key,
-    col_1 smallint, 
-    col_2 integer, 
-    col_3 bigint, 
+    col_1 smallint,
+    col_2 integer,
+    col_3 bigint,
     col_4 smallserial,
     col_5 bigserial,
     col_6 numeric,

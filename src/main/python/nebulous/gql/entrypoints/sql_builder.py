@@ -150,7 +150,7 @@ def row_block(field, parent_name=None):
         jsonb_build_object({", ".join([f"'{name}', {expr}" for name, expr in select_clause])})
     from
         {block_name}
-) 
+)
     """
 
     return block
@@ -163,7 +163,7 @@ def to_order_clause(field):
 
 def check_has_total(field) -> bool:
     "Check if 'totalCount' is requested in the query result set"
-    return any(x.name in 'totalCount' for x in field.fields)
+    return any(x.name in "totalCount" for x in field.fields)
 
 
 def get_selection_alias(field, key: str) -> str:
@@ -191,21 +191,21 @@ def connection_block(field, parent_name):
     after = to_after_clause(field)
     order = to_order_clause(field)
     has_total = check_has_total(field)
-    
+
     cursor = to_cursor_sql(sqla_model)
 
-    totalCount_alias = field.get_subfield_alias(['totalCount'])
+    totalCount_alias = field.get_subfield_alias(["totalCount"])
 
-    edges_alias = field.get_subfield_alias(['edges'])
-    node_alias = field.get_subfield_alias(['edges', 'node'])
-    cursor_alias = field.get_subfield_alias(['edges', 'cursor'])
+    edges_alias = field.get_subfield_alias(["edges"])
+    node_alias = field.get_subfield_alias(["edges", "node"])
+    cursor_alias = field.get_subfield_alias(["edges", "cursor"])
 
-    pageInfo_alias = field.get_subfield_alias(['pageInfo'])
-    hasNextPage_alias = field.get_subfield_alias(['pageInfo', 'hasNextPage'])
-    hasPreviousPage_alias = field.get_subfield_alias(['pageInfo', 'hasPreviousPage'])
-    startCursor_alias = field.get_subfield_alias(['pageInfo', 'startCursor'])
-    endCursor_alias = field.get_subfield_alias(['pageInfo', 'endCursor'])
-    
+    pageInfo_alias = field.get_subfield_alias(["pageInfo"])
+    hasNextPage_alias = field.get_subfield_alias(["pageInfo", "hasNextPage"])
+    hasPreviousPage_alias = field.get_subfield_alias(["pageInfo", "hasPreviousPage"])
+    startCursor_alias = field.get_subfield_alias(["pageInfo", "startCursor"])
+    endCursor_alias = field.get_subfield_alias(["pageInfo", "endCursor"])
+
     edge_node_selects = []
     for cfield in field.fields:
         if cfield.name == "edges":
@@ -221,7 +221,6 @@ def connection_block(field, parent_name):
                             edge_node_selects.append(elem)
                         # Other than edges, pageInfo, and cursor stuff is
                         # all handled by default
-
 
     # check if cursor is required
 
@@ -244,7 +243,7 @@ def connection_block(field, parent_name):
     {block_name}_p1 as (
         select *
         from {table_name}
-        where 
+        where
             ({"and".join(join_conditions) or 'true'})
             and ({"and".join(filter_conditions) or 'true'})
             and ({after or 'true'})
@@ -265,7 +264,7 @@ def connection_block(field, parent_name):
     )
 /*
     has_previous_page as (
-        select 
+        select
             case
                 -- If a cursor is provided, that row appears on the previous page
                 when coalesce(before_cursor, after_cursor) is not null then true
@@ -286,7 +285,7 @@ def connection_block(field, parent_name):
             ),
             '{edges_alias}', json_agg(
                 jsonb_build_object(
-                    '{cursor_alias}', {cursor}, 
+                    '{cursor_alias}', {cursor},
                     '{node_alias}', json_build_object(
                         {", ".join([f"'{name}', {expr}" for name, expr in edge_node_selects])}
                     )
@@ -294,8 +293,8 @@ def connection_block(field, parent_name):
             )
         )
     from
-        {block_name} 
-) 
+        {block_name}
+)
     """
 
     return block

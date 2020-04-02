@@ -1,8 +1,7 @@
 from functools import lru_cache
 
-from sqlalchemy import asc, desc
-
 from nebulous.text_utils import snake_to_camel
+from sqlalchemy import asc, desc
 
 from ..alias import EnumType, EnumValue, InputObjectType
 

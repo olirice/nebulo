@@ -21,14 +21,15 @@ def connection_factory(sqla_model):
     name = f"{snake_to_camel(sqla_model.__table__.name)}Connection"
 
     from .edge import edge_factory
+
     edge = edge_factory(sqla_model)
 
-    #from .table import table_factory
-    #table = table_factory(sqla_model)
+    # from .table import table_factory
+    # table = table_factory(sqla_model)
 
     def build_attrs():
         return {
-            #"nodes": Field(NonNull(List(table)), resolver=default_resolver),
+            # "nodes": Field(NonNull(List(table)), resolver=default_resolver),
             "edges": Field(NonNull(List(NonNull(edge))), resolver=default_resolver),
             "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
             "totalCount": Field(NonNull(Int), resolver=default_resolver),
@@ -41,11 +42,12 @@ def connection_factory(sqla_model):
 
 def connection_args_factory(sqla_model):
     from .condition import condition_factory
+
     condition = condition_factory(sqla_model)
 
-    #from .ordering import ordering_factory, to_default_ordering
-    #ordering = ordering_factory(sqla_model)
-    #default_ordering = to_default_ordering(sqla_model)
+    # from .ordering import ordering_factory, to_default_ordering
+    # ordering = ordering_factory(sqla_model)
+    # default_ordering = to_default_ordering(sqla_model)
 
     return {
         "first": Argument(Int, description="", out_name=None),

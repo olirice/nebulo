@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import typing
 
-from sqlalchemy import text
-
 from nebulous.text_utils.base64 import from_base64, to_base64, to_base64_sql
+from sqlalchemy import text
 
 from ..alias import Field, InterfaceType, NonNull, ScalarType
 

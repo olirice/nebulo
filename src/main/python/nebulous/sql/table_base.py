@@ -4,14 +4,13 @@ A base class to derive sql tables from
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from nebulous.sql.classproperty import classproperty
+from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 from sqlalchemy import MetaData
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty
 from sqlalchemy.sql.schema import Constraint, PrimaryKeyConstraint, UniqueConstraint
-
-from nebulous.sql.classproperty import classproperty
-from nebulous.sql.computed_column_mixin import ComputedColumnsMixin
 
 
 def build_base():

@@ -6,9 +6,6 @@ import typing
 
 import pytest
 from graphql import graphql as execute_graphql
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-
 from nebulous.gql.alias import Schema
 from nebulous.gql.gql_database import sqla_models_to_query_object
 from nebulous.server.flask import create_app
@@ -18,6 +15,8 @@ from nebulous.sql.reflection_utils import (
     rename_to_many_collection,
     rename_to_one_collection,
 )
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 if typing.TYPE_CHECKING:
     from flask import Flask

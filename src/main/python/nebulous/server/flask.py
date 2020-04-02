@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from flask import Flask
 from flask_graphql import GraphQLView
-
 from nebulous.gql.gql_database import GQLDatabase
 from nebulous.sql.sql_database import SQLDatabase
 

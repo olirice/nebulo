@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="nebulous",
@@ -17,9 +17,7 @@ setup(
     packages=find_packages("src/main/python"),
     package_dir={"": "src/main/python"},
     include_package_data=True,
-    entry_points={
-        "console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]
-    },
+    entry_points={"console_scripts": ["nebulous=nebulous.cli:main", "neb=nebulous.cli:main"]},
     install_requires=[
         "sqlalchemy==1.3.11",
         "psycopg2-binary==2.8.4",
@@ -31,7 +29,7 @@ setup(
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],
-        "dev": ['pylint', 'black', 'sqlalchemy-stubs'],
-        "nvim": ['neovim', 'python-language-server']
-        },
+        "dev": ["pylint", "black", "sqlalchemy-stubs"],
+        "nvim": ["neovim", "python-language-server"],
+    },
 )
