@@ -7,4 +7,4 @@ def test_astnode_get_subfield_alias_exception():
         # Calling instance method on class
         # No instance variables used before the thing
         # we're trying to test
-        ASTNode.get_subfield_alias(None, path=[])
+        ASTNode.get_subfield_alias(None, path=[])  # type: ignore
