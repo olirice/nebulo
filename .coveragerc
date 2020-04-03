@@ -4,3 +4,7 @@ exclude_lines =
     if TYPE_CHECKING:
     if typing.TYPE_CHECKING
     except ImportError
+
+[run]
+omit =
+    src/main/python/nebulo/lexer.py

@@ -8,7 +8,6 @@ from nebulo.sql.table_base import TableBase
 from sqlalchemy import Column
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import RelationshipProperty
-from sqlalchemy.sql.schema import PrimaryKeyConstraint, UniqueConstraint
 
 if TYPE_CHECKING:
     RelationshipPropertyType = RelationshipProperty[Any]
@@ -25,21 +24,9 @@ def get_table_name(sqla_model: TableBase) -> str:
 
 
 @lru_cache()
-def get_unique_constraints(sqla_model: TableBase) -> List[UniqueConstraint]:
-    """Unique constraints in the table"""
-    return [x for x in sqla_model.constraints if isinstance(x, UniqueConstraint)]
-
-
-@lru_cache()
 def get_relationships(sqla_model: TableBase) -> List[RelationshipPropertyType]:
     """Relationships with other tables"""
     return list(sql_inspect(sqla_model).relationships)
-
-
-@lru_cache()
-def get_primary_key(sqla_model: TableBase) -> List[PrimaryKeyConstraint]:
-    """Primary key"""
-    return sqla_model.__table__.primary_key
 
 
 @lru_cache()

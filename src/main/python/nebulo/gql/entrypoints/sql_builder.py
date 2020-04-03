@@ -1,7 +1,7 @@
 # pylint: disable=invalid-name
 from __future__ import annotations
 
-import random
+import secrets
 import string
 import typing
 
@@ -12,6 +12,11 @@ from nebulo.sql.inspect import get_primary_key_columns, get_table_name
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.sql.compiler import StrSQLCompiler
+
+
+def sanitize(text: str) -> str:
+    escape_key = secure_random_string()
+    return f"${escape_key}${text}${escape_key}$"
 
 
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
@@ -37,8 +42,7 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
 
     res = []
     for col, val in zip(pkey_cols, pkey_eq):
-        res.append(f"{local_table_name}.{col.name} = {val}")
-
+        res.append(f"{local_table_name}.{col.name} = {sanitize(val)}")
     return res
 
 
@@ -53,24 +57,29 @@ def to_after_clause(field) -> str:
     if cursor is None:
         return "true"
     cursor_table, cursor_values = cursor
+    sanitized_cursor_values = [sanitize(x) for x in cursor_values]
 
     if cursor_table != local_table_name:
         raise ValueError("Invalid after cursor")
 
+    # No user input
     left = "(" + ", ".join([x.name for x in pkey_cols]) + ")"
-    right = "(" + ", ".join(cursor_values) + ")"
+
+    # Contains user input
+    right = "(" + ", ".join(sanitized_cursor_values) + ")"
 
     return left + " > " + right
 
 
 def to_limit_clause(field) -> int:
     args = field.args
-    limit = args.get("first", 10)
+    limit = int(args.get("first", 10))
     return limit
 
 
 def to_conditions_clause(field) -> typing.List[str]:
-    local_table_name = get_table_name(field.return_type.sqla_model)
+    return_sqla_model = field.return_type.sqla_model
+    local_table_name = get_table_name(return_sqla_model)
     args = field.args
 
     conditions = args.get("condition")
@@ -79,8 +88,9 @@ def to_conditions_clause(field) -> typing.List[str]:
         return ["true"]
 
     res = []
-    for col_name, val in conditions.items():
-        res.append(f"{local_table_name}.{col_name} = {val}")
+    for col_key, val in conditions.items():
+        col_name = getattr(return_sqla_model, col_key).name
+        res.append(f"{local_table_name}.{col_name} = {sanitize(val)}")
     return res
 
 
@@ -115,7 +125,7 @@ def row_block(field, parent_name=None):
     return_type = field.return_type
     sqla_model = return_type.sqla_model
 
-    block_name = random_string()
+    block_name = secure_random_string()
     table_name = get_table_name(sqla_model)
     if parent_name is None:
         # If there is no parent, nodeId is mandatory
@@ -151,7 +161,6 @@ def row_block(field, parent_name=None):
         {block_name}
 )
     """
-
     return block
 
 
@@ -178,7 +187,7 @@ def connection_block(field, parent_name):
     return_type = field.return_type
     sqla_model = return_type.sqla_model
 
-    block_name = random_string()
+    block_name = secure_random_string()
     table_name = get_table_name(sqla_model)
     if parent_name is None:
         join_conditions = ["true"]
@@ -199,11 +208,11 @@ def connection_block(field, parent_name):
     node_alias = field.get_subfield_alias(["edges", "node"])
     cursor_alias = field.get_subfield_alias(["edges", "cursor"])
 
-    pageInfo_alias = field.get_subfield_alias(["pageInfo"])
-    hasNextPage_alias = field.get_subfield_alias(["pageInfo", "hasNextPage"])
-    hasPreviousPage_alias = field.get_subfield_alias(["pageInfo", "hasPreviousPage"])
-    startCursor_alias = field.get_subfield_alias(["pageInfo", "startCursor"])
-    endCursor_alias = field.get_subfield_alias(["pageInfo", "endCursor"])
+    pageInfo_alias = sanitize(field.get_subfield_alias(["pageInfo"]))
+    hasNextPage_alias = sanitize(field.get_subfield_alias(["pageInfo", "hasNextPage"]))
+    hasPreviousPage_alias = sanitize(field.get_subfield_alias(["pageInfo", "hasPreviousPage"]))
+    startCursor_alias = sanitize(field.get_subfield_alias(["pageInfo", "startCursor"]))
+    endCursor_alias = sanitize(field.get_subfield_alias(["pageInfo", "endCursor"]))
 
     edge_node_selects = []
     for cfield in field.fields:
@@ -220,8 +229,6 @@ def connection_block(field, parent_name):
                             edge_node_selects.append(elem)
                         # Other than edges, pageInfo, and cursor stuff is
                         # all handled by default
-
-    # check if cursor is required
 
     block = f"""
 (
@@ -249,13 +256,13 @@ def connection_block(field, parent_name):
         order by
             {order}
         limit
-            {min(limit, 10) + 1}
+            {limit + 1}
     ),
 
     {block_name} as (
         select row_number() over () as row_num, *
         from {block_name}_p1
-        limit {min(limit, 10)}
+        limit {limit}
     ),
 
     has_next_page as (
@@ -295,10 +302,9 @@ def connection_block(field, parent_name):
         {block_name}
 )
     """
-
     return block
 
 
-def random_string(length=8):
+def secure_random_string(length=8):
     letters = string.ascii_lowercase
-    return "".join(random.choices(letters, k=length))
+    return "".join([secrets.choice(letters) for _ in range(length)])

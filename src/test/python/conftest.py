@@ -22,8 +22,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 if typing.TYPE_CHECKING:
     from flask import Flask
 
-CONNECTION_STR = "postgresql://nebulo_user:password@localhost:4442/nebulo_db"
-
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;
@@ -33,8 +31,13 @@ SQL_DOWN = """
 
 
 @pytest.fixture(scope="session")
-def engine():
-    _engine = create_engine(CONNECTION_STR)
+def connection_str():
+    return "postgresql://nebulo_user:password@localhost:4442/nebulo_db"
+
+
+@pytest.fixture(scope="session")
+def engine(connection_str):
+    _engine = create_engine(connection_str)
 
     # Make sure the schema is clean
     _engine.execute(SQL_DOWN)

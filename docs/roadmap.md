@@ -2,11 +2,18 @@
 
 *Page Not Complete*
 
-Todo:
-- Reflect Enum types
-- Reflect composite types
-- Reflect computed columns
-- Expose SQL functions as mutations
-- Parameterize generated queries to protect against SQL injection
-- Mutations
-- Document usage as a library
+**Requirements for Alpha Release:**
+
+* Expose SQL functions as mutations (prerequisite to auth)
+
+**Requirements for Stable Release:**
+
+* Reflect mutations
+* Document usage as a library
+* Document authorization
+
+**Additional High Priority Requirements**
+
+* Reflect enum types
+* Reflect composite types
+* Reflect computed columns
