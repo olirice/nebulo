@@ -7,9 +7,10 @@
     <a href="https://github.com/olirice/nebulo/actions">
         <img src="https://github.com/olirice/nebulo/workflows/pre-commit%20hooks/badge.svg" alt="Pre-commit Status" height="18">
     </a>
+    <a href="https://codecov.io/gh/olirice/nebulo"><img src="https://codecov.io/gh/olirice/nebulo/branch/master/graph/badge.svg" height="18"></a>
     <a href="https://github.com/psf/black">
         <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Codestyle Black" height="18">
-        </a>
+    </a>
 
 </p>
 <p>
