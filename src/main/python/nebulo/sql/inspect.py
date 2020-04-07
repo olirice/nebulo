@@ -33,3 +33,9 @@ def get_relationships(sqla_model: TableBase) -> List[RelationshipPropertyType]:
 def get_primary_key_columns(sqla_model: TableBase) -> List[ColumnType]:
     """Primary key"""
     return [x for x in sqla_model.__table__.primary_key.columns]
+
+
+@lru_cache()
+def get_columns(sqla_model: TableBase) -> List[ColumnType]:
+    """Columns on the table"""
+    return [x for x in sqla_model.__table__.columns]

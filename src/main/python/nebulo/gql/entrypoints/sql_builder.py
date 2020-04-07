@@ -5,6 +5,7 @@ import secrets
 import string
 import typing
 
+from cachetools import cached
 from nebulo.gql.alias import ConnectionType, ScalarType, TableType
 from nebulo.gql.convert.cursor import to_cursor_sql
 from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
@@ -19,7 +20,7 @@ def sanitize(text: str) -> str:
     return f"${escape_key}${text}${escape_key}$"
 
 
-def to_join_clause(field, parent_block_name: str) -> typing.List[str]:  #
+def to_join_clause(field, parent_block_name: str) -> typing.List[str]:
     parent_field = field.parent
     relation_from_parent = getattr(parent_field.return_type.sqla_model, field.name).property
     local_table_name = get_table_name(field.return_type.sqla_model)
@@ -46,17 +47,33 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     return res
 
 
-def to_after_clause(field) -> str:
+def to_pagination_clause(field) -> str:
+    args = field.args
+    after_cursor = args.get("after", None)
+    before_cursor = args.get("before", None)
+    first = args.get("first", None)
+    last = args.get("last", None)
+
+    if after_cursor is None and before_cursor is None:
+        return "true"
+
+    if after_cursor is not None and before_cursor is not None:
+        raise ValueError('only one of "before" and "after" may be provided')
+
+    if first is not None and last is not None:
+        raise ValueError('only one of "first" and "last" may be provided')
+
+    if after_cursor is not None and last is not None:
+        raise ValueError('"after" is not compatible with "last". Use "first"')
+
+    if before_cursor is not None and first is not None:
+        raise ValueError('"before" is not compatible with "first". Use "last"')
+
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
-
     pkey_cols = get_primary_key_columns(local_table)
 
-    args = field.args
-    cursor = args.get("after", None)
-    if cursor is None:
-        return "true"
-    cursor_table, cursor_values = cursor
+    cursor_table, cursor_values = before_cursor or after_cursor
     sanitized_cursor_values = [sanitize(x) for x in cursor_values]
 
     if cursor_table != local_table_name:
@@ -68,12 +85,17 @@ def to_after_clause(field) -> str:
     # Contains user input
     right = "(" + ", ".join(sanitized_cursor_values) + ")"
 
-    return left + " > " + right
+    op = ">" if after_cursor is not None else "<"
+
+    return left + op + right
 
 
-def to_limit_clause(field) -> int:
+def to_limit(field) -> int:
     args = field.args
-    limit = int(args.get("first", 10))
+    default = 10
+    first = int(args.get("first", default))
+    last = int(args.get("last", default))
+    limit = min(first, last, default)
     return limit
 
 
@@ -164,9 +186,10 @@ def row_block(field, parent_name=None):
     return block
 
 
+@cached(cache={}, key=lambda x: x.return_type.sqla_model)
 def to_order_clause(field):
     sqla_model = field.return_type.sqla_model
-    return ", ".join([x.name for x in get_primary_key_columns(sqla_model)])
+    return "(" + ", ".join([x.name for x in get_primary_key_columns(sqla_model)]) + ")"
 
 
 def check_has_total(field) -> bool:
@@ -195,10 +218,14 @@ def connection_block(field, parent_name):
         join_conditions = to_join_clause(field, parent_name)
 
     filter_conditions = to_conditions_clause(field)
-    limit = to_limit_clause(field)
-    after = to_after_clause(field)
-    order = to_order_clause(field)
+    limit = to_limit(field)
     has_total = check_has_total(field)
+    order = to_order_clause(field)
+    reverse_order = to_order_clause(field) + "desc"
+
+    pagination = to_pagination_clause(field)
+    is_page_after = "after" in field.args
+    is_page_before = "before" in field.args
 
     cursor = to_cursor_sql(sqla_model)
 
@@ -246,48 +273,58 @@ def connection_block(field, parent_name):
             and {'true' if has_total else 'false'}
     ),
 
+    -- Select table subset with (maybe) 1 extra row
     {block_name}_p1 as (
-        select *
-        from {table_name}
+        select
+            *
+        from
+            {table_name}
         where
             ({"and".join(join_conditions) or 'true'})
             and ({"and".join(filter_conditions) or 'true'})
-            and ({after or 'true'})
+            and ({pagination})
         order by
+            {reverse_order if is_page_before else order},
             {order}
         limit
             {limit + 1}
     ),
 
+    -- Remove possible extra row
+    {block_name}_p2 as (
+        select
+            *
+        from
+            {block_name}_p1
+        limit
+            {limit}
+    ),
+
     {block_name} as (
-        select row_number() over () as row_num, *
-        from {block_name}_p1
-        limit {limit}
+        select
+            row_number() over () as _row_num,
+            *
+        from
+            {block_name}_p2
+        order by
+            {order}
+        limit
+            {limit}
     ),
 
     has_next_page as (
-        select (select count(*) from {block_name}) > (select count(*) from {block_name}) as has_next
+        select (select count(*) from {block_name}_p1) > {limit} as has_next
     )
-/*
-    has_previous_page as (
-        select
-            case
-                -- If a cursor is provided, that row appears on the previous page
-                when coalesce(before_cursor, after_cursor) is not null then true
-                -- If no cursor is provided, no previous page
-                else false
-            end has_previous
-    ),
-*/
+
     select
         jsonb_build_object(
             '{totalCount_alias}', (select total_count from total),
 
             '{pageInfo_alias}', json_build_object(
                 '{hasNextPage_alias}', (select has_next from has_next_page),
-                '{hasPreviousPage_alias}', {'true' if after else 'false'},
-                '{startCursor_alias}', (select {cursor} from {block_name} order by row_num asc limit 1),
-                '{endCursor_alias}', (select {cursor} from {block_name} order by row_num desc limit 1)
+                '{hasPreviousPage_alias}', {'true' if is_page_after else 'false'},
+                '{startCursor_alias}', (select {cursor} from {block_name} order by _row_num asc limit 1),
+                '{endCursor_alias}', (select {cursor} from {block_name} order by _row_num desc limit 1)
             ),
             '{edges_alias}', json_agg(
                 jsonb_build_object(

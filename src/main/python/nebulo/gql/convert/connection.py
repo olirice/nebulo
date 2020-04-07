@@ -11,13 +11,13 @@ from .cursor import Cursor
 from .page_info import PageInfo
 
 if typing.TYPE_CHECKING:
-    pass
+    from nebulo.sql.table_base import TableBase
 
 __all__ = ["connection_factory", "connection_args_factory"]
 
 
 @lru_cache()
-def connection_factory(sqla_model):
+def connection_factory(sqla_model: TableBase):
     name = f"{snake_to_camel(sqla_model.__table__.name)}Connection"
 
     from .edge import edge_factory
@@ -36,15 +36,15 @@ def connection_factory(sqla_model):
     return return_type
 
 
-def connection_args_factory(sqla_model):
+def connection_args_factory(sqla_model: TableBase):
     from .condition import condition_factory
 
     condition = condition_factory(sqla_model)
 
     return {
         "first": Argument(Int, description="", out_name=None),
-        # "last": Argument(Int),
-        # "before": Argument(Cursor),
+        "last": Argument(Int),
+        "before": Argument(Cursor),
         "after": Argument(Cursor),
         "condition": Argument(condition),
     }

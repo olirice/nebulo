@@ -4,7 +4,7 @@ from typing import Optional
 
 from flask import Flask
 from flask_graphql import GraphQLView
-from nebulo.gql.gql_database import GQLDatabase
+from nebulo.gql.gql_database import sqla_models_to_graphql_schema
 from nebulo.sql.sql_database import SQLDatabase
 
 __all__ = ["create_app"]
@@ -41,8 +41,8 @@ def register_database(app):
 
 def register_graphql_schema(app):
     sql_db = app.config["database"]
-    gql_db = GQLDatabase(sql_db)
-    app.config["graphql_schema"] = gql_db.schema
+    gql_schema = sqla_models_to_graphql_schema(sql_db.models)
+    app.config["graphql_schema"] = gql_schema
     return app
 
 

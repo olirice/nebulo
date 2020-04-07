@@ -6,8 +6,7 @@ import typing
 
 import pytest
 from graphql import graphql as execute_graphql
-from nebulo.gql.alias import Schema
-from nebulo.gql.gql_database import sqla_models_to_query_object
+from nebulo.gql.gql_database import sqla_models_to_graphql_schema
 from nebulo.server.flask import create_app
 from nebulo.sql import table_base
 from nebulo.sql.reflection_utils import (
@@ -93,8 +92,7 @@ def schema_builder(session, engine):
         )
 
         tables = list(TableBase.classes)
-        query_object = sqla_models_to_query_object(tables)
-        schema = Schema(query_object)
+        schema = sqla_models_to_graphql_schema(tables)
         return schema
 
     return build

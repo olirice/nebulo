@@ -28,6 +28,7 @@ setup(
         "flask-graphql==2.0.1",
         "click==7.1.1",
         "inflect==4.1.0",
+        "cachetools==4.0.0",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],

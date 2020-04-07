@@ -3,10 +3,9 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+from nebulo.gql.alias import InputField, InputObjectType
+from nebulo.gql.convert.table import convert_column
 from nebulo.text_utils import snake_to_camel
-
-from ..alias import InputField, InputObjectType
-from .table import convert_column
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase
