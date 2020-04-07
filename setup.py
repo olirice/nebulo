@@ -6,7 +6,13 @@ setup(
     description="Nebulo: Reflect RDBMS to GraphQL API",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
-    license="TBD",
+    license="MIT",
+    url="https://github.com/olirice/nebulo",
+    project_urls={
+        "Documentation": "https://olirice.github.io/nebulo/",
+        "Source Code": "https://github.com/olirice/nebulo",
+    },
+    keywords="graphql sqlalchemy sql api python",
     classifiers=[
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.7",
