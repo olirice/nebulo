@@ -52,7 +52,7 @@ neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 
 Visit your shiny new GraphQL API at [http://localhost:5018/graphql](http://localhost:5018/graphql)
 
-![graphiql image](images/graphiql.png)
+![graphiql image](docs/images/graphiql.png)
 
 Next, check out the [docs](https://olirice.github.io/nebulo/introduction/) guide for a small end-to-end example.
 
