@@ -13,6 +13,7 @@ from nebulo.sql.inspect import get_primary_key_columns, get_table_name
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.sql.compiler import StrSQLCompiler
+    from nebulo.gql.parse_info import ASTNode
 
 
 def sanitize(text: str) -> str:
@@ -33,13 +34,10 @@ def to_join_clause(field, parent_block_name: str) -> typing.List[str]:
     return join_clause
 
 
-def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
+def to_pkey_clause(field, pkey_eq: typing.List[str]) -> typing.List[str]:
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
     pkey_cols = get_primary_key_columns(local_table)
-
-    if not hasattr(pkey_eq, "__iter__"):
-        pkey_eq = [pkey_eq]
 
     res = []
     for col, val in zip(pkey_cols, pkey_eq):
@@ -47,15 +45,12 @@ def to_pkey_clause(field, pkey_eq) -> typing.List[str]:
     return res
 
 
-def to_pagination_clause(field) -> str:
+def to_pagination_clause(field: ASTNode) -> str:
     args = field.args
     after_cursor = args.get("after", None)
     before_cursor = args.get("before", None)
     first = args.get("first", None)
     last = args.get("last", None)
-
-    if after_cursor is None and before_cursor is None:
-        return "true"
 
     if after_cursor is not None and before_cursor is not None:
         raise ValueError('only one of "before" and "after" may be provided')
@@ -68,6 +63,9 @@ def to_pagination_clause(field) -> str:
 
     if before_cursor is not None and first is not None:
         raise ValueError('"before" is not compatible with "first". Use "last"')
+
+    if after_cursor is None and before_cursor is None:
+        return "true"
 
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
@@ -195,15 +193,6 @@ def to_order_clause(field):
 def check_has_total(field) -> bool:
     "Check if 'totalCount' is requested in the query result set"
     return any(x.name in "totalCount" for x in field.fields)
-
-
-def get_selection_alias(field, key: str) -> str:
-    """ Looks up the alias of a selected subfield, or returns subfield.name
-    if no alias is provided """
-    for subfield in field.fields:
-        if subfield.name == key:
-            return subfield.alias or key
-    return key
 
 
 def connection_block(field, parent_name):

@@ -19,18 +19,24 @@ INSERT INTO account (id, name) VALUES
 create table offer (
     id serial primary key, --integer primary key autoincrement,
     currency text,
-    account_id int not null,
+    account_id_not_null int not null,
+    account_id_nullable int,
 
-    constraint fk_offer_account_id
-        foreign key (account_id)
+    constraint fk_offer_account_id_not_null
+        foreign key (account_id_not_null)
+        references account (id),
+
+    constraint fk_offer_account_id_nullable
+        foreign key (account_id_nullable)
         references account (id)
+
 );
 
-INSERT INTO offer (currency, account_id) VALUES
-('usd', 2),
-('gbp', 2),
-('eur', 3),
-('jpy', 4);
+INSERT INTO offer (currency, account_id_not_null, account_id_nullable) VALUES
+('usd', 2, 2),
+('gbp', 2, 2),
+('eur', 3, null),
+('jpy', 4, 4);
 """
 
 
@@ -42,7 +48,7 @@ def test_query_one_to_many(gql_exec_builder):
     {{
         account(nodeId: "{node_id}") {{
             id
-            offersByAccountId {{
+            offersByAccountIdNullable {{
                 edges {{
                     node {{
                         id
@@ -59,7 +65,7 @@ def test_query_one_to_many(gql_exec_builder):
     assert result.errors is None
     assert result.data["account"]["id"] == account_id
 
-    offers_by_id = result.data["account"]["offersByAccountId"]
+    offers_by_id = result.data["account"]["offersByAccountIdNullable"]
     currencies = {x["node"]["currency"] for x in offers_by_id["edges"]}
     assert "usd" in currencies and "gbp" in currencies
 
@@ -77,7 +83,7 @@ def test_query_many_to_one(gql_exec_builder):
         edges {
             node {
                 id
-                accountByAccountId {
+                accountByAccountIdNotNull {
                     name
                 }
             }

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 @click.group()
 @click.version_option(version="0.0.1")
 def main(**kwargs):
-    pass
+    pass  # pragma: no cover
 
 
 @main.command()
@@ -24,8 +24,8 @@ def main(**kwargs):
 @click.option("-e", "--echo-queries", is_flag=True, default=False)
 def run(connection, schema, echo_queries, host, port):
     """Run the GraphQL Server"""
-    app = create_app(connection, schema, echo_queries)
-    app.run(host=host, port=port)
+    app = create_app(connection, schema, echo_queries)  # pragma: no cover
+    app.run(host=host, port=port)  # pragma: no cover
 
 
 @main.command()

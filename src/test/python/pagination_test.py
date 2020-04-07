@@ -188,3 +188,71 @@ def test_pagination_order(gql_exec_builder):
     """
     result = executor(request_string=gql_query)
     assert [x["node"]["name"] for x in result.data["allAccounts"]["edges"]] == ["rachel", "sophie"]
+
+
+def test_invalid_pagination_params(gql_exec_builder):
+    executor = gql_exec_builder(SQL_UP)
+    cursor = "YWNjb3VudEA3"
+    # First with Before
+    gql_query = f"""
+    {{
+        allAccounts(first: 1, before: "{cursor}") {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert result.errors is not None
+
+    # Last with After
+    gql_query = f"""
+    {{
+        allAccounts(last: 1, after: "{cursor}") {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert result.errors is not None
+
+    # First and Last
+    gql_query = f"""
+    {{
+        allAccounts(first: 1, last: 1) {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert result.errors is not None
+
+    # Before and After
+    gql_query = f"""
+    {{
+        allAccounts(before: "{cursor}", after: "{cursor}") {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    result = executor(request_string=gql_query)
+    assert result.errors is not None

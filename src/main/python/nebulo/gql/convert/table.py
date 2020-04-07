@@ -4,15 +4,12 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-import sqlalchemy
 from nebulo.gql.alias import Field, InputField, NonNull, String, TableType
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
 from nebulo.gql.convert.typemap import Typemap
 from nebulo.gql.default_resolver import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, get_table_name
 from nebulo.text_utils import snake_to_camel
-from sqlalchemy import cast, func
-from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
 
@@ -40,13 +37,6 @@ def convert_column(
         return output_type(return_type, resolver=default_resolver)
     else:
         return output_type(return_type)
-
-
-@lru_cache()
-def convert_composite(composite) -> typing.Union[Field, InputField]:
-    """Converts a sqlalchemy composite field into a graphql object type"""
-    composite = composite
-    raise NotImplementedError("Composite fields are not yet supported")
 
 
 @lru_cache()
@@ -108,7 +98,3 @@ def table_factory(sqla_model):
     return_type.sqla_model = sqla_model
 
     return return_type
-
-
-def encode(text_to_encode, encoding="base64"):
-    return func.encode(cast(text_to_encode, BYTEA()), cast(encoding, sqlalchemy.Text()))
