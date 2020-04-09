@@ -309,21 +309,21 @@ def connection_block(field, parent_name):
         jsonb_build_object(
             '{totalCount_alias}', (select total_count from total),
 
-            '{pageInfo_alias}', json_build_object(
+            '{pageInfo_alias}', jsonb_build_object(
                 '{hasNextPage_alias}', (select has_next from has_next_page),
                 '{hasPreviousPage_alias}', {'true' if is_page_after else 'false'},
                 '{startCursor_alias}', (select {cursor} from {block_name} order by _row_num asc limit 1),
                 '{endCursor_alias}', (select {cursor} from {block_name} order by _row_num desc limit 1)
             ),
-            '{edges_alias}', json_agg(
+            '{edges_alias}', jsonb_agg(
                 jsonb_build_object(
                     '{cursor_alias}', {cursor},
-                    '{node_alias}', json_build_object(
+                    '{node_alias}', jsonb_build_object(
                         {", ".join([f"'{name}', {expr}" for name, expr in edge_node_selects])}
                     )
                 )
             )
-        )
+        ) as result
     from
         {block_name}
 )

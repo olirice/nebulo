@@ -1,6 +1,8 @@
 import typing
 
+from graphql.execution.execute import get_field_def
 from graphql.execution.values import get_argument_values
+from graphql.language import FieldNode
 from nebulo.gql.alias import Field, List, NonNull, ObjectType, ResolveInfo, Schema
 
 __all__ = ["parse_resolve_info"]
@@ -19,25 +21,52 @@ def field_to_type(field):
 
 
 class ASTNode:
-    def __init__(self, field_ast: Field, field_def: ObjectType, schema: Schema, parent: typing.Optional["ASTNode"]):
+    def __init__(
+        self,
+        field_node: FieldNode,
+        field_def: ObjectType,
+        schema: Schema,
+        parent: typing.Optional["ASTNode"],
+        variable_values,
+        parent_type,
+    ):
 
-        args = get_argument_values(arg_defs=field_def.args, arg_asts=field_ast.arguments)
-        selection_set = field_ast.selection_set
+        # _args = get_argument_values(arg_defs=field_def.args, arg_asts=field_node.arguments)
+        self.name = field_node.name.value
+
+        field_def = get_field_def(schema, parent_type, self.name)  # A connection/edge/etc class
+
+        _args = get_argument_values(type_def=field_def, node=field_node, variable_values=variable_values)
+
+        selection_set = field_node.selection_set
         field_type = field_to_type(field_def)
 
-        self.alias = (field_ast.alias.value if field_ast.alias else None) or field_ast.name.value
-        self.name = field_ast.name.value
+        # import pdb; pdb.set_trace()
+
+        self.alias = (field_node.alias.value if field_node.alias else None) or field_node.name.value
         self.return_type = field_type
         self.parent: typing.Optional[ASTNode] = parent
-        self.args: typing.Dict[str, typing.Any] = args
+        self.parent_type = parent_type
+        self.args: typing.Dict[str, typing.Any] = _args
         self.path: typing.List[str] = parent.path + [self.name] if parent is not None else ["root"]
 
         sub_fields = []
         if selection_set:
             for selection_ast in selection_set.selections:
                 selection_name = selection_ast.name.value
+
                 selection_field = field_type.fields[selection_name]
-                sub_fields.append(ASTNode(selection_ast, selection_field, schema, parent=self))
+                sub_fields.append(
+                    ASTNode(
+                        field_node=selection_ast,
+                        field_def=selection_field,
+                        schema=schema,
+                        parent=self,
+                        variable_values=variable_values,
+                        # TODO(OR): Maybe wrong type
+                        parent_type=field_type,
+                    )
+                )
 
         self.fields = sub_fields
 
@@ -79,13 +108,20 @@ def parse_resolve_info(info: ResolveInfo) -> ASTNode:
     }
     """
     # Root info
-    field_ast = info.field_asts[0]
+    # import pdb; pdb.set_trace()
+    field_node = info.field_nodes[0]
     schema = info.schema
 
     # Current field from parent
     parent_type = info.parent_type
-    parent_lookup_name = field_ast.name.value
+    parent_lookup_name = field_node.name.value
     current_field = parent_type.fields[parent_lookup_name]
-
-    parsed_info = ASTNode(field_ast, current_field, schema, parent=None)
+    parsed_info = ASTNode(
+        field_node,
+        current_field,
+        schema,
+        parent=None,
+        variable_values=info.variable_values,
+        parent_type=info.parent_type,
+    )
     return parsed_info

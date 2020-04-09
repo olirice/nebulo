@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING
 
 import click
 from graphql.utils.schema_printer import print_schema
-from nebulo.server.flask import create_app
+
+# from nebulo.server.flask import create_app
+from nebulo.server.starlette import create_app
 
 if TYPE_CHECKING:
     pass
@@ -24,7 +26,8 @@ def main(**kwargs):
 @click.option("-e", "--echo-queries", is_flag=True, default=False)
 def run(connection, schema, echo_queries, host, port):
     """Run the GraphQL Server"""
-    app = create_app(connection, schema, echo_queries)  # pragma: no cover
+    # app = create_app(connection, schema, echo_queries)  # pragma: no cover
+    app = create_app(connection)  # pragma: no cover
     app.run(host=host, port=port)  # pragma: no cover
 
 

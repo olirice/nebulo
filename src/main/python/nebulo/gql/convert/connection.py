@@ -26,9 +26,10 @@ def connection_factory(sqla_model: TableBase):
 
     def build_attrs():
         return {
-            "edges": Field(NonNull(List(NonNull(edge))), resolver=default_resolver),
-            "pageInfo": Field(NonNull(PageInfo), resolver=default_resolver),
-            "totalCount": Field(NonNull(Int), resolver=default_resolver),
+            # TODO(OR): Are the resolve arguments necessary?
+            "edges": Field(NonNull(List(NonNull(edge))), resolve=default_resolver),
+            "pageInfo": Field(NonNull(PageInfo), resolve=default_resolver),
+            "totalCount": Field(NonNull(Int), resolve=default_resolver),
         }
 
     return_type = ConnectionType(name=name, fields=build_attrs, description="")

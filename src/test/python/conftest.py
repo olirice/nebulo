@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 import importlib
-import typing
 
 import pytest
 from graphql import graphql as execute_graphql
-from nebulo.gql.gql_database import sqla_models_to_graphql_schema
-from nebulo.server.flask import create_app
+from nebulo.server.starlette import create_app
 from nebulo.sql import table_base
 from nebulo.sql.reflection_utils import (
     rename_columns,
@@ -17,10 +15,6 @@ from nebulo.sql.reflection_utils import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-
-if typing.TYPE_CHECKING:
-    from flask import Flask
-
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;

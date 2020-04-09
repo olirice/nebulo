@@ -56,7 +56,7 @@ NodeID = ScalarType(
 NodeInterface = InterfaceType(
     "NodeInterface",
     description="An object with a nodeId",
-    fields={"nodeId": Field(NonNull(NodeID), description="The global id of the object.", resolver=None)},
+    fields={"nodeId": Field(NonNull(NodeID), description="The global id of the object.", resolve=None)},
     # Maybe not necessary
     resolve_type=lambda *args, **kwargs: None,
 )

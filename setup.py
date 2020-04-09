@@ -31,10 +31,11 @@ setup(
         "psycopg2-binary==2.8.4",
         "graphql-core==2.3.1",
         "flask==1.1.1",
-        "flask-graphql==2.0.1",
         "click==7.1.1",
         "inflect==4.1.0",
         "cachetools==4.0.0",
+        "starlette==0.13.2",
+        "databases[postgresql]==0.2.6",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],
