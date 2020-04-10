@@ -27,7 +27,7 @@ def test_query_with_int_condition(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is None
     result_id = result.data["allAccounts"]["edges"][0]["node"]["id"]
     assert result_id == 1
@@ -47,7 +47,7 @@ def test_query_with_string_condition(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is None
     result_name = result.data["allAccounts"]["edges"][0]["node"]["name"]
     assert result_name == "sophie"

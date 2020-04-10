@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import os
 
 import click
-from graphql.utils.schema_printer import print_schema
+import uvicorn
+from graphql.utilities import print_schema
 
 # from nebulo.server.flask import create_app
 from nebulo.server.starlette import create_app
-
-if TYPE_CHECKING:
-    pass
 
 
 @click.group()
@@ -21,14 +19,21 @@ def main(**kwargs):
 @main.command()
 @click.option("-c", "--connection", default="sqlite:///")
 @click.option("-p", "--port", default=5018)
-@click.option("-h", "--host", default="localhost")
-@click.option("-s", "--schema", default=None)
-@click.option("-e", "--echo-queries", is_flag=True, default=False)
-def run(connection, schema, echo_queries, host, port):
+@click.option("-h", "--host", default="0.0.0.0")
+@click.option("-w", "--workers", default=1)
+@click.option("-s", "--schema", default="public")
+@click.option("--reload/--no-reload", default=True)
+def run(connection, schema, host, port, reload, workers):
     """Run the GraphQL Server"""
-    # app = create_app(connection, schema, echo_queries)  # pragma: no cover
-    app = create_app(connection)  # pragma: no cover
-    app.run(host=host, port=port)  # pragma: no cover
+
+    if reload and workers > 1:
+        print("Reload not supported with workers > 1")
+    else:
+        # app = create_app(connection, schema, echo_queries)  # pragma: no cover
+        os.environ["NEBULO_CONNECTION"] = connection
+        os.environ["NEBULO_SCHEMA"] = schema
+
+        uvicorn.run("nebulo.server.app:APP", host=host, port=port, workers=workers, log_level="warning", reload=reload)
 
 
 @main.command()

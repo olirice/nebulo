@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import importlib
+from typing import Callable
 
 import pytest
-from graphql import graphql as execute_graphql
-from nebulo.server.starlette import create_app
+from databases import Database
+from graphql import graphql_sync as execute_graphql
+from graphql.execution.execute import ExecutionResult
+
+# from nebulo.server.starlette import create_app, create_database
+from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.sql import table_base
 from nebulo.sql.reflection_utils import (
     rename_columns,
@@ -15,6 +20,8 @@ from nebulo.sql.reflection_utils import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from starlette.applications import Starlette
+from starlette.testclient import TestClient
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;
@@ -31,7 +38,6 @@ def connection_str():
 @pytest.fixture(scope="session")
 def engine(connection_str):
     _engine = create_engine(connection_str)
-
     # Make sure the schema is clean
     _engine.execute(SQL_DOWN)
     yield _engine
@@ -51,11 +57,8 @@ def session(session_maker):
     _session = session_maker
     _session.execute(SQL_DOWN)
     _session.commit()
-
     yield _session
-
     _session.rollback()
-
     _session.execute(SQL_DOWN)
     _session.commit()
     _session.close()
@@ -70,7 +73,7 @@ def schema_builder(session, engine):
     # differences in added/deleted columns gets janked up. Reimporting resets
     # the metadata.
     importlib.reload(table_base)
-    TableBase = table_base.TableBase
+    TableBase = table_base.TableBase  # pylint: disable=invalid-name
 
     def build(sql: str):
         session.execute(sql)
@@ -84,47 +87,51 @@ def schema_builder(session, engine):
             name_for_scalar_relationship=rename_to_one_collection,
             name_for_collection_relationship=rename_to_many_collection,
         )
-
         tables = list(TableBase.classes)
-        schema = sqla_models_to_graphql_schema(tables)
+        schema = sqla_models_to_graphql_schema(tables, resolve_async=False)
         return schema
 
     return build
 
 
 @pytest.fixture
-def gql_exec_builder(schema_builder, session):
+def gql_exec_builder(schema_builder, session) -> Callable[str, Callable[str, ExecutionResult]]:
     """Return a function that accepts a sql string
     and returns a graphql executor """
 
-    def build(sql: str):
+    def build(sql: str) -> Callable[str, ExecutionResult]:
         schema = schema_builder(sql)
-        return lambda request_string: execute_graphql(
-            schema=schema, request_string=request_string, context={"session": session}
+        return lambda source_query: execute_graphql(
+            schema=schema, source=source_query, context_value={"session": session}
         )
 
     return build
 
 
+@pytest.fixture(scope="session")
+def database(connection_str):
+    _database = create_database(connection_str)
+    _database.connect()
+    yield _database
+    _database.disconnect()
+
+
 @pytest.fixture
-def app_builder(engine, gql_exec_builder):
-    def build(sql: str) -> Flask:
+def app_builder(gql_exec_builder, database: Database) -> Callable[str, Starlette]:
+    def build(sql: str) -> Starlette:
         # Builds the schmema
         executor = gql_exec_builder(sql)  # pylint: disable=unused-variable
-
-        connection = None
-        schema = "public"
-        echo_queries = False
-
-        app = create_app(connection=connection, schema=schema, echo_queries=echo_queries, engine=engine)
+        graphql_endpoint = get_graphql_endpoint(gql_schema, database)
+        app = Starlette(routes=[graphql_endpoint])
         return app
 
     yield build
 
 
 @pytest.fixture
-def client_builder(app_builder):
-    def build(sql: str):
-        return app_builder(sql).test_client()
+def client_builder(app_builder: Callable[str, TestClient]) -> Callable[str, TestClient]:
+    def build(sql: str) -> TestClient:
+        app = app_builder(sql)
+        return app_builder(sql)
 
     yield build

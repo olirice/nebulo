@@ -33,7 +33,7 @@ def test_get_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is None
     cursor = result.data["allAccounts"]["edges"][2]["cursor"]
     assert cursor is not None
@@ -56,7 +56,7 @@ def test_invalid_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert "invalid" in result.errors[0].message.lower()
 
 
@@ -74,7 +74,7 @@ def test_retrieve_1_after_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     # Get a cursor to 2nd entry
     cursor = result.data["allAccounts"]["edges"][1]["cursor"]
     print(cursor)
@@ -92,7 +92,7 @@ def test_retrieve_1_after_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 3
 
 
@@ -110,7 +110,7 @@ def test_retrieve_1_before_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     # Get a cursor to 2nd entry
     cursor = result.data["allAccounts"]["edges"][1]["cursor"]
     print(cursor)
@@ -128,7 +128,7 @@ def test_retrieve_1_before_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 1
 
 
@@ -146,7 +146,7 @@ def test_pagination_order(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     # Get a cursor to 2nd entry
     # Cursor for the "rachel" entry
     limit = 2
@@ -168,7 +168,7 @@ def test_pagination_order(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     print(result.data)
     after_result = [x["node"]["name"] for x in result.data["allAccounts"]["edges"]]
     assert after_result == ["sophie", "buddy"]
@@ -186,7 +186,7 @@ def test_pagination_order(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert [x["node"]["name"] for x in result.data["allAccounts"]["edges"]] == ["rachel", "sophie"]
 
 
@@ -206,7 +206,7 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is not None
 
     # Last with After
@@ -222,7 +222,7 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is not None
 
     # First and Last
@@ -238,7 +238,7 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is not None
 
     # Before and After
@@ -254,5 +254,5 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is not None

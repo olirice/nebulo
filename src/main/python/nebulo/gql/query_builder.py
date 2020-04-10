@@ -246,6 +246,8 @@ def connection_block(field, parent_name):
                         # Other than edges, pageInfo, and cursor stuff is
                         # all handled by default
 
+    # TODO(OR): Sanitize aliases
+
     block = f"""
 (
     with total as (
@@ -309,11 +311,11 @@ def connection_block(field, parent_name):
         jsonb_build_object(
             '{totalCount_alias}', (select total_count from total),
 
-            '{pageInfo_alias}', jsonb_build_object(
-                '{hasNextPage_alias}', (select has_next from has_next_page),
-                '{hasPreviousPage_alias}', {'true' if is_page_after else 'false'},
-                '{startCursor_alias}', (select {cursor} from {block_name} order by _row_num asc limit 1),
-                '{endCursor_alias}', (select {cursor} from {block_name} order by _row_num desc limit 1)
+            {pageInfo_alias}, jsonb_build_object(
+                {hasNextPage_alias}, (select has_next from has_next_page),
+                {hasPreviousPage_alias}, {'true' if is_page_after else 'false'},
+                {startCursor_alias}, (select {cursor} from {block_name} order by _row_num asc limit 1),
+                {endCursor_alias}, (select {cursor} from {block_name} order by _row_num desc limit 1)
             ),
             '{edges_alias}', jsonb_agg(
                 jsonb_build_object(

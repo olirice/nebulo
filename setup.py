@@ -29,7 +29,7 @@ setup(
     install_requires=[
         "sqlalchemy==1.3.15",
         "psycopg2-binary==2.8.4",
-        "graphql-core==2.3.1",
+        "graphql-core==3.1.0",
         "flask==1.1.1",
         "click==7.1.1",
         "inflect==4.1.0",

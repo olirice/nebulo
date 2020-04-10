@@ -1,5 +1,5 @@
 from databases import Database
-from nebulo.gql.gql_database import sqla_models_to_graphql_schema
+from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphql_endpoint, graphiql_endpoint
 from nebulo.sql.sql_database import SQLDatabase
@@ -10,14 +10,14 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 
 
-def create_app(connection: str):
+def create_app(database: Database) -> Starlette:
     """Create an ASGI App"""
 
-    database = Database(connection)
+    connection_str = str(database.url)
 
-    reflection_manager = SQLDatabase(connection=connection, schema="public")
+    reflection_manager = SQLDatabase(connection=connection_str, schema="public")
 
-    gql_schema = sqla_models_to_graphql_schema(reflection_manager.models)
+    gql_schema = sqla_models_to_graphql_schema(reflection_manager.models, resolve_async=True)
 
     graphql_endpoint = get_graphql_endpoint(gql_schema, database)
 
@@ -34,8 +34,3 @@ def create_app(connection: str):
         on_shutdown=[database.disconnect],
     )
     return _app
-
-
-# uvicorn does not support application factory pattern
-# https://github.com/encode/uvicorn/issues/492
-app = create_app("postgresql://nebulo_user:password@localhost:4443/nebulo_db")
