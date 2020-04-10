@@ -36,6 +36,7 @@ setup(
         "cachetools==4.0.0",
         "starlette==0.13.2",
         "databases[postgresql]==0.2.6",
+        "uvicorn==0.1.1",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],
