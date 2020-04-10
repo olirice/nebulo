@@ -5,9 +5,9 @@ import os
 import click
 import uvicorn
 from graphql.utilities import print_schema
-
-# from nebulo.server.flask import create_app
-from nebulo.server.starlette import create_app
+from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
+from nebulo.sql.reflection_manager import reflect_sqla_models
+from sqlalchemy import create_engine
 
 
 @click.group()
@@ -25,7 +25,6 @@ def main(**kwargs):
 @click.option("--reload/--no-reload", default=True)
 def run(connection, schema, host, port, reload, workers):
     """Run the GraphQL Server"""
-
     if reload and workers > 1:
         print("Reload not supported with workers > 1")
     else:
@@ -33,16 +32,17 @@ def run(connection, schema, host, port, reload, workers):
         os.environ["NEBULO_CONNECTION"] = connection
         os.environ["NEBULO_SCHEMA"] = schema
 
-        uvicorn.run("nebulo.server.app:APP", host=host, port=port, workers=workers, log_level="warning", reload=reload)
+        uvicorn.run("nebulo.server.app:APP", host=host, port=port, workers=workers, log_level="info", reload=reload)
 
 
 @main.command()
 @click.option("-c", "--connection", default="sqlite:///")
-@click.option("-s", "--schema", default=None)
+@click.option("-s", "--schema", default="public")
 @click.option("-o", "--out-file", type=click.File("w"), default=None)
 def dump_schema(connection, schema, out_file):
     """Dump the GraphQL Schema to stdout or file"""
-    app = create_app(connection, schema, echo_queries=False)
-    schema = app.config["graphql_schema"]
+    engine = create_engine(connection)
+    sqla_models = reflect_sqla_models(engine)
+    schema = sqla_models_to_graphql_schema(sqla_models)
     schema_str = print_schema(schema)
     click.echo(schema_str, file=out_file)

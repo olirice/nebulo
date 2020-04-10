@@ -5,11 +5,8 @@ import importlib
 from typing import Callable
 
 import pytest
-from databases import Database
 from graphql import graphql_sync as execute_graphql
 from graphql.execution.execute import ExecutionResult
-
-# from nebulo.server.starlette import create_app, create_database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.sql import table_base
 from nebulo.sql.reflection_utils import (
@@ -20,8 +17,6 @@ from nebulo.sql.reflection_utils import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from starlette.applications import Starlette
-from starlette.testclient import TestClient
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;
@@ -95,43 +90,14 @@ def schema_builder(session, engine):
 
 
 @pytest.fixture
-def gql_exec_builder(schema_builder, session) -> Callable[str, Callable[str, ExecutionResult]]:
+def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str], ExecutionResult]]:
     """Return a function that accepts a sql string
     and returns a graphql executor """
 
-    def build(sql: str) -> Callable[str, ExecutionResult]:
+    def build(sql: str) -> Callable[[str], ExecutionResult]:
         schema = schema_builder(sql)
         return lambda source_query: execute_graphql(
             schema=schema, source=source_query, context_value={"session": session}
         )
 
     return build
-
-
-@pytest.fixture(scope="session")
-def database(connection_str):
-    _database = create_database(connection_str)
-    _database.connect()
-    yield _database
-    _database.disconnect()
-
-
-@pytest.fixture
-def app_builder(gql_exec_builder, database: Database) -> Callable[str, Starlette]:
-    def build(sql: str) -> Starlette:
-        # Builds the schmema
-        executor = gql_exec_builder(sql)  # pylint: disable=unused-variable
-        graphql_endpoint = get_graphql_endpoint(gql_schema, database)
-        app = Starlette(routes=[graphql_endpoint])
-        return app
-
-    yield build
-
-
-@pytest.fixture
-def client_builder(app_builder: Callable[str, TestClient]) -> Callable[str, TestClient]:
-    def build(sql: str) -> TestClient:
-        app = app_builder(sql)
-        return app_builder(sql)
-
-    yield build
