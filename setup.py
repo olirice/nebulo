@@ -39,7 +39,7 @@ setup(
         "uvicorn==0.11.3",
     ],
     extras_require={
-        "test": ["pytest", "pytest-cov"],
+        "test": ["pytest", "pytest-cov", "requests"],
         "dev": ["pylint", "black", "sqlalchemy-stubs", "pre-commit"],
         "nvim": ["neovim", "python-language-server"],
         "docs": ["mkdocs", "pygments", "pymdown-extensions"],
