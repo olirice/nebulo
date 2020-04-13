@@ -1,10 +1,14 @@
 # pylint: disable=unused-argument
-import re
-from typing import Type
+from __future__ import annotations
 
-from nebulo.sql.table_base import TableBase
+import re
+from typing import TYPE_CHECKING, Type
+
 from nebulo.text_utils import snake_to_camel, to_plural
 from sqlalchemy import Table, event
+
+if TYPE_CHECKING:
+    from nebulo.sql.table_base import TableBase
 
 
 def to_camelcase(text: str) -> str:

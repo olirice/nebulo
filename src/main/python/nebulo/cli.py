@@ -32,7 +32,7 @@ def run(connection, schema, host, port, reload, workers):
         os.environ["NEBULO_CONNECTION"] = connection
         os.environ["NEBULO_SCHEMA"] = schema
 
-        uvicorn.run("nebulo.server.app:APP", host=host, port=port, workers=workers, log_level="info", reload=reload)
+        uvicorn.run("nebulo.server.app:APP", host=host, workers=workers, port=port, log_level="info", reload=reload)
 
 
 @main.command()

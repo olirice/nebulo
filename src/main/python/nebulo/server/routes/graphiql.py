@@ -1,12 +1,9 @@
-import json
 from functools import lru_cache
 
 from starlette.responses import HTMLResponse
 
 
 async def graphiql_endpoint(request, graphql_url_path='"/"') -> HTMLResponse:
-    url_path = json.dumps(request.url.path)
-    print(url_path)
     html_text = build_graphiql_html(graphql_url_path)
     return HTMLResponse(html_text)
 
