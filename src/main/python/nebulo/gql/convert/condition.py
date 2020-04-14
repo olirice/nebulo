@@ -20,4 +20,4 @@ def condition_factory(sqla_model: TableBase) -> InputObjectType:
     attrs = {}
     for column in sqla_model.__table__.columns:
         attrs[column.key] = convert_column(column, output_type=InputField)
-    return InputObjectType(result_name, attrs, description="", container_type=None)
+    return InputObjectType(result_name, attrs, description="")

@@ -1,4 +1,4 @@
-from graphql.execution import ResolveInfo
+# pylint: disable=missing-class-docstring,invalid-name
 from graphql.type import (
     GraphQLArgument,
     GraphQLBoolean,
@@ -12,6 +12,7 @@ from graphql.type import (
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
+    GraphQLResolveInfo,
     GraphQLScalarType,
     GraphQLSchema,
     GraphQLString,
@@ -32,7 +33,7 @@ Boolean = GraphQLBoolean
 ScalarType = GraphQLScalarType
 
 
-class HasSQLAModel:
+class HasSQLAModel:  # pylint: disable= too-few-public-methods
     sqla_table = None
 
 
@@ -57,7 +58,7 @@ InterfaceType = GraphQLInterfaceType
 Int = GraphQLInt
 InputObjectType = GraphQLInputObjectType
 InputField = GraphQLInputField
-ResolveInfo = ResolveInfo
+ResolveInfo = GraphQLResolveInfo
 EnumType = GraphQLEnumType
 EnumValue = GraphQLEnumValue
 Schema = GraphQLSchema

@@ -1,3 +1,4 @@
+from graphql.pyutils import Path
 from nebulo.gql.alias import ResolveInfo
 
 
@@ -11,12 +12,12 @@ def default_resolver(_, info: ResolveInfo, **kwargs):
     - To keep the resolver tree extensible for end users
     - To keep everything as default as possible
     """
-    path = info.path
+    path: Path = info.path
     context = info.context
     final_result = context["result"]
 
     remain_result = final_result
-    for elem in path:
+    for elem in path.as_list():
         remain_result = remain_result[elem]
 
     return remain_result

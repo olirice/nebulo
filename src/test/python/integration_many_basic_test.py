@@ -28,7 +28,7 @@ def test_query_multiple_fields(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is None
     assert "edges" in result.data["allAccounts"]
     assert "node" in result.data["allAccounts"]["edges"][0]
@@ -49,7 +49,7 @@ def test_arg_first(gql_exec_builder):
         }}
     }}
     """
-    result = executor(request_string=gql_query)
+    result = executor(gql_query)
     assert result.errors is None
     assert len(result.data["allAccounts"]["edges"]) == 2
     assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 1

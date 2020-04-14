@@ -1,13 +1,16 @@
 # pylint: disable=redefined-outer-name
 from __future__ import annotations
 
+import asyncio
 import importlib
-import typing
+from typing import Callable, Generator
 
 import pytest
-from graphql import graphql as execute_graphql
-from nebulo.gql.gql_database import sqla_models_to_graphql_schema
-from nebulo.server.flask import create_app
+from databases import Database
+from graphql import graphql_sync as execute_graphql
+from graphql.execution.execute import ExecutionResult
+from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
+from nebulo.server.starlette import create_app
 from nebulo.sql import table_base
 from nebulo.sql.reflection_utils import (
     rename_columns,
@@ -17,10 +20,8 @@ from nebulo.sql.reflection_utils import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-
-if typing.TYPE_CHECKING:
-    from flask import Flask
-
+from starlette.applications import Starlette
+from starlette.testclient import TestClient
 
 SQL_DOWN = """
     DROP SCHEMA public CASCADE;
@@ -30,14 +31,23 @@ SQL_DOWN = """
 
 
 @pytest.fixture(scope="session")
+def event_loop():
+    """ Event loop for use testing async functions """
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
 def connection_str():
+    """ SQLAlchemy connection string to test database """
     return "postgresql://nebulo_user:password@localhost:4442/nebulo_db"
 
 
 @pytest.fixture(scope="session")
-def engine(connection_str):
+def engine(connection_str: str):
+    """ SQLAlchemy engine """
     _engine = create_engine(connection_str)
-
     # Make sure the schema is clean
     _engine.execute(SQL_DOWN)
     yield _engine
@@ -53,15 +63,21 @@ def session_maker(engine):
 
 
 @pytest.fixture
-def session(session_maker):
+def reset_sqla() -> None:
+    """ SQLA Metadata is preserved between tests. When we build tables in tests
+    and the tables have previously used names, the metadata is re-used and
+    differences in added/deleted columns gets janked up. Reimporting resets
+    the metadata. """
+    importlib.reload(table_base)
+
+
+@pytest.fixture
+def session(session_maker, reset_sqla):  # pylint: disable=unused-argument
     _session = session_maker
     _session.execute(SQL_DOWN)
     _session.commit()
-
     yield _session
-
     _session.rollback()
-
     _session.execute(SQL_DOWN)
     _session.commit()
     _session.close()
@@ -71,17 +87,12 @@ def session(session_maker):
 def schema_builder(session, engine):
     """Return a function that accepts a sql string
     and returns graphql schema"""
-    # SQLA Metadata is preserved between tests. When we build tables in tests
-    # and the tables have previously used names, the metadata is re-used and
-    # differences in added/deleted columns gets janked up. Reimporting resets
-    # the metadata.
-    importlib.reload(table_base)
-    TableBase = table_base.TableBase
 
     def build(sql: str):
         session.execute(sql)
         session.commit()
         rename_columns()
+        TableBase = table_base.TableBase  # pylint: disable=invalid-name
         TableBase.prepare(
             engine,
             reflect=True,
@@ -90,47 +101,58 @@ def schema_builder(session, engine):
             name_for_scalar_relationship=rename_to_one_collection,
             name_for_collection_relationship=rename_to_many_collection,
         )
-
         tables = list(TableBase.classes)
-        schema = sqla_models_to_graphql_schema(tables)
+        schema = sqla_models_to_graphql_schema(tables, resolve_async=False)
         return schema
 
-    return build
+    yield build
 
 
 @pytest.fixture
-def gql_exec_builder(schema_builder, session):
+def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str], ExecutionResult]]:
     """Return a function that accepts a sql string
     and returns a graphql executor """
 
-    def build(sql: str):
+    def build(sql: str) -> Callable[[str], ExecutionResult]:
         schema = schema_builder(sql)
-        return lambda request_string: execute_graphql(
-            schema=schema, request_string=request_string, context={"session": session}
+        return lambda source_query: execute_graphql(
+            schema=schema, source=source_query, context_value={"session": session}
         )
 
     return build
 
 
 @pytest.fixture
-def app_builder(engine, gql_exec_builder):
-    def build(sql: str) -> Flask:
-        # Builds the schmema
-        executor = gql_exec_builder(sql)  # pylint: disable=unused-variable
+def app_builder(event_loop, connection_str, session) -> Generator[Callable[[str], Starlette], None, None]:
 
-        connection = None
-        schema = "public"
-        echo_queries = False
+    database = Database(connection_str)
+    # Starlette on_connect does not get called via test client
+    connect_coroutine = database.connect()
+    event_loop.run_until_complete(connect_coroutine)
 
-        app = create_app(connection=connection, schema=schema, echo_queries=echo_queries, engine=engine)
+    def build(sql: str) -> Starlette:
+        session.execute(sql)
+        session.commit()
+
+        # schema_building_coroutine = database.execute_many(sql, values={})
+        # event_loop.run_until_complete(schema_building_coroutine)
+
+        # Create the schema
+        app = create_app(database)
         return app
 
     yield build
 
+    disconnect_coroutine = database.disconnect()
+    event_loop.run_until_complete(disconnect_coroutine)
+
 
 @pytest.fixture
-def client_builder(app_builder):
-    def build(sql: str):
-        return app_builder(sql).test_client()
+def client_builder(app_builder: Callable[[str], Starlette]) -> Callable[[str], TestClient]:
+    def build(sql: str) -> TestClient:
+        importlib.reload(table_base)
+        app = app_builder(sql)
+        client = TestClient(app)
+        return client
 
-    yield build
+    return build

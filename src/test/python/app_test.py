@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import json
+import typing
+
+if typing.TYPE_CHECKING:
+    from starlette.applications import Starlette
 
 SQL_UP = """
 CREATE TABLE account (
@@ -18,19 +22,20 @@ INSERT INTO account (id, name) VALUES
 
 
 def test_app_has_route(app_builder):
-    app = app_builder(SQL_UP)
-    routes = {x.endpoint for x in app.url_map.iter_rules()}
-    assert "graphql" in routes
+    app: Starlette = app_builder(SQL_UP)
+    routes: typing.List[str] = [x.path for x in app.routes]
+    assert "/" in routes
 
 
 def test_app_serves_graphiql(client_builder):
     client = client_builder(SQL_UP)
     headers = {"Accept": "text/html"}
-    resp = client.get("/graphql", headers=headers)
-    assert resp.status == "200 OK"
+    resp = client.get("/graphiql", headers=headers)
+    print(resp)
+    assert resp.status_code == 200
 
 
-def test_app_serves_graphql_query(client_builder):
+def test_app_serves_graphql_query_from_application_json(client_builder):
     client = client_builder(SQL_UP)
 
     query = f"""
@@ -46,8 +51,10 @@ def test_app_serves_graphql_query(client_builder):
         }}
     }}
     """
-    resp = client.post("/graphql", json={"query": query})
-    assert resp.status == "200 OK"
-    payload = json.loads(resp.data)
+    resp = client.post("/", json={"query": query})
+    assert resp.status_code == 200
+    print(resp.text)
+
+    payload = json.loads(resp.text)
     assert "data" in payload
     assert len(payload["data"]["allAccounts"]["edges"]) == 4

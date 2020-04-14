@@ -34,7 +34,7 @@ def convert_column(
 
     # TODO(OR): clean up.
     if output_type == Field:
-        return output_type(return_type, resolver=default_resolver)
+        return output_type(return_type, resolve=default_resolver)
     else:
         return output_type(return_type)
 
@@ -62,7 +62,7 @@ def table_factory(sqla_model):
         attrs = {}
 
         # Override id to relay standard
-        attrs["nodeId"] = Field(NonNull(NodeID), resolver=default_resolver)
+        attrs["nodeId"] = Field(NonNull(NodeID), resolve=default_resolver)
 
         for column in get_columns(sqla_model):
             key = column.key
@@ -81,7 +81,7 @@ def table_factory(sqla_model):
             if direction == interfaces.MANYTOONE:
                 _type = table_factory(to_sqla_model)
                 _type = NonNull(_type) if not is_nullable else _type
-                attrs[attr_key] = Field(_type, resolver=default_resolver)
+                attrs[attr_key] = Field(_type, resolve=default_resolver)
 
             elif direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
                 from .connection import connection_factory, connection_args_factory
@@ -89,7 +89,7 @@ def table_factory(sqla_model):
                 connection = connection_factory(to_sqla_model)
                 connection_args = connection_args_factory(to_sqla_model)
                 attrs[attr_key] = Field(
-                    connection if is_nullable else NonNull(connection), args=connection_args, resolver=default_resolver
+                    connection if is_nullable else NonNull(connection), args=connection_args, resolve=default_resolver
                 )
 
         return attrs
