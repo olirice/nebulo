@@ -2,7 +2,7 @@ from databases import Database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphql_endpoint, graphiql_endpoint
-from nebulo.sql.reflection_manager import reflect_sqla_models
+from nebulo.sql.reflection.manager import reflect_sqla_models
 from sqlalchemy import create_engine
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException

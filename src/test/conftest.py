@@ -12,12 +12,7 @@ from graphql.execution.execute import ExecutionResult
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.starlette import create_app
 from nebulo.sql import table_base
-from nebulo.sql.reflection_utils import (
-    rename_columns,
-    rename_table,
-    rename_to_many_collection,
-    rename_to_one_collection,
-)
+from nebulo.sql.reflection.manager import reflect_sqla_models
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from starlette.applications import Starlette
@@ -91,17 +86,8 @@ def schema_builder(session, engine):
     def build(sql: str):
         session.execute(sql)
         session.commit()
-        rename_columns()
         TableBase = table_base.TableBase  # pylint: disable=invalid-name
-        TableBase.prepare(
-            engine,
-            reflect=True,
-            schema="public",
-            classname_for_table=rename_table,
-            name_for_scalar_relationship=rename_to_one_collection,
-            name_for_collection_relationship=rename_to_many_collection,
-        )
-        tables = list(TableBase.classes)
+        tables = reflect_sqla_models(engine, schema="public", declarative_base=TableBase)
         schema = sqla_models_to_graphql_schema(tables, resolve_async=False)
         return schema
 

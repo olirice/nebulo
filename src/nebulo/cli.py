@@ -6,7 +6,7 @@ import click
 import uvicorn
 from graphql.utilities import print_schema
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
-from nebulo.sql.reflection_manager import reflect_sqla_models
+from nebulo.sql.reflection.manager import reflect_sqla_models
 from sqlalchemy import create_engine
 
 

@@ -19,8 +19,8 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     python_requires=">=3.7",
-    packages=find_packages("src/main/python"),
-    package_dir={"": "src/main/python"},
+    packages=find_packages("src/"),
+    package_dir={"": "src/"},
     include_package_data=True,
     entry_points={
         "console_scripts": ["nebulo=nebulo.cli:main", "neb=nebulo.cli:main"],

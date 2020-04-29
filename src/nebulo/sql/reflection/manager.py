@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from nebulo.sql.reflection_utils import (
+from nebulo.sql.reflection.utils import (
     rename_columns,
     rename_table,
     rename_to_many_collection,
