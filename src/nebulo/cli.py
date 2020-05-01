@@ -42,7 +42,7 @@ def run(connection, schema, host, port, reload, workers):
 def dump_schema(connection, schema, out_file):
     """Dump the GraphQL Schema to stdout or file"""
     engine = create_engine(connection)
-    sqla_models = reflect_sqla_models(engine)
-    schema = sqla_models_to_graphql_schema(sqla_models)
+    sqla_models, sql_functions = reflect_sqla_models(engine, schema=schema)
+    schema = sqla_models_to_graphql_schema(sqla_models, sql_functions)
     schema_str = print_schema(schema)
     click.echo(schema_str, file=out_file)

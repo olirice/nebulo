@@ -74,7 +74,9 @@ def reflect_functions(engine, schema="public") -> List[SQLFunction]:
     type_mapper = TypeMapper(engine, schema)
 
     for func_schema, func_name, arg_names, pg_arg_types, pg_return_type_name in rows:
-        sqla_arg_types = [type_mapper.name_to_sqla(pg_type_name) for pg_type_name in pg_arg_types]
+        arg_names = arg_names or []
+        pg_arg_types = pg_arg_types or []
+        sqla_arg_types = [type_mapper.name_to_sqla(pg_type_name) for pg_type_name in pg_arg_types or []]
         sqla_return_type = type_mapper.name_to_sqla(pg_return_type_name)
         function = SQLFunction(
             schema=func_schema,

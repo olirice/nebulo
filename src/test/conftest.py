@@ -87,8 +87,8 @@ def schema_builder(session, engine):
         session.execute(sql)
         session.commit()
         TableBase = table_base.TableBase  # pylint: disable=invalid-name
-        tables = reflect_sqla_models(engine, schema="public", declarative_base=TableBase)
-        schema = sqla_models_to_graphql_schema(tables, resolve_async=False)
+        tables, functions = reflect_sqla_models(engine, schema="public", declarative_base=TableBase)
+        schema = sqla_models_to_graphql_schema(tables, functions, resolve_async=False)
         return schema
 
     yield build

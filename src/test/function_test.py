@@ -26,5 +26,6 @@ def test_call_function(engine, session):
     functions = reflect_functions(engine, schema="public")
     to_upper = [x for x in functions if x.name == "to_upper"][0]
 
-    result = to_upper.call(session, {"some_text": "abc"})
+    query = to_upper.to_executable({"some_text": "abc"})
+    result = session.execute(query).fetchone()["to_upper"]
     assert result == "ABC"

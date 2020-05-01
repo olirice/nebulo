@@ -1,14 +1,18 @@
 # pylint: disable=invalid-name
 import typing
+from collections import namedtuple
 
-from nebulo.gql.alias import Int, ScalarType, String, Type
+from flupy import flu
+from nebulo.gql.alias import Boolean, Int, ScalarType, String, Type
+from nebulo.gql.convert.composite import composite_factory
+from nebulo.text_utils import snake_to_camel
+from sqlalchemy import Column
 from sqlalchemy import text as sql_text
 from sqlalchemy import types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.base import PGDialect
+from sqlalchemy.orm import CompositeProperty, composite
 from sqlalchemy.sql.type_api import TypeEngine
-
-from flupy import flu
 
 __all__ = ["TypeMapper"]
 
@@ -26,7 +30,12 @@ class TypeMapper:
         self.dialect: PGDialect = engine.dialect
         self.schema = schema
 
+        for composite_ in self.reflect_composites():
+            if composite_.key not in self._composites:
+                self._composites[composite_.key] = composite_
+
     _sqla_to_gql = {
+        types.Boolean: Boolean,
         # Number
         types.Integer: Int,
         types.INTEGER: Int,
@@ -46,8 +55,14 @@ class TypeMapper:
         postgresql.CIDR: CIDRType,
     }
 
+    _composites = {}
+
     def name_to_sqla(self, pg_type_name: str) -> TypeEngine:
         """Looks up a SQLA type from its sql name (supports enums)"""
+        sqla_composite = self._composites.get(pg_type_name)
+        if sqla_composite is not None:
+            return sqla_composite
+
         sqla_type = self.dialect._get_column_info(  # pylint: disable=protected-access
             name=None,
             format_type=pg_type_name,
@@ -58,11 +73,17 @@ class TypeMapper:
             schema=self.schema,
             comment=None,
         )["type"]
+        if sqla_type is None:
+            import pdb
+
+            pdb.set_trace()
         return sqla_type
 
     @classmethod
     def sqla_to_gql(cls, sqla_type: TypeEngine, default: Type = String) -> Type:
         """Looks up a GraphQL type from a SQLA"""
+        if isinstance(sqla_type, CompositeProperty):
+            return composite_factory(sqla_type)
         return cls._sqla_to_gql.get(sqla_type, default)
 
     def reflect_composites(self) -> typing.List:
@@ -136,9 +157,38 @@ class TypeMapper:
         )
         rows = self.engine.execute(sql, schema=self.schema).fetchall()
 
-        for (full_name, (schema_name, composite_name, column_name, data_type, ordinal, is_required, desc)) in flu(
-            rows
-        ).group_by(lambda x: x[0] + "." + x[1]):
-            pass
+        composites = []
 
-        return []
+        for _, composite_rows in flu(rows).group_by(lambda x: x[0] + "." + x[1]):
+            # attributed for python class
+            attrs = []
+            # columns for sqla composite
+            columns = []
+            for (
+                _,  # schema name
+                composite_name,
+                column_name,
+                data_type,
+                _,  # ordinal
+                is_required,
+                desc,
+            ) in composite_rows:
+                attrs.append(column_name)
+                column_type = self.name_to_sqla(data_type)
+                nullable = not is_required
+                column = Column(name=column_name, key=column_name, type_=column_type, nullable=nullable, comment=desc)
+                columns.append(column)
+
+            py_composite_name = snake_to_camel(composite_name, upper=True)
+            py_composite_tuple = namedtuple(py_composite_name + "_tuple", attrs)
+            py_composite = type(
+                py_composite_name,
+                (py_composite_tuple,),
+                {"__composite_values__": lambda self: self, "sql_name": composite_name},
+            )
+
+            sqla_composite = composite(py_composite, *columns)
+            sqla_composite.key = composite_name
+            composites.append(sqla_composite)
+
+        return composites
