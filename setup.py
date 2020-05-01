@@ -37,6 +37,8 @@ setup(
         "starlette==0.13.2",
         "databases[postgresql]==0.2.6",
         "uvicorn==0.11.3",
+        "parse==1.15.0",
+        "flupy==1.0.12",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov", "requests"],

@@ -16,6 +16,7 @@ from graphql.type import (
     GraphQLScalarType,
     GraphQLSchema,
     GraphQLString,
+    GraphQLType,
 )
 
 # Handle name changes from graphql-core and graphql-core-next
@@ -24,12 +25,12 @@ try:
 except ImportError:
     from graphql.type import GraphQLInputField
 
-
+Type = GraphQLType
 List = GraphQLList
 NonNull = GraphQLNonNull
 Argument = GraphQLArgument
-String = GraphQLString
 Boolean = GraphQLBoolean
+String = GraphQLString
 ScalarType = GraphQLScalarType
 
 

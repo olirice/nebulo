@@ -6,10 +6,10 @@ from functools import lru_cache
 
 from nebulo.gql.alias import Field, InputField, NonNull, String, TableType
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
-from nebulo.gql.convert.typemap import Typemap
 from nebulo.gql.default_resolver import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, get_table_name
 from nebulo.text_utils import snake_to_camel
+from nebulo.typemap import TypeMapper
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
 
@@ -28,7 +28,7 @@ def convert_column(
     column: ColumnType, output_type: typing.Union[Field, InputField] = Field
 ) -> typing.Union[Field, InputField]:
     """Converts a sqlalchemy column into a graphql field or input field"""
-    gql_type = Typemap.get(type(column.type), String)
+    gql_type = TypeMapper.sqla_to_gql(type(column.type), String)
     notnull = not column.nullable
     return_type = NonNull(gql_type) if notnull and output_type == Field else gql_type
 

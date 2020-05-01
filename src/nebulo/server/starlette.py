@@ -17,10 +17,10 @@ def create_app(database: Database) -> Starlette:
     # Reflect database to sqla models
     connection_str = str(database.url)
     sqla_engine = create_engine(connection_str)
-    sqla_models = reflect_sqla_models(engine=sqla_engine, schema="public")
+    sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema="public")
 
     # Convert sqla models to graphql schema
-    gql_schema = sqla_models_to_graphql_schema(sqla_models, resolve_async=True)
+    gql_schema = sqla_models_to_graphql_schema(sqla_models, sql_functions, resolve_async=True)
 
     # Build Starlette app
     graphql_endpoint = get_graphql_endpoint(gql_schema, database)

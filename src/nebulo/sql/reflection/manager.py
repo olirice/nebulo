@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Tuple
 
+from nebulo.sql.reflection.function import SQLFunction, reflect_functions
 from nebulo.sql.reflection.utils import (
     rename_columns,
     rename_table,
@@ -12,7 +13,9 @@ from nebulo.sql.table_base import TableBase
 from sqlalchemy.engine import Engine
 
 
-def reflect_sqla_models(engine: Engine, schema: str = "public", declarative_base=TableBase) -> List[TableBase]:
+def reflect_sqla_models(
+    engine: Engine, schema: str = "public", declarative_base=TableBase
+) -> Tuple[List[TableBase], List[SQLFunction]]:
     """Reflect SQLAlchemy Declarative Models from a database connection"""
     # Register event listeners to apply GQL attr keys to columns
     rename_columns()
@@ -27,5 +30,7 @@ def reflect_sqla_models(engine: Engine, schema: str = "public", declarative_base
         name_for_scalar_relationship=rename_to_one_collection,
         name_for_collection_relationship=rename_to_many_collection,
     )
+
+    functions = reflect_functions(engine=engine, schema=schema)
     # SQLA Tables
-    return list(base.classes)
+    return (list(base.classes), functions)
