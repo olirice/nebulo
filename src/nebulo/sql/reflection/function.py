@@ -8,6 +8,7 @@ from nebulo.sql.sanitize import sanitize
 from nebulo.typemap import TypeMapper
 from sqlalchemy import text as sql_text
 from sqlalchemy.sql.type_api import TypeEngine
+from sqlalchemy.sql import sqltypes
 
 
 class SQLFunction:
@@ -26,7 +27,9 @@ class SQLFunction:
         return_sqla_type: TypeEngine,
     ):
         if len(arg_names) != len(arg_sqla_types) != len(arg_pg_types):
-            raise SQLParseError("SQLFunction requires same number of arg_names and sqla_types")
+            raise SQLParseError(
+                "SQLFunction requires same number of arg_names and sqla_types"
+            )
         self.schema = schema
         self.name = name
         self.arg_names = arg_names
@@ -37,17 +40,22 @@ class SQLFunction:
     def to_executable(self, kwargs):
 
         if len(kwargs) != len(self.arg_names):
-            raise SQLParseError(f"Invalid number of parameters for SQLFunction {self.schema}.{self.name}")
+            raise SQLParseError(
+                f"Invalid number of parameters for SQLFunction {self.schema}.{self.name}"
+            )
 
         call_sig = ", ".join(
-            [f"{sanitize(arg_value)}::{arg_type}" for arg_value, arg_type in zip(kwargs.values(), self.arg_pg_types)]
+            [
+                f"{sanitize(arg_value)}::{arg_type}"
+                for arg_value, arg_type in zip(kwargs.values(), self.arg_pg_types)
+            ]
         )
 
         executable = sql_text(f"select {self.schema}.{self.name}({call_sig})")
         return executable
 
 
-def reflect_functions(engine, schema="public") -> List[SQLFunction]:
+def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
     """Get a list of functions available in the database"""
     sql = sql_text(
         """
@@ -55,8 +63,11 @@ def reflect_functions(engine, schema="public") -> List[SQLFunction]:
         n.nspname as function_schema,
         p.proname as function_name,
         proargnames arg_names,
+        (select array_agg((select typnamespace::regnamespace::text from pg_type where oid=type_oid)) from unnest(proargtypes) x(type_oid)) arg_types_schema,
         (select array_agg(type_oid::regtype::text) from unnest(proargtypes) x(type_oid)) arg_types,
+        t.typnamespace::regnamespace::text as return_type_schema,
         t.typname as return_type
+
     from
         pg_proc p
         left join pg_namespace n on p.pronamespace = n.oid
@@ -71,13 +82,25 @@ def reflect_functions(engine, schema="public") -> List[SQLFunction]:
 
     functions: List[SQLFunction] = []
 
-    type_mapper = TypeMapper(engine, schema)
-
-    for func_schema, func_name, arg_names, pg_arg_types, pg_return_type_name in rows:
+    for (
+        func_schema,
+        func_name,
+        arg_names,
+        arg_type_schemas,
+        pg_arg_types,
+        pg_return_type_schema,
+        pg_return_type_name,
+    ) in rows:
         arg_names = arg_names or []
         pg_arg_types = pg_arg_types or []
-        sqla_arg_types = [type_mapper.name_to_sqla(pg_type_name) for pg_type_name in pg_arg_types or []]
-        sqla_return_type = type_mapper.name_to_sqla(pg_return_type_name)
+        sqla_arg_types = [
+            type_map.get((pg_type_schema, pg_type_name), sqltypes.NULLTYPE)
+            for pg_type_schema, pg_type_name in zip(arg_type_schemas, pg_arg_types) or []
+        ]
+        sqla_return_type = type_map.get(
+            (pg_return_type_schema, pg_return_type_name), sqltypes.NULLTYPE
+        )
+
         function = SQLFunction(
             schema=func_schema,
             name=func_name,

@@ -30,9 +30,9 @@ class TypeMapper:
         self.dialect: PGDialect = engine.dialect
         self.schema = schema
 
-        for composite_ in self.reflect_composites():
-            if composite_.key not in self._composites:
-                self._composites[composite_.key] = composite_
+        #for composite_ in self.reflect_composites():
+        #    if composite_.key not in self._composites:
+        #        self._composites[composite_.key] = composite_
 
     _sqla_to_gql = {
         types.Boolean: Boolean,

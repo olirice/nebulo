@@ -12,6 +12,7 @@ from nebulo.text_utils import snake_to_camel
 from nebulo.typemap import TypeMapper
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
+from .composite import composite_factory
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase

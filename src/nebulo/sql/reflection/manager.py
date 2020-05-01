@@ -11,6 +11,9 @@ from nebulo.sql.reflection.utils import (
 )
 from nebulo.sql.table_base import TableBase
 from sqlalchemy.engine import Engine
+from nebulo.typemap import TypeMapper
+from nebulo.sql.reflection.types import reflect_types
+from sqlalchemy import event, Table
 
 
 def reflect_sqla_models(
@@ -18,7 +21,15 @@ def reflect_sqla_models(
 ) -> Tuple[List[TableBase], List[SQLFunction]]:
     """Reflect SQLAlchemy Declarative Models from a database connection"""
     # Register event listeners to apply GQL attr keys to columns
+
+    type_map = reflect_types(engine, schema)
+
+    functions = reflect_functions(engine=engine, schema=schema, type_map=type_map)
+    
+    # Event listeners impacting reflection
     rename_columns()
+
+    # TODO: Reflect tables with composite types
 
     base = declarative_base
 
@@ -31,6 +42,5 @@ def reflect_sqla_models(
         name_for_collection_relationship=rename_to_many_collection,
     )
 
-    functions = reflect_functions(engine=engine, schema=schema)
     # SQLA Tables
     return (list(base.classes), functions)
