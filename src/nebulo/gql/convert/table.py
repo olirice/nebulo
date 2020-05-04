@@ -12,7 +12,7 @@ from nebulo.text_utils import snake_to_camel
 from nebulo.typemap import TypeMapper
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
-from .composite import composite_factory
+from .composite import convert_column
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase
@@ -22,22 +22,6 @@ if typing.TYPE_CHECKING:
 else:
     ColumnType = Column
     RelationshipPropertyType = RelationshipProperty
-
-
-@lru_cache()
-def convert_column(
-    column: ColumnType, output_type: typing.Union[Field, InputField] = Field
-) -> typing.Union[Field, InputField]:
-    """Converts a sqlalchemy column into a graphql field or input field"""
-    gql_type = TypeMapper.sqla_to_gql(type(column.type), String)
-    notnull = not column.nullable
-    return_type = NonNull(gql_type) if notnull and output_type == Field else gql_type
-
-    # TODO(OR): clean up.
-    if output_type == Field:
-        return output_type(return_type, resolve=default_resolver)
-    else:
-        return output_type(return_type)
 
 
 @lru_cache()

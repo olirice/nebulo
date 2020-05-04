@@ -72,3 +72,6 @@ class Field(GraphQLField):
 class TableType(ObjectType):
     sqla_model = None
     field_to_column = None
+
+class CompositeType(ObjectType):
+    sqla_composite = None

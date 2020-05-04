@@ -171,17 +171,41 @@ SELECT
                 comment=desc,
             )
             columns.append(column)
-
+        
+        from .composite import CompositeType, CompositeElement, composite_type_factory
         py_composite_name = snake_to_camel(composite_name, upper=True)
-        py_composite_tuple = namedtuple(py_composite_name + "_tuple", attrs)
-        py_composite = type(
-            py_composite_name,
-            (py_composite_tuple,),
-            {"__composite_values__": lambda self: self, "sql_name": composite_name},
-        )
-
-        sqla_composite = composite(py_composite, *columns)
-        sqla_composite.key = composite_name
+        #sqla_composite = CompositeType(py_composite_name, columns)
+        sqla_composite = composite_type_factory(py_composite_name, columns)
         composites[(schema_name, composite_name)] = sqla_composite
 
+
+
     return composites
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
