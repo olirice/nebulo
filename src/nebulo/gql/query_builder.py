@@ -118,7 +118,6 @@ def build_scalar(field, sqla_model) -> typing.Tuple[str, typing.Union[str, StrSQ
     return_type = field.return_type
     if return_type == NodeID:
         return (field.alias, to_global_id_sql(sqla_model))
-    # print(field.name, sqla_model, getattr(sqla_model, field.name), getattr(sqla_model, field.name).name, flush=True)
 
     return (field.alias, getattr(sqla_model, field.name).name)
 
@@ -135,6 +134,12 @@ def sql_builder(tree, parent_name=None):
 
     if isinstance(return_type, ConnectionType):
         return connection_block(field=tree, parent_name=parent_name)
+
+    # SQL Function handler
+    if hasattr(return_type, "sql_function"):
+        return return_type.sql_function.to_executable(tree.args)
+
+    raise Exception("sql builder could not match return type")
 
 
 def sql_finalize(return_name, expr):

@@ -16,15 +16,13 @@ from nebulo.gql.alias import (
     String,
 )
 from nebulo.gql.default_resolver import default_resolver
-from nebulo.sql.reflection.composite import CompositeType as SQLACompositeType
+from nebulo.sql.composite import CompositeType as SQLACompositeType
 from nebulo.text_utils import snake_to_camel
 from sqlalchemy import Column, types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.type_api import TypeEngine
 
 if typing.TYPE_CHECKING:
-    pass
-
     ColumnType = Column[typing.Any]
 else:
     ColumnType = Column
@@ -61,7 +59,7 @@ SQLA_TO_GQL = {
 }
 
 
-def convert_type(sqla_type: TypeEngine):
+def convert_type(sqla_type: typing.Type[TypeEngine[typing.Any]]):
     if issubclass(sqla_type, SQLACompositeType):
         gql_type = composite_factory(sqla_type)
     else:
@@ -103,7 +101,7 @@ def composite_factory(sqla_composite: SQLACompositeType) -> CompositeType:
     return return_type
 
 
-def convert_input_type(sqla_type: TypeEngine):
+def convert_input_type(sqla_type: typing.Type[TypeEngine[typing.Any]]):
     if issubclass(sqla_type, SQLACompositeType):
         gql_type = composite_input_factory(sqla_type)
     else:

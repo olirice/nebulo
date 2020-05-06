@@ -18,6 +18,7 @@ from graphql.type import (
     GraphQLString,
     GraphQLType,
 )
+from nebulo.sql.composite import CompositeType as SQLACompositeType
 
 # Handle name changes from graphql-core and graphql-core-next
 try:
@@ -32,28 +33,6 @@ Argument = GraphQLArgument
 Boolean = GraphQLBoolean
 String = GraphQLString
 ScalarType = GraphQLScalarType
-
-
-class HasSQLAModel:  # pylint: disable= too-few-public-methods
-    sqla_table = None
-
-
-class ObjectType(GraphQLObjectType, HasSQLAModel):
-    pass
-
-
-class ConnectionType(GraphQLObjectType, HasSQLAModel):
-    pass
-
-
-class EdgeType(ObjectType, HasSQLAModel):
-    pass
-
-
-class CursorType(GraphQLScalarType):
-    pass
-
-
 ID = GraphQLID
 InterfaceType = GraphQLInterfaceType
 Int = GraphQLInt
@@ -63,16 +42,36 @@ ResolveInfo = GraphQLResolveInfo
 EnumType = GraphQLEnumType
 EnumValue = GraphQLEnumValue
 Schema = GraphQLSchema
+Field = GraphQLField
 
 
-class Field(GraphQLField):
-    sqla_model = None
+class HasSQLAModel:  # pylint: disable= too-few-public-methods
+    sqla_table = None
 
 
-class TableType(ObjectType):
-    sqla_model = None
-    field_to_column = None
+class HasSQLFunction:  # pylint: disable= too-few-public-methods
+    sql_function = None
 
 
-class CompositeType(ObjectType):
-    sqla_composite = None
+class HasSQLAComposite:  # pylint: disable= too-few-public-methods
+    sqla_composite: SQLACompositeType
+
+
+class ObjectType(GraphQLObjectType, HasSQLAModel):
+    pass
+
+
+class ConnectionType(ObjectType, HasSQLAModel):
+    pass
+
+
+class EdgeType(ObjectType, HasSQLAModel):
+    pass
+
+
+class TableType(ObjectType, HasSQLAModel):
+    pass
+
+
+class CompositeType(ObjectType, HasSQLAComposite):
+    pass

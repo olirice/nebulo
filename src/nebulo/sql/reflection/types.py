@@ -2,6 +2,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 from flupy import flu
+from nebulo.sql.composite import composite_type_factory
 from nebulo.text_utils import snake_to_camel
 from sqlalchemy import Column
 from sqlalchemy import text as sql_text
@@ -101,8 +102,6 @@ SELECT
             nullable = not is_required
             column = Column(name=column_name, key=column_name, type_=column_type, nullable=nullable, comment=desc)
             columns.append(column)
-
-        from .composite import composite_type_factory
 
         py_composite_name = snake_to_camel(composite_name, upper=True)
         # sqla_composite = CompositeType(py_composite_name, columns)

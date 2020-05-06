@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import typing
 
-from nebulo.gql.alias import CursorType
+from nebulo.gql.alias import ScalarType
 from nebulo.sql.inspect import get_table_name
 from nebulo.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import asc, desc, text
@@ -33,7 +33,7 @@ def from_cursor(cursor: str) -> typing.Tuple[str, typing.List[str]]:
     return sqla_model_name, values
 
 
-Cursor = CursorType("Cursor", serialize=str, parse_value=from_cursor, parse_literal=lambda x: from_cursor(x.value))
+Cursor = ScalarType("Cursor", serialize=str, parse_value=from_cursor, parse_literal=lambda x: from_cursor(x.value))
 
 
 def to_cursor(table_name, values: typing.List[typing.Any]) -> str:

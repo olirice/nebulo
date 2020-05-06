@@ -7,6 +7,13 @@ returns text
 as $$
     select upper(some_text);
 $$ language sql;
+
+
+-- solve query root type nust not be none issue
+create table trash (
+    id serial primary key
+);
+
 """
 
 
@@ -30,3 +37,17 @@ def test_call_function(engine, session):
     query = to_upper.to_executable({"some_text": "abc"})
     result = session.execute(query).fetchone()["to_upper"]
     assert result == "ABC"
+
+
+def test_integration_function(gql_exec_builder):
+    executor = gql_exec_builder(CREATE_FUNCTION)
+
+    gql_query = """
+    mutation {
+        toUpper(some_text: "abc")
+    }
+    """
+
+    result = executor(gql_query)
+    assert result.errors is None
+    assert result.data["toUpper"] == "ABC"
