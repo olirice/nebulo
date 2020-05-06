@@ -19,7 +19,6 @@ def create_app(database: Database) -> Starlette:
     sqla_engine = create_engine(connection_str)
     sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema="public")
 
-
     # Convert sqla models to graphql schema
     gql_schema = sqla_models_to_graphql_schema(sqla_models, sql_functions, resolve_async=True)
 

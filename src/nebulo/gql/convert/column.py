@@ -1,33 +1,18 @@
 # pylint: disable=invalid-name,unsubscriptable-object
 from __future__ import annotations
-from functools import lru_cache
-
-from nebulo.gql.alias import (
-    Field,
-    NonNull,
-    ObjectType,
-    InputObjectType,
-    InputField,
-    CompositeType,
-)
-from nebulo.text_utils import snake_to_camel
 
 import typing
-from collections import namedtuple
+from functools import lru_cache
 
-from flupy import flu
-from nebulo.gql.alias import Boolean, Int, ScalarType, String, Type
+from nebulo.gql.alias import (Boolean, CompositeType, Field, InputField,
+                              InputObjectType, Int, NonNull, ScalarType,
+                              String)
+from nebulo.gql.default_resolver import default_resolver
 from nebulo.sql.reflection.composite import CompositeType as SQLACompositeType
 from nebulo.text_utils import snake_to_camel
-from sqlalchemy import Column
-from sqlalchemy import text as sql_text
-from sqlalchemy import types
+from sqlalchemy import Column, types
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.postgresql.base import PGDialect
 from sqlalchemy.sql.type_api import TypeEngine
-from sqlalchemy.sql.schema import Column
-
-from nebulo.gql.default_resolver import default_resolver
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase
@@ -68,23 +53,26 @@ SQLA_TO_GQL = {
 }
 
 
-@lru_cache()
-def convert_column(column: ColumnType) -> Field:
-    """Converts a sqlalchemy column into a graphql field or input field"""
-    sqla_type = type(column.type)
+def convert_type(sqla_type: TypeEngine):
     if issubclass(sqla_type, SQLACompositeType):
         gql_type = composite_factory(sqla_type)
     else:
         gql_type = SQLA_TO_GQL.get(sqla_type, String)
+    return gql_type
 
+
+@lru_cache()
+def convert_column(column: ColumnType) -> Field:
+    """Converts a sqlalchemy column into a graphql field or input field"""
+    sqla_type = type(column.type)
+    gql_type = convert_type(sqla_type)
     notnull = not column.nullable
     return_type = NonNull(gql_type) if notnull else gql_type
-
     return Field(return_type, resolve=default_resolver)
 
 
 @lru_cache()
-def composite_factory(sqla_composite: SQLACompositeType) -> ObjectType:
+def composite_factory(sqla_composite: SQLACompositeType) -> CompositeType:
     def build_composite_column_resolver(column_key):
         def resolver(parent, info, **kwargs):
             return parent[column_key]
@@ -106,23 +94,24 @@ def composite_factory(sqla_composite: SQLACompositeType) -> ObjectType:
     return return_type
 
 
-@lru_cache()
-def convert_column_to_input(column: ColumnType) -> InputField:
-    """Converts a sqlalchemy column into a graphql field or input field"""
-    sqla_type = type(column.type)
+def convert_input_type(sqla_type: TypeEngine):
     if issubclass(sqla_type, SQLACompositeType):
         gql_type = composite_input_factory(sqla_type)
     else:
         gql_type = SQLA_TO_GQL.get(sqla_type, String)
-
-    notnull = not column.nullable
-    return_type = NonNull(gql_type) if notnull else gql_type
-
-    return InputField(return_type)
+    return gql_type
 
 
 @lru_cache()
-def composite_input_factory(sqla_composite: SQLACompositeType) -> ObjectType:
+def convert_column_to_input(column: ColumnType) -> InputField:
+    """Converts a sqlalchemy column into a graphql field or input field"""
+    sqla_type = type(column.type)
+    gql_type = convert_input_type(sqla_type)
+    return InputField(gql_type)
+
+
+@lru_cache()
+def composite_input_factory(sqla_composite: SQLACompositeType) -> InputObjectType:
     name = snake_to_camel(sqla_composite.name, upper=True) + "Input"
     fields = {}
 

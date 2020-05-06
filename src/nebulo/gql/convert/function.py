@@ -3,9 +3,9 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulo.gql.alias import Argument, Field, ResolveInfo, String
+from nebulo.gql.alias import Argument, Field, NonNull, ResolveInfo
+from nebulo.gql.convert.column import convert_type
 from nebulo.gql.parse_info import parse_resolve_info
-from nebulo.typemap import TypeMapper
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase
@@ -16,11 +16,11 @@ __all__ = ["function_factory"]
 @lru_cache()
 def function_factory(sql_function: TableBase):
     gql_args = {
-        arg_name: Argument(TypeMapper.sqla_to_gql(arg_sqla_type, String))
+        arg_name: Argument(NonNull(convert_type(arg_sqla_type)))
         for arg_name, arg_sqla_type in zip(sql_function.arg_names, sql_function.arg_sqla_types)
     }
 
-    return_type = TypeMapper.sqla_to_gql(sql_function.return_sqla_type, String)
+    return_type = convert_type(sql_function.return_sqla_type)
     return_type.sql_function = sql_function
 
     return Field(return_type, args=gql_args, resolve=async_function_resolver, description="")

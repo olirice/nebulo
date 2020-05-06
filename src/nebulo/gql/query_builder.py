@@ -6,7 +6,7 @@ import string
 import typing
 
 from cachetools import cached
-from nebulo.gql.alias import ConnectionType, ScalarType, TableType, CompositeType
+from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
 from nebulo.gql.convert.cursor import to_cursor_sql
 from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
 from nebulo.sql.inspect import get_primary_key_columns, get_table_name
@@ -330,6 +330,7 @@ def connection_block(field, parent_name):
         {block_name}
 )
     """
+
     return block
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulo.gql.alias import InputField, InputObjectType
-from nebulo.gql.convert.composite import convert_column_to_input
+from nebulo.gql.alias import InputObjectType
+from nebulo.gql.convert.column import convert_column_to_input
 from nebulo.text_utils import snake_to_camel
 
 if typing.TYPE_CHECKING:

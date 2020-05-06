@@ -1,7 +1,6 @@
 import sqlalchemy as sqla
 from nebulo.sql.table_base import TableBase
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from nebulo.sql.reflection.function import reflect_functions
 
 SQL_UP = """
 CREATE TABLE public.refl_numer (

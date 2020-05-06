@@ -4,15 +4,14 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulo.gql.alias import Field, InputField, NonNull, String, TableType
+from nebulo.gql.alias import Field, NonNull, TableType
+from nebulo.gql.convert.column import convert_column
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
 from nebulo.gql.default_resolver import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, get_table_name
 from nebulo.text_utils import snake_to_camel
-from nebulo.typemap import TypeMapper
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
-from .composite import convert_column
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase

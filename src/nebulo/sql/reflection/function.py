@@ -1,14 +1,13 @@
-# pylint: disable=unused-argument,invalid-name,line-too-long
+# pylint: disable=unused-argument,invalid-name,line-too-long,unsubscriptable-object
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, List, Optional, Type
 
 from nebulo.exceptions import SQLParseError
 from nebulo.sql.sanitize import sanitize
-from nebulo.typemap import TypeMapper
 from sqlalchemy import text as sql_text
-from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.sql import sqltypes
+from sqlalchemy.sql.type_api import TypeEngine
 
 
 class SQLFunction:
@@ -22,14 +21,12 @@ class SQLFunction:
         schema: str,
         name: str,
         arg_names: List[Optional[str]],
-        arg_pg_types: List[TypeEngine],
-        arg_sqla_types: List[TypeEngine],
-        return_sqla_type: TypeEngine,
+        arg_pg_types: List[str],
+        arg_sqla_types: List[Type[TypeEngine[Any]]],
+        return_sqla_type: Type[TypeEngine[Any]],
     ):
         if len(arg_names) != len(arg_sqla_types) != len(arg_pg_types):
-            raise SQLParseError(
-                "SQLFunction requires same number of arg_names and sqla_types"
-            )
+            raise SQLParseError("SQLFunction requires same number of arg_names and sqla_types")
         self.schema = schema
         self.name = name
         self.arg_names = arg_names
@@ -40,15 +37,10 @@ class SQLFunction:
     def to_executable(self, kwargs):
 
         if len(kwargs) != len(self.arg_names):
-            raise SQLParseError(
-                f"Invalid number of parameters for SQLFunction {self.schema}.{self.name}"
-            )
+            raise SQLParseError(f"Invalid number of parameters for SQLFunction {self.schema}.{self.name}")
 
         call_sig = ", ".join(
-            [
-                f"{sanitize(arg_value)}::{arg_type}"
-                for arg_value, arg_type in zip(kwargs.values(), self.arg_pg_types)
-            ]
+            [f"{sanitize(arg_value)}::{arg_type}" for arg_value, arg_type in zip(kwargs.values(), self.arg_pg_types)]
         )
 
         executable = sql_text(f"select {self.schema}.{self.name}({call_sig})")
@@ -57,6 +49,13 @@ class SQLFunction:
 
 def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
     """Get a list of functions available in the database"""
+
+    # TODO: Support default arguments
+    # I haven't been able to find a way to get an array of default args
+    # but you can get a function signature including and not including
+    # see proargdefaults, pronargdefaults,
+    # pg_get_function_identity_arguments, get_function_arguments
+
     sql = sql_text(
         """
     select
@@ -94,12 +93,10 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
         arg_names = arg_names or []
         pg_arg_types = pg_arg_types or []
         sqla_arg_types = [
-            type_map.get((pg_type_schema, pg_type_name), sqltypes.NULLTYPE)
+            type_map.get(pg_type_name, sqltypes.NULLTYPE)
             for pg_type_schema, pg_type_name in zip(arg_type_schemas, pg_arg_types) or []
         ]
-        sqla_return_type = type_map.get(
-            (pg_return_type_schema, pg_return_type_name), sqltypes.NULLTYPE
-        )
+        sqla_return_type = type_map.get(pg_return_type_name, sqltypes.NULLTYPE)
 
         function = SQLFunction(
             schema=func_schema,
