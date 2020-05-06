@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, List, NamedTuple, Type
 
 from sqlalchemy import Column
 from sqlalchemy.sql.type_api import TypeEngine
-from sqlalchemy.types import TypeDecorator, UserDefinedType
+from sqlalchemy.types import UserDefinedType
 
 if TYPE_CHECKING:
     ColumnType = Column[Any]
@@ -30,38 +30,6 @@ class CompositeType(UserDefinedType):  # type: ignore
     name: str
     columns: List[ColumnType] = []
     type_cls: Type[NamedTuple]
-
-    def get_col_spec(self):
-        return self.name
-
-    def bind_processor(self, dialect):
-        def process(value):
-            if value is None:
-                return None
-            processed_value = []
-            for i, column in enumerate(self.columns):
-                if isinstance(column.type, TypeDecorator):
-                    processed_value.append(column.type.process_bind_param(value[i], dialect))
-                else:
-                    processed_value.append(value[i])
-            return self.type_cls(*processed_value)  # type: ignore
-
-        return process
-
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is None:
-                return None
-            cls = value.__class__
-            kwargs = {}
-            for column in self.columns:
-                if isinstance(column.type, TypeDecorator):
-                    kwargs[column.name] = column.type.process_result_value(getattr(value, column.name), dialect)
-                else:
-                    kwargs[column.name] = getattr(value, column.name)
-            return cls(**kwargs)
-
-        return process
 
 
 def composite_type_factory(name: str, columns: List[ColumnType]) -> TypeEngineType:

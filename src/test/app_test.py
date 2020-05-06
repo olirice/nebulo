@@ -18,6 +18,10 @@ INSERT INTO account (id, name) VALUES
 (2, 'rachel'),
 (3, 'sophie'),
 (4, 'buddy');
+
+
+CREATE FUNCTION to_lower(some_text text) returns text as
+$$ select lower(some_text) $$ language sql;
 """
 
 
@@ -58,3 +62,20 @@ def test_app_serves_graphql_query_from_application_json(client_builder):
     payload = json.loads(resp.text)
     assert "data" in payload
     assert len(payload["data"]["allAccounts"]["edges"]) == 4
+
+
+def test_app_serves_mutation_function(client_builder):
+    client = client_builder(SQL_UP)
+
+    query = """
+    mutation {
+        toLower(some_text: "AbC")
+    }
+    """
+    resp = client.post("/", json={"query": query})
+    assert resp.status_code == 200
+    print(resp.text)
+
+    payload = json.loads(resp.text)
+    assert "data" in payload
+    assert payload["data"]["toLower"] == "abc"
