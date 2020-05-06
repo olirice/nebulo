@@ -4,9 +4,17 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulo.gql.alias import (Boolean, CompositeType, Field, InputField,
-                              InputObjectType, Int, NonNull, ScalarType,
-                              String)
+from nebulo.gql.alias import (
+    Boolean,
+    CompositeType,
+    Field,
+    InputField,
+    InputObjectType,
+    Int,
+    NonNull,
+    ScalarType,
+    String,
+)
 from nebulo.gql.default_resolver import default_resolver
 from nebulo.sql.reflection.composite import CompositeType as SQLACompositeType
 from nebulo.text_utils import snake_to_camel
@@ -15,7 +23,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.type_api import TypeEngine
 
 if typing.TYPE_CHECKING:
-    from nebulo.sql.table_base import TableBase
+    pass
 
     ColumnType = Column[typing.Any]
 else:
