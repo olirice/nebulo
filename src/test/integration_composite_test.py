@@ -7,8 +7,8 @@ CREATE TYPE full_name AS (
 );
 
 create table account (
-	id serial primary key,
-	name full_name not null
+    id serial primary key,
+    name full_name not null
 );
 
 insert into account(name) values
@@ -35,4 +35,3 @@ def test_query_multiple_fields(gql_exec_builder):
     assert result.errors is None
     assert result.data["account"]["id"] == account_id
     assert result.data["account"]["name"]["first_name"] == "oliver"
-    assert isinstance(result.data["account"]["createdAt"], str)

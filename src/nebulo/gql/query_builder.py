@@ -118,6 +118,8 @@ def build_scalar(field, sqla_model) -> typing.Tuple[str, typing.Union[str, StrSQ
     return_type = field.return_type
     if return_type == NodeID:
         return (field.alias, to_global_id_sql(sqla_model))
+    # print(field.name, sqla_model, getattr(sqla_model, field.name), getattr(sqla_model, field.name).name, flush=True)
+
     return (field.alias, getattr(sqla_model, field.name).name)
 
 
@@ -159,7 +161,7 @@ def row_block(field, parent_name=None):
 
     select_clause = []
     for field in field.fields:
-        if isinstance(field.return_type, ScalarType):
+        if isinstance(field.return_type, (ScalarType, CompositeType)):
             select_clause.append(build_scalar(field, sqla_model))
         else:
             select_clause.append(build_relationship(field, block_name))

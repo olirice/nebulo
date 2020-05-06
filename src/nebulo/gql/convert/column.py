@@ -99,6 +99,7 @@ def composite_factory(sqla_composite: SQLACompositeType) -> CompositeType:
 
     return_type = CompositeType(name, fields)
     return_type.sqla_composite = sqla_composite
+
     return return_type
 
 
