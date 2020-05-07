@@ -10,10 +10,7 @@ from sqlalchemy.sql import sqltypes
 from sqlalchemy.sql.type_api import TypeEngine
 
 if TYPE_CHECKING:
-    pass
-
     TypeEngineType = TypeEngine[Any]
-    # TypeEngineComposite = TypeEngine[CompositeType]
 else:
     TypeEngineType = TypeEngine
 
