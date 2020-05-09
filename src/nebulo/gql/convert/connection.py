@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
-from nebulo.text_utils import snake_to_camel
+from nebulo.gql.convert.factory_config import FactoryConfig
 
 from ..alias import Argument, ConnectionType, Field, Int, List, NonNull
 from ..default_resolver import default_resolver
@@ -18,8 +18,7 @@ __all__ = ["connection_factory", "connection_args_factory"]
 
 @lru_cache()
 def connection_factory(sqla_model: TableBase):
-    name = f"{snake_to_camel(sqla_model.__table__.name)}Connection"
-
+    name = FactoryConfig.table_name_mapper(sqla_model) + "Connection"
     from .edge import edge_factory
 
     edge = edge_factory(sqla_model)

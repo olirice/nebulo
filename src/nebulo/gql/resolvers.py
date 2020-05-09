@@ -21,6 +21,7 @@ def sync_resolver(_, info: ResolveInfo, **kwargs):
 
     # GraphQL automatically resolves the top level object name
     # At time of writing, only required for scalar functions
+
     if isinstance(tree.return_type, ObjectType):
         query = sql_finalize(tree.name, base_query)
         result = session.execute(query).fetchone()[0]

@@ -4,12 +4,13 @@ from __future__ import annotations
 import secrets
 import string
 import typing
+from functools import lru_cache
 
 from cachetools import cached
 from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
 from nebulo.gql.convert.cursor import to_cursor_sql
 from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
-from nebulo.sql.inspect import get_primary_key_columns, get_table_name
+from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
 
 if typing.TYPE_CHECKING:
     from sqlalchemy.sql.compiler import StrSQLCompiler
@@ -21,9 +22,29 @@ def sanitize(text: str) -> str:
     return f"${escape_key}${text}${escape_key}$"
 
 
+@lru_cache()
+def field_name_to_column(sqla_model, gql_field_name: str):
+    from nebulo.gql.convert.factory_config import FactoryConfig
+
+    for column in get_columns(sqla_model):
+        if FactoryConfig.column_name_mapper(column) == gql_field_name:
+            return column
+    raise Exception(f"No column corresponding to field {gql_field_name}")
+
+
+@lru_cache()
+def field_name_to_relationship(sqla_model, gql_field_name: str):
+    from nebulo.gql.convert.factory_config import FactoryConfig
+
+    for relationship in get_relationships(sqla_model):
+        if FactoryConfig.relationship_name_mapper(relationship) == gql_field_name:
+            return relationship
+    raise Exception(f"No relationship corresponding to field {gql_field_name}")
+
+
 def to_join_clause(field, parent_block_name: str) -> typing.List[str]:
     parent_field = field.parent
-    relation_from_parent = getattr(parent_field.return_type.sqla_model, field.name).property
+    relation_from_parent = field_name_to_relationship(parent_field.return_type.sqla_model, field.name)
     local_table_name = get_table_name(field.return_type.sqla_model)
 
     join_clause = []
@@ -108,9 +129,9 @@ def to_conditions_clause(field) -> typing.List[str]:
         return ["true"]
 
     res = []
-    for col_key, val in conditions.items():
-        col_name = getattr(return_sqla_model, col_key).name
-        res.append(f"{local_table_name}.{col_name} = {sanitize(val)}")
+    for field_name, val in conditions.items():
+        column_name = field_name_to_column(return_sqla_model, field_name).name
+        res.append(f"{local_table_name}.{column_name} = {sanitize(val)}")
     return res
 
 
@@ -119,7 +140,8 @@ def build_scalar(field, sqla_model) -> typing.Tuple[str, typing.Union[str, StrSQ
     if return_type == NodeID:
         return (field.alias, to_global_id_sql(sqla_model))
 
-    return (field.alias, getattr(sqla_model, field.name).name)
+    column = field_name_to_column(sqla_model, field.name)
+    return (field.alias, column.name)
 
 
 def build_relationship(field, block_name):
@@ -129,15 +151,15 @@ def build_relationship(field, block_name):
 def sql_builder(tree, parent_name=None):
     return_type = tree.return_type
 
+    # SQL Function handler
+    if hasattr(return_type, "sql_function"):
+        return return_type.sql_function.to_executable(tree.args)
+
     if isinstance(return_type, TableType):
         return row_block(field=tree, parent_name=parent_name)
 
     if isinstance(return_type, ConnectionType):
         return connection_block(field=tree, parent_name=parent_name)
-
-    # SQL Function handler
-    if hasattr(return_type, "sql_function"):
-        return return_type.sql_function.to_executable(tree.args)
 
     raise Exception("sql builder could not match return type")
 

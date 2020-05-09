@@ -1,14 +1,14 @@
 from functools import lru_cache
 
 from nebulo.gql.alias import EdgeType, Field
-from nebulo.text_utils import snake_to_camel
+from nebulo.gql.convert.factory_config import FactoryConfig
 
 __all__ = ["edge_factory"]
 
 
 @lru_cache()
 def edge_factory(sqla_model):
-    name = f"{snake_to_camel(sqla_model.__table__.name)}Edge"
+    name = FactoryConfig.table_name_mapper(sqla_model) + "Edge"
 
     def build_attrs():
         from .table import table_factory

@@ -58,6 +58,18 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
 
     sql = sql_text(
         """
+    with extension_functions as (
+        select
+            objid as extension_function_oid
+        from
+            pg_depend
+        where
+            -- depends on an extension
+            deptype='e'
+            -- is a proc/function
+            and classid = 'pg_proc'::regclass
+    )
+
     select
         n.nspname as function_schema,
         p.proname as function_name,
@@ -66,14 +78,15 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
         (select array_agg(type_oid::regtype::text) from unnest(proargtypes) x(type_oid)) arg_types,
         t.typnamespace::regnamespace::text as return_type_schema,
         t.typname as return_type
-
     from
         pg_proc p
         left join pg_namespace n on p.pronamespace = n.oid
         left join pg_language l on p.prolang = l.oid
         left join pg_type t on t.oid = p.prorettype
+        left join extension_functions ef on p.oid = ef.extension_function_oid
     where
         n.nspname not in ('pg_catalog', 'information_schema')
+        and ef.extension_function_oid is null
         and n.nspname like :schema
         """
     )
@@ -92,6 +105,7 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
     ) in rows:
         arg_names = arg_names or []
         pg_arg_types = pg_arg_types or []
+        arg_type_schemas = arg_type_schemas or []
         sqla_arg_types = [
             type_map.get(pg_type_name, sqltypes.NULLTYPE)
             for pg_type_schema, pg_type_name in zip(arg_type_schemas, pg_arg_types) or []

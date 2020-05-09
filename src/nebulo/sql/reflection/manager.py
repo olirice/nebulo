@@ -4,12 +4,7 @@ from typing import List, Tuple
 
 from nebulo.sql.reflection.function import SQLFunction, reflect_functions
 from nebulo.sql.reflection.types import reflect_composites
-from nebulo.sql.reflection.utils import (
-    rename_columns,
-    rename_table,
-    rename_to_many_collection,
-    rename_to_one_collection,
-)
+from nebulo.sql.reflection.utils import rename_table, rename_to_many_collection, rename_to_one_collection
 from nebulo.sql.table_base import TableBase
 from sqlalchemy.dialects.postgresql import base as pg_base
 from sqlalchemy.engine import Engine
@@ -33,12 +28,6 @@ def reflect_sqla_models(
 
     type_map = pg_base.ischema_names.copy()
 
-    # Reflect functions, allowing composite types
-    functions = reflect_functions(engine=engine, schema=schema, type_map=type_map)
-
-    # Event listeners impacting reflection
-    rename_columns()
-
     declarative_base.prepare(
         engine,
         reflect=True,
@@ -48,5 +37,13 @@ def reflect_sqla_models(
         name_for_collection_relationship=rename_to_many_collection,
     )
 
+    tables = list(declarative_base.classes)
+
+    for table in tables:
+        type_map[table.__table__.name] = table
+
+    # Reflect functions, allowing composite types
+    functions = reflect_functions(engine=engine, schema=schema, type_map=type_map)
+
     # SQLA Tables
-    return (list(declarative_base.classes), functions)
+    return (tables, functions)

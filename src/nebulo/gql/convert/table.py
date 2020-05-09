@@ -6,25 +6,20 @@ from functools import lru_cache
 
 from nebulo.gql.alias import Field, NonNull, TableType
 from nebulo.gql.convert.column import convert_column
+from nebulo.gql.convert.factory_config import FactoryConfig
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
 from nebulo.gql.default_resolver import default_resolver
-from nebulo.sql.inspect import get_columns, get_relationships, get_table_name
-from nebulo.text_utils import snake_to_camel
+from nebulo.sql.inspect import get_columns, get_relationships
+from nebulo.sql.table_base import TableBase
 from sqlalchemy.orm import RelationshipProperty, interfaces
 from sqlalchemy.sql.schema import Column
 
-if typing.TYPE_CHECKING:
-    from nebulo.sql.table_base import TableBase
-
-    ColumnType = Column[typing.Any]
-    RelationshipPropertyType = RelationshipProperty[typing.Any]
-else:
-    ColumnType = Column
-    RelationshipPropertyType = RelationshipProperty
+TableNameMapper = typing.Callable[[TableBase], str]
+ColumnNameMapper = typing.Callable[[Column], str]
+RelationshipNameMapper = typing.Callable[[RelationshipProperty], str]
 
 
-@lru_cache()
-def relationship_is_nullable(relationship: RelationshipPropertyType, source: TableBase) -> bool:
+def relationship_is_nullable(relationship: RelationshipProperty, source: TableBase) -> bool:
     """Checks if a sqlalchemy orm relationship is nullable"""
     for local_col, remote_col in relationship.local_remote_pairs:
         if local_col.nullable or remote_col.nullable:
@@ -33,14 +28,9 @@ def relationship_is_nullable(relationship: RelationshipPropertyType, source: Tab
 
 
 @lru_cache()
-def relationship_to_attr_name(relationship: RelationshipPropertyType) -> str:
-    """Collect the  """
-    return relationship.key
+def table_factory(sqla_model: TableBase) -> TableType:
 
-
-@lru_cache()
-def table_factory(sqla_model):
-    name = snake_to_camel(get_table_name(sqla_model))
+    name = FactoryConfig.table_name_mapper(sqla_model)
 
     def build_attrs():
         attrs = {}
@@ -49,7 +39,7 @@ def table_factory(sqla_model):
         attrs["nodeId"] = Field(NonNull(NodeID), resolve=default_resolver)
 
         for column in get_columns(sqla_model):
-            key = column.key
+            key = FactoryConfig.column_name_mapper(column)
             attrs[key] = convert_column(column)
 
         for relationship in get_relationships(sqla_model):
@@ -58,7 +48,7 @@ def table_factory(sqla_model):
             is_nullable = relationship_is_nullable(relationship, sqla_model)
 
             # Name of the attribute on the model
-            attr_key = relationship_to_attr_name(relationship)
+            attr_key = FactoryConfig.relationship_name_mapper(relationship)
 
             # TODO(OR): Update so key is set by relevant fields
             # If this model has 1 counterpart, do not use a list

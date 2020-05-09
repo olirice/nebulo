@@ -60,11 +60,13 @@ SQLA_TO_GQL = {
 
 
 def convert_type(sqla_type: typing.Type[TypeEngine[typing.Any]]):
+    if hasattr(sqla_type, "__table__"):
+        from .table import table_factory
+
+        return table_factory(sqla_type)
     if issubclass(sqla_type, SQLACompositeType):
-        gql_type = composite_factory(sqla_type)
-    else:
-        gql_type = SQLA_TO_GQL.get(sqla_type, String)
-    return gql_type
+        return composite_factory(sqla_type)
+    return SQLA_TO_GQL.get(sqla_type, String)
 
 
 @lru_cache()
@@ -79,12 +81,6 @@ def convert_column(column: ColumnType) -> Field:
 
 @lru_cache()
 def composite_factory(sqla_composite: SQLACompositeType) -> CompositeType:
-    def build_composite_column_resolver(column_key):
-        def resolver(parent, info, **kwargs):
-            return parent[column_key]
-
-        return resolver
-
     name = snake_to_camel(sqla_composite.name, upper=True)
     fields = {}
 
@@ -92,7 +88,6 @@ def composite_factory(sqla_composite: SQLACompositeType) -> CompositeType:
         column_key = str(column.key)
         gql_key = column_key
         gql_type = convert_column(column)
-        gql_type.resolve = build_composite_column_resolver(str(column.name))
         fields[gql_key] = gql_type
 
     return_type = CompositeType(name, fields)

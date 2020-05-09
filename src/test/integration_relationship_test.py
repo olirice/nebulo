@@ -48,7 +48,7 @@ def test_query_one_to_many(gql_exec_builder):
     {{
         account(nodeId: "{node_id}") {{
             id
-            offersByAccountIdNullable {{
+            offersByIdToAccountIdNullable {{
                 edges {{
                     node {{
                         id
@@ -65,7 +65,7 @@ def test_query_one_to_many(gql_exec_builder):
     assert result.errors is None
     assert result.data["account"]["id"] == account_id
 
-    offers_by_id = result.data["account"]["offersByAccountIdNullable"]
+    offers_by_id = result.data["account"]["offersByIdToAccountIdNullable"]
     currencies = {x["node"]["currency"] for x in offers_by_id["edges"]}
     assert "usd" in currencies and "gbp" in currencies
 
@@ -83,7 +83,7 @@ def test_query_many_to_one(gql_exec_builder):
         edges {
             node {
                 id
-                accountByAccountIdNotNull {
+                accountByAccountIdNotNullToId {
                     name
                 }
             }

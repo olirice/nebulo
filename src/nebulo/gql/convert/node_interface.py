@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 
 from nebulo.gql.alias import Field, InterfaceType, NonNull, ScalarType
-from nebulo.sql.inspect import get_table_name
+from nebulo.sql.inspect import get_primary_key_columns, get_table_name
 from nebulo.text_utils.base64 import from_base64, to_base64, to_base64_sql
 from sqlalchemy import text
 
@@ -36,7 +36,8 @@ def from_global_id(global_id: str) -> typing.Tuple[str, typing.List[str]]:
 
 def to_global_id_sql(sqla_model) -> StrSQLCompiler:
     table_name = get_table_name(sqla_model)
-    pkey_cols = list(sqla_model.__table__.primary_key.columns)
+
+    pkey_cols = get_primary_key_columns(sqla_model)
 
     selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
 
