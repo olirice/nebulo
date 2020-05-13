@@ -3,9 +3,9 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+from nebulo.config import Config
 from nebulo.gql.alias import Argument, ConnectionType, Field, Int, List, NonNull
 from nebulo.gql.convert.cursor import Cursor
-from nebulo.gql.convert.factory_config import FactoryConfig
 from nebulo.gql.convert.page_info import PageInfo
 from nebulo.gql.resolver.default import default_resolver
 
@@ -17,7 +17,7 @@ __all__ = ["connection_factory", "connection_args_factory"]
 
 @lru_cache()
 def connection_factory(sqla_model: TableBase):
-    name = FactoryConfig.table_name_mapper(sqla_model) + "Connection"
+    name = Config.table_name_mapper(sqla_model) + "Connection"
     from .edge import edge_factory
 
     edge = edge_factory(sqla_model)

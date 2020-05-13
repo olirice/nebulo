@@ -3,10 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import importlib
-from typing import Callable, Generator
+from typing import Callable
 
 import pytest
-from databases import Database
 from graphql import graphql_sync as execute_graphql
 from graphql.execution.execute import ExecutionResult
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
@@ -109,32 +108,23 @@ def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str],
 
 
 @pytest.fixture
-def app_builder(event_loop, connection_str, session) -> Generator[Callable[[str], Starlette], None, None]:
-
-    database = Database(connection_str)
-    # Starlette on_connect does not get called via test client
-    connect_coroutine = database.connect()
-    event_loop.run_until_complete(connect_coroutine)
-
+def app_builder(event_loop, connection_str, session) -> Callable[[str], Starlette]:
     def build(sql: str) -> Starlette:
         session.execute(sql)
         session.commit()
 
-        # schema_building_coroutine = database.execute_many(sql, values={})
-        # event_loop.run_until_complete(schema_building_coroutine)
-
         # Create the schema
-        app = create_app(database=database)
+        app = create_app(connection_str)
         return app
 
-    yield build
-
-    disconnect_coroutine = database.disconnect()
-    event_loop.run_until_complete(disconnect_coroutine)
+    return build
 
 
 @pytest.fixture
 def client_builder(app_builder: Callable[[str], Starlette]) -> Callable[[str], TestClient]:
+    # NOTE: Client must be used as a context manager for on_startup and on_shutdown to execute
+    # e.g. connect to the database
+
     def build(sql: str) -> TestClient:
         importlib.reload(table_base)
         app = app_builder(sql)

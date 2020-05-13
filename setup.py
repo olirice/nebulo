@@ -39,7 +39,7 @@ setup(
         "uvicorn==0.11.3",
         "parse==1.15.0",
         "flupy==1.0.12",
-        "pyjwt==1.7.7",
+        "pyjwt==1.7.1",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov", "requests"],

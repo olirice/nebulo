@@ -28,10 +28,11 @@ def function_factory(sql_function: TableBase, resolve_async: bool = False):
     if issubclass(sql_function.return_sqla_type, SQLACompositeType):
         sqla_composite = sql_function.return_sqla_type
         composite_identifier = sqla_composite.pg_schema + "." + sqla_composite.pg_name
-        from nebulo.server.app import NEBULO_JWT_IDENTIFIER, NEBULO_JWT_SECRET
 
-        if composite_identifier == NEBULO_JWT_IDENTIFIER:
-            return_type = jwt_factory(NEBULO_JWT_SECRET)
+        from nebulo.config import Config
+
+        if composite_identifier == Config.JWT_IDENTIFIER:
+            return_type = jwt_factory(Config.JWT_SECRET)
 
     return_type.sql_function = sql_function
     return Field(return_type, args=gql_args, resolve=async_resolver if resolve_async else sync_resolver, description="")

@@ -7,6 +7,7 @@ import typing
 from functools import lru_cache
 
 from cachetools import cached
+from nebulo.config import Config
 from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
 from nebulo.gql.convert.cursor import to_cursor_sql
 from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
@@ -24,20 +25,16 @@ def sanitize(text: str) -> str:
 
 @lru_cache()
 def field_name_to_column(sqla_model, gql_field_name: str):
-    from nebulo.gql.convert.factory_config import FactoryConfig
-
     for column in get_columns(sqla_model):
-        if FactoryConfig.column_name_mapper(column) == gql_field_name:
+        if Config.column_name_mapper(column) == gql_field_name:
             return column
     raise Exception(f"No column corresponding to field {gql_field_name}")
 
 
 @lru_cache()
 def field_name_to_relationship(sqla_model, gql_field_name: str):
-    from nebulo.gql.convert.factory_config import FactoryConfig
-
     for relationship in get_relationships(sqla_model):
-        if FactoryConfig.relationship_name_mapper(relationship) == gql_field_name:
+        if Config.relationship_name_mapper(relationship) == gql_field_name:
             return relationship
     raise Exception(f"No relationship corresponding to field {gql_field_name}")
 

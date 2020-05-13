@@ -39,3 +39,12 @@ def get_primary_key_columns(sqla_model: TableBase) -> List[ColumnType]:
 def get_columns(sqla_model: TableBase) -> List[ColumnType]:
     """Columns on the table"""
     return [x for x in sqla_model.__table__.columns]
+
+
+@lru_cache()
+def is_nullable(relationship: RelationshipProperty) -> bool:
+    """Checks if a sqlalchemy orm relationship is nullable"""
+    for local_col, remote_col in relationship.local_remote_pairs:
+        if local_col.nullable or remote_col.nullable:
+            return True
+    return False

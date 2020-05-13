@@ -13,15 +13,16 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 
 
-def create_app(database: Database, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
+def create_app(connection: str, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
     """Create an ASGI App"""
 
     if not (jwt_identifier is not None) == (jwt_secret is not None):
         raise Exception("jwt_token_identifier and jwt_secret must be provided together")
 
+    database = Database(connection)
     # Reflect database to sqla models
-    connection_str = str(database.url)
-    sqla_engine = create_engine(connection_str)
+    sqla_engine = create_engine(connection)
+
     sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema="public")
 
     # Convert sqla models to graphql schema

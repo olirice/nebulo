@@ -34,7 +34,8 @@ def test_app_has_route(app_builder):
 def test_app_serves_graphiql(client_builder):
     client = client_builder(SQL_UP)
     headers = {"Accept": "text/html"}
-    resp = client.get("/graphiql", headers=headers)
+    with client:
+        resp = client.get("/graphiql", headers=headers)
     print(resp)
     assert resp.status_code == 200
 
@@ -55,7 +56,9 @@ def test_app_serves_graphql_query_from_application_json(client_builder):
         }}
     }}
     """
-    resp = client.post("/", json={"query": query})
+
+    with client:
+        resp = client.post("/", json={"query": query})
     assert resp.status_code == 200
     print(resp.text)
 
@@ -72,7 +75,9 @@ def test_app_serves_mutation_function(client_builder):
         toLower(some_text: "AbC")
     }
     """
-    resp = client.post("/", json={"query": query})
+
+    with client:
+        resp = client.post("/", json={"query": query})
     assert resp.status_code == 200
     print(resp.text)
 
