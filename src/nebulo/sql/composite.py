@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, List, NamedTuple, Type
+from typing import List, NamedTuple, Type
 
 from sqlalchemy import Column
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.types import UserDefinedType
-
-if TYPE_CHECKING:
-    ColumnType = Column[Any]
-    TypeEngineType = TypeEngine[Any]
-else:
-    ColumnType = Column
-    TypeEngineType = TypeEngine
 
 
 class CompositeType(UserDefinedType):  # type: ignore
@@ -28,23 +21,32 @@ class CompositeType(UserDefinedType):  # type: ignore
     python_type = tuple
 
     name: str
-    columns: List[ColumnType] = []
+    columns: List[Column] = []
     type_cls: Type[NamedTuple]
 
-
-def composite_type_factory(name: str, columns: List[ColumnType]) -> TypeEngineType:
-
-    for column in columns:
-        column.key = column.name
+    pg_name: str
+    pg_schema: str
 
     def init(self, *args, **kwargs):
         pass
+
+
+def composite_type_factory(name: str, columns: List[Column], pg_name: str, pg_schema: str) -> TypeEngine:
+
+    for column in columns:
+        column.key = column.name
 
     type_cls: Type[NamedTuple] = namedtuple(name, [c.name for c in columns])  # type: ignore
 
     composite = type(
         name,
         (CompositeType,),
-        {"name": name, "columns": columns, "type_cls": type_cls, "__init__": init},  # type:ignore
+        {
+            "name": name,
+            "columns": columns,
+            "type_cls": type_cls,
+            "pg_name": pg_name,
+            "pg_schema": pg_schema,
+        },  # type:ignore
     )
     return composite  # type: ignore

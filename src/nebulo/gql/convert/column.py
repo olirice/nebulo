@@ -15,7 +15,7 @@ from nebulo.gql.alias import (
     ScalarType,
     String,
 )
-from nebulo.gql.default_resolver import default_resolver
+from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.composite import CompositeType as SQLACompositeType
 from nebulo.text_utils import snake_to_camel
 from sqlalchemy import Column, types
@@ -59,7 +59,8 @@ SQLA_TO_GQL = {
 }
 
 
-def convert_type(sqla_type: typing.Type[TypeEngine[typing.Any]]):
+@lru_cache()
+def convert_type(sqla_type: typing.Type[TypeEngine]):
     if hasattr(sqla_type, "__table__"):
         from .table import table_factory
 
@@ -92,10 +93,10 @@ def composite_factory(sqla_composite: SQLACompositeType) -> CompositeType:
 
     return_type = CompositeType(name, fields)
     return_type.sqla_composite = sqla_composite
-
     return return_type
 
 
+@lru_cache()
 def convert_input_type(sqla_type: typing.Type[TypeEngine[typing.Any]]):
     if issubclass(sqla_type, SQLACompositeType):
         gql_type = composite_input_factory(sqla_type)

@@ -8,7 +8,7 @@ from nebulo.gql.alias import Field, NonNull, TableType
 from nebulo.gql.convert.column import convert_column
 from nebulo.gql.convert.factory_config import FactoryConfig
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
-from nebulo.gql.default_resolver import default_resolver
+from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships
 from nebulo.sql.table_base import TableBase
 from sqlalchemy.orm import RelationshipProperty, interfaces

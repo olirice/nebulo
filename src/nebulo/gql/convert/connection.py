@@ -3,12 +3,11 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+from nebulo.gql.alias import Argument, ConnectionType, Field, Int, List, NonNull
+from nebulo.gql.convert.cursor import Cursor
 from nebulo.gql.convert.factory_config import FactoryConfig
-
-from ..alias import Argument, ConnectionType, Field, Int, List, NonNull
-from ..default_resolver import default_resolver
-from .cursor import Cursor
-from .page_info import PageInfo
+from nebulo.gql.convert.page_info import PageInfo
+from nebulo.gql.resolver.default import default_resolver
 
 if typing.TYPE_CHECKING:
     from nebulo.sql.table_base import TableBase
@@ -25,7 +24,6 @@ def connection_factory(sqla_model: TableBase):
 
     def build_attrs():
         return {
-            # TODO(OR): Are the resolve arguments necessary?
             "edges": Field(NonNull(List(NonNull(edge))), resolve=default_resolver),
             "pageInfo": Field(NonNull(PageInfo), resolve=default_resolver),
             "totalCount": Field(NonNull(Int), resolve=default_resolver),

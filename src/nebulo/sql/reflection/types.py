@@ -1,5 +1,5 @@
 # pylint: disable=invalid-name
-from typing import TYPE_CHECKING, Any, Dict, Tuple
+from typing import Dict, Tuple
 
 from flupy import flu
 from nebulo.sql.composite import composite_type_factory
@@ -9,13 +9,8 @@ from sqlalchemy import text as sql_text
 from sqlalchemy.sql import sqltypes
 from sqlalchemy.sql.type_api import TypeEngine
 
-if TYPE_CHECKING:
-    TypeEngineType = TypeEngine[Any]
-else:
-    TypeEngineType = TypeEngine
 
-
-def reflect_composites(engine, schema, type_map) -> Dict[Tuple[str, str], TypeEngineType]:
+def reflect_composites(engine, schema, type_map) -> Dict[Tuple[str, str], TypeEngine]:
     """Get a list of functions available in the database"""
 
     sql = sql_text(
@@ -102,7 +97,7 @@ SELECT
 
         py_composite_name = snake_to_camel(composite_name, upper=True)
         # sqla_composite = CompositeType(py_composite_name, columns)
-        sqla_composite = composite_type_factory(py_composite_name, columns)
+        sqla_composite = composite_type_factory(py_composite_name, columns, composite_name, schema_name)
         composites[(schema_name, composite_name)] = sqla_composite
 
     return composites

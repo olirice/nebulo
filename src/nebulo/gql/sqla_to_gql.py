@@ -5,7 +5,8 @@ from nebulo.gql.convert.connection import connection_args_factory, connection_fa
 from nebulo.gql.convert.function import function_factory
 from nebulo.gql.convert.node_interface import NodeID
 from nebulo.gql.convert.table import table_factory
-from nebulo.gql.resolvers import async_resolver, sync_resolver
+from nebulo.gql.resolver.asynchronous import async_resolver
+from nebulo.gql.resolver.synchronous import sync_resolver
 from nebulo.sql.inspect import get_table_name
 from nebulo.text_utils import snake_to_camel, to_plural
 

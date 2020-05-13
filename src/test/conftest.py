@@ -102,7 +102,7 @@ def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str],
     def build(sql: str) -> Callable[[str], ExecutionResult]:
         schema = schema_builder(sql)
         return lambda source_query: execute_graphql(
-            schema=schema, source=source_query, context_value={"session": session}
+            schema=schema, source=source_query, context_value={"session": session, "jwt_claims": {}}
         )
 
     return build
@@ -124,7 +124,7 @@ def app_builder(event_loop, connection_str, session) -> Generator[Callable[[str]
         # event_loop.run_until_complete(schema_building_coroutine)
 
         # Create the schema
-        app = create_app(database)
+        app = create_app(database=database)
         return app
 
     yield build

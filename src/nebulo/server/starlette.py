@@ -1,3 +1,5 @@
+from typing import Optional
+
 from databases import Database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
@@ -11,8 +13,11 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 
 
-def create_app(database: Database) -> Starlette:
+def create_app(database: Database, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
     """Create an ASGI App"""
+
+    if not (jwt_identifier is not None) == (jwt_secret is not None):
+        raise Exception("jwt_token_identifier and jwt_secret must be provided together")
 
     # Reflect database to sqla models
     connection_str = str(database.url)
@@ -23,7 +28,7 @@ def create_app(database: Database) -> Starlette:
     gql_schema = sqla_models_to_graphql_schema(sqla_models, sql_functions, resolve_async=True)
 
     # Build Starlette app
-    graphql_endpoint = get_graphql_endpoint(gql_schema, database)
+    graphql_endpoint = get_graphql_endpoint(gql_schema, database, jwt_secret)
     routes = [Route("/", graphql_endpoint, methods=["POST"]), Route("/graphiql", graphiql_endpoint, methods=["GET"])]
     middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
     _app = Starlette(
