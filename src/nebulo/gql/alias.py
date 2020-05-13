@@ -1,14 +1,19 @@
 # pylint: disable=missing-class-docstring,invalid-name
+import typing
+
+from graphql.language import ObjectTypeDefinitionNode, ObjectTypeExtensionNode
 from graphql.type import (
     GraphQLArgument,
     GraphQLBoolean,
     GraphQLEnumType,
     GraphQLEnumValue,
     GraphQLField,
+    GraphQLFieldMap,
     GraphQLID,
     GraphQLInputObjectType,
     GraphQLInt,
     GraphQLInterfaceType,
+    GraphQLIsTypeOfFn,
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
@@ -17,6 +22,7 @@ from graphql.type import (
     GraphQLSchema,
     GraphQLString,
     GraphQLType,
+    Thunk,
 )
 from nebulo.sql.composite import CompositeType as SQLACompositeType
 
@@ -58,18 +64,40 @@ class HasSQLAComposite:  # pylint: disable= too-few-public-methods
 
 
 class ObjectType(GraphQLObjectType, HasSQLAModel):
+    def __init__(
+        self,
+        name: str,
+        fields: Thunk[GraphQLFieldMap],
+        interfaces: typing.Optional[Thunk[typing.Collection["GraphQLInterfaceType"]]] = None,
+        is_type_of: typing.Optional[GraphQLIsTypeOfFn] = None,
+        extensions: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        description: typing.Optional[str] = None,
+        ast_node: typing.Optional[ObjectTypeDefinitionNode] = None,
+        extension_ast_nodes: typing.Optional[typing.Collection[ObjectTypeExtensionNode]] = None,
+        sqla_model=None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            fields=fields,
+            interfaces=interfaces,
+            is_type_of=is_type_of,
+            extensions=extensions,
+            description=description,
+            ast_node=ast_node,
+            extension_ast_nodes=extension_ast_nodes,
+        )
+        self.sqla_model = sqla_model
+
+
+class ConnectionType(ObjectType):
     pass
 
 
-class ConnectionType(ObjectType, HasSQLAModel):
+class EdgeType(ObjectType):
     pass
 
 
-class EdgeType(ObjectType, HasSQLAModel):
-    pass
-
-
-class TableType(ObjectType, HasSQLAModel):
+class TableType(ObjectType):
     pass
 
 

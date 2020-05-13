@@ -22,12 +22,6 @@ from sqlalchemy import Column, types
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.sql.type_api import TypeEngine
 
-if typing.TYPE_CHECKING:
-    ColumnType = Column[typing.Any]
-else:
-    ColumnType = Column
-
-
 UnknownType = ScalarType(name="UnknownString", serialize=str)
 DateTimeType = ScalarType(name="DateTime", serialize=str)
 DateType = ScalarType(name="Date", serialize=str)
@@ -71,7 +65,7 @@ def convert_type(sqla_type: typing.Type[TypeEngine]):
 
 
 @lru_cache()
-def convert_column(column: ColumnType) -> Field:
+def convert_column(column: Column) -> Field:
     """Converts a sqlalchemy column into a graphql field or input field"""
     sqla_type = type(column.type)
     gql_type = convert_type(sqla_type)
@@ -106,7 +100,7 @@ def convert_input_type(sqla_type: typing.Type[TypeEngine[typing.Any]]):
 
 
 @lru_cache()
-def convert_column_to_input(column: ColumnType) -> InputField:
+def convert_column_to_input(column: Column) -> InputField:
     """Converts a sqlalchemy column into a graphql field or input field"""
     sqla_type = type(column.type)
     gql_type = convert_input_type(sqla_type)

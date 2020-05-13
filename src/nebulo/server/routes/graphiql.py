@@ -1,15 +1,20 @@
 from functools import lru_cache
 
+from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
 
-async def graphiql_endpoint(request, graphql_url_path='"/"') -> HTMLResponse:
+async def graphiql_endpoint(request: Request, graphql_url_path: str = '"/"') -> HTMLResponse:
+    """Return the HTMLResponse for GraphiQL GraphQL explorer configured to hit the correct endpoint"""
+
     html_text = build_graphiql_html(graphql_url_path)
     return HTMLResponse(html_text)
 
 
 @lru_cache()
 def build_graphiql_html(url_path: str) -> str:
+    """Return the raw HTML for GraphiQL GraphQL explorer"""
+
     text = GRAPHIQL.replace("{{REQUEST_PATH}}", url_path)
     return text
 

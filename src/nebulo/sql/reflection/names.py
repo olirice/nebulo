@@ -11,8 +11,7 @@ if TYPE_CHECKING:
 
 
 def rename_table(base: Type[TableBase], tablename: str, table: Table) -> str:
-    "Produce a 'camelized' class name, e.g. "
-    "'words_and_underscores' -> 'WordsAndUnderscores'"
+    """Produce a 'camelized' class name, e.g. 'words_and_underscores' -> 'WordsAndUnderscores'"""
     return snake_to_camel(tablename, upper=True)
 
 

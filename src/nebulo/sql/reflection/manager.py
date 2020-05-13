@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import List, Tuple
 
 from nebulo.sql.reflection.function import SQLFunction, reflect_functions
+from nebulo.sql.reflection.names import rename_table, rename_to_many_collection, rename_to_one_collection
 from nebulo.sql.reflection.types import reflect_composites
-from nebulo.sql.reflection.utils import rename_table, rename_to_many_collection, rename_to_one_collection
 from nebulo.sql.table_base import TableBase
 from sqlalchemy.dialects.postgresql import base as pg_base
 from sqlalchemy.engine import Engine

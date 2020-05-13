@@ -18,10 +18,12 @@ def table_factory(sqla_model: TableBase) -> TableType:
     """
     Reflects a SQLAlchemy table into a graphql-core GraphQLObjectType
 
-
+    Parameters
+    ----------
+    sqla_model
+        A SQLAlchemy ORM Table
 
     """
-
     from .connection import connection_factory, connection_args_factory
 
     name = Config.table_name_mapper(sqla_model)
@@ -63,7 +65,8 @@ def table_factory(sqla_model: TableBase) -> TableType:
 
         return attrs
 
-    return_type = TableType(name=name, fields=build_attrs, interfaces=[NodeInterface], description="")
-    return_type.sqla_model = sqla_model
+    return_type = TableType(
+        name=name, fields=build_attrs, interfaces=[NodeInterface], description="", sqla_model=sqla_model
+    )
 
     return return_type

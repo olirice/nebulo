@@ -13,7 +13,9 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 
 
-def create_app(connection: str, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
+def create_app(
+    connection: str, schema: str = "public", jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None
+) -> Starlette:
     """Create an ASGI App"""
 
     if not (jwt_identifier is not None) == (jwt_secret is not None):
@@ -23,15 +25,18 @@ def create_app(connection: str, jwt_identifier: Optional[str] = None, jwt_secret
     # Reflect database to sqla models
     sqla_engine = create_engine(connection)
 
-    sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema="public")
+    sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema=schema)
 
     # Convert sqla models to graphql schema
     gql_schema = sqla_models_to_graphql_schema(sqla_models, sql_functions, resolve_async=True)
 
     # Build Starlette app
     graphql_endpoint = get_graphql_endpoint(gql_schema, database, jwt_secret)
+
     routes = [Route("/", graphql_endpoint, methods=["POST"]), Route("/graphiql", graphiql_endpoint, methods=["GET"])]
+
     middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
+
     _app = Starlette(
         routes=routes,
         middleware=middleware,

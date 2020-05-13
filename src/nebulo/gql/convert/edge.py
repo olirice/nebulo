@@ -8,14 +8,13 @@ __all__ = ["edge_factory"]
 
 @lru_cache()
 def edge_factory(sqla_model):
+    from .cursor import Cursor
+    from .table import table_factory
+
     name = Config.table_name_mapper(sqla_model) + "Edge"
 
     def build_attrs():
-        from .table import table_factory
-        from .cursor import Cursor
-
         return {"cursor": Field(Cursor), "node": Field(table_factory(sqla_model))}
 
-    edge = EdgeType(name=name, fields=build_attrs, description="")
-    edge.sqla_model = sqla_model
+    edge = EdgeType(name=name, fields=build_attrs, description="", sqla_model=sqla_model)
     return edge

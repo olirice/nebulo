@@ -17,20 +17,19 @@ __all__ = ["connection_factory", "connection_args_factory"]
 
 @lru_cache()
 def connection_factory(sqla_model: TableBase):
-    name = Config.table_name_mapper(sqla_model) + "Connection"
     from .edge import edge_factory
 
-    edge = edge_factory(sqla_model)
+    name = Config.table_name_mapper(sqla_model) + "Connection"
 
     def build_attrs():
+        edge = edge_factory(sqla_model)
         return {
             "edges": Field(NonNull(List(NonNull(edge))), resolve=default_resolver),
             "pageInfo": Field(NonNull(PageInfo), resolve=default_resolver),
             "totalCount": Field(NonNull(Int), resolve=default_resolver),
         }
 
-    return_type = ConnectionType(name=name, fields=build_attrs, description="")
-    return_type.sqla_model = sqla_model
+    return_type = ConnectionType(name=name, fields=build_attrs, description="", sqla_model=sqla_model)
     return return_type
 
 
