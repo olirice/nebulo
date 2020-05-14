@@ -28,7 +28,9 @@ def create_app(
     sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema=schema)
 
     # Convert sqla models to graphql schema
-    gql_schema = sqla_models_to_graphql_schema(sqla_models, sql_functions, resolve_async=True)
+    gql_schema = sqla_models_to_graphql_schema(
+        sqla_models, sql_functions, jwt_identifier=jwt_identifier, jwt_secret=jwt_secret, resolve_async=True
+    )
 
     # Build Starlette app
     graphql_endpoint = get_graphql_endpoint(gql_schema, database, jwt_secret)

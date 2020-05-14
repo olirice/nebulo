@@ -24,6 +24,8 @@ class SQLFunction:
         arg_pg_types: List[str],
         arg_sqla_types: List[Type[TypeEngine[Any]]],
         return_sqla_type: Type[TypeEngine[Any]],
+        return_pg_type_schema: str,
+        return_pg_type: str,
     ):
         if len(arg_names) != len(arg_sqla_types) != len(arg_pg_types):
             raise SQLParseError("SQLFunction requires same number of arg_names and sqla_types")
@@ -33,6 +35,8 @@ class SQLFunction:
         self.arg_pg_types = arg_pg_types
         self.arg_sqla_types = arg_sqla_types
         self.return_sqla_type = return_sqla_type
+        self.return_pg_type_schema = return_pg_type_schema
+        self.return_pg_type = return_pg_type
 
     def to_executable(self, kwargs):
 
@@ -119,6 +123,8 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
             arg_pg_types=pg_arg_types,
             arg_sqla_types=sqla_arg_types,
             return_sqla_type=sqla_return_type,
+            return_pg_type_schema=pg_return_type_schema,
+            return_pg_type=pg_return_type_name,
         )
         functions.append(function)
 

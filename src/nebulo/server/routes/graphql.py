@@ -1,8 +1,8 @@
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable, Dict, Optional
 
-import jwt
 from databases import Database
 from graphql import graphql as graphql_exec
+from nebulo.server.jwt import get_jwt_claims_handler
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -11,7 +11,7 @@ __all__ = ["get_graphql_endpoint"]
 
 
 def get_graphql_endpoint(
-    schema: str, database: Database, jwt_secret: str
+    schema: str, database: Database, jwt_secret: Optional[str]
 ) -> Callable[[Request], Awaitable[JSONResponse]]:
     """Retrieve the GraphQL variables from the Starlette Request"""
 
@@ -60,25 +60,3 @@ async def get_variables(request) -> Awaitable[Dict[str, Any]]:
     if content_type == "application/json":
         return (await request.json()).get("variables", {})
     raise HTTPException(400, "content-type header must be set")
-
-
-def get_jwt_claims_handler(secret: str) -> Callable[[Request], Awaitable[Dict[str, Any]]]:
-    """Return a function that retrieves and decodes JWT claims from the Starlette Request"""
-
-    async def get_jwt_claims(request: Request) -> Dict[str, Any]:
-        """Retrieve the JWT claims from the Starlette Request"""
-
-        if "Authorization" not in request.headers:
-            return {}
-
-        auth = request.headers["Authorization"]
-        try:
-            scheme, token = auth.split()
-            if scheme.lower() == "bearer":
-                contents = jwt.decode(token, secret, algorithms=["HS256"])
-                return contents
-        except (jwt.exceptions.DecodeError,):  # type: ignore
-            raise HTTPException(401, "Invalid JWT credentials")
-        return {}
-
-    return get_jwt_claims
