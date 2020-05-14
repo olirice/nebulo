@@ -2,12 +2,13 @@ from functools import lru_cache
 
 from nebulo.config import Config
 from nebulo.gql.alias import EdgeType, Field
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
 __all__ = ["edge_factory"]
 
 
 @lru_cache()
-def edge_factory(sqla_model):
+def edge_factory(sqla_model: DeclarativeMeta) -> EdgeType:
     from .cursor import Cursor
     from .table import table_factory
 

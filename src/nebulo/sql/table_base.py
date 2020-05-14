@@ -3,16 +3,15 @@ A base class to derive sql tables from
 """
 
 
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, Table
 from sqlalchemy.ext.automap import automap_base
+from typing_extensions import Protocol, runtime_checkable
 
 
-class Table:
-    """Base class for application sql tables that will contain mixins"""
-
-    __abstract__ = True
+@runtime_checkable
+class TableProtocol(Protocol):
+    __table__: Table
 
 
 Meta = MetaData()
-
-TableBase = automap_base(metadata=Meta, cls=Table)
+TableBase = automap_base(metadata=Meta)

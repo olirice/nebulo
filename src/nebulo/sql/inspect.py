@@ -2,41 +2,34 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, List
+from typing import List
 
-from nebulo.sql.table_base import TableBase
+from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import Column
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import RelationshipProperty
 
-if TYPE_CHECKING:
-    RelationshipPropertyType = RelationshipProperty[Any]
-    ColumnType = Column[Any]
-else:
-    RelationshipPropertyType = RelationshipProperty
-    ColumnType = Column
-
 
 @lru_cache()
-def get_table_name(sqla_model: TableBase) -> str:
+def get_table_name(sqla_model: TableProtocol) -> str:
     """Name of the table"""
     return sqla_model.__table__.name
 
 
 @lru_cache()
-def get_relationships(sqla_model: TableBase) -> List[RelationshipPropertyType]:
+def get_relationships(sqla_model: TableProtocol) -> List[RelationshipProperty]:
     """Relationships with other tables"""
     return list(sql_inspect(sqla_model).relationships)
 
 
 @lru_cache()
-def get_primary_key_columns(sqla_model: TableBase) -> List[ColumnType]:
+def get_primary_key_columns(sqla_model: TableProtocol) -> List[Column]:
     """Primary key"""
     return [x for x in sqla_model.__table__.primary_key.columns]
 
 
 @lru_cache()
-def get_columns(sqla_model: TableBase) -> List[ColumnType]:
+def get_columns(sqla_model: TableProtocol) -> List[Column]:
     """Columns on the table"""
     return [x for x in sqla_model.__table__.columns]
 

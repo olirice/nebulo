@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 from functools import lru_cache
 
 from nebulo.config import Config
@@ -8,15 +7,13 @@ from nebulo.gql.alias import Argument, ConnectionType, Field, Int, List, NonNull
 from nebulo.gql.convert.cursor import Cursor
 from nebulo.gql.convert.page_info import PageInfo
 from nebulo.gql.resolver.default import default_resolver
-
-if typing.TYPE_CHECKING:
-    from nebulo.sql.table_base import TableBase
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
 __all__ = ["connection_factory", "connection_args_factory"]
 
 
 @lru_cache()
-def connection_factory(sqla_model: TableBase):
+def connection_factory(sqla_model: DeclarativeMeta):
     from .edge import edge_factory
 
     name = Config.table_name_mapper(sqla_model) + "Connection"
@@ -33,7 +30,7 @@ def connection_factory(sqla_model: TableBase):
     return return_type
 
 
-def connection_args_factory(sqla_model: TableBase):
+def connection_args_factory(sqla_model: DeclarativeMeta):
     from .condition import condition_factory
 
     condition = condition_factory(sqla_model)

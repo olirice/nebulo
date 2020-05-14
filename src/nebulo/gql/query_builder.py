@@ -11,11 +11,12 @@ from nebulo.config import Config
 from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
 from nebulo.gql.convert.cursor import to_cursor_sql
 from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
+from nebulo.gql.parse_info import ASTNode
 from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
-
-if typing.TYPE_CHECKING:
-    from sqlalchemy.sql.compiler import StrSQLCompiler
-    from nebulo.gql.parse_info import ASTNode
+from nebulo.sql.table_base import TableProtocol
+from sqlalchemy import Column
+from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.sql.compiler import StrSQLCompiler
 
 
 def sanitize(text: str) -> str:
@@ -24,7 +25,7 @@ def sanitize(text: str) -> str:
 
 
 @lru_cache()
-def field_name_to_column(sqla_model, gql_field_name: str):
+def field_name_to_column(sqla_model: TableProtocol, gql_field_name: str) -> Column:
     for column in get_columns(sqla_model):
         if Config.column_name_mapper(column) == gql_field_name:
             return column
@@ -32,15 +33,16 @@ def field_name_to_column(sqla_model, gql_field_name: str):
 
 
 @lru_cache()
-def field_name_to_relationship(sqla_model, gql_field_name: str):
+def field_name_to_relationship(sqla_model: TableProtocol, gql_field_name: str) -> RelationshipProperty:
     for relationship in get_relationships(sqla_model):
         if Config.relationship_name_mapper(relationship) == gql_field_name:
             return relationship
     raise Exception(f"No relationship corresponding to field {gql_field_name}")
 
 
-def to_join_clause(field, parent_block_name: str) -> typing.List[str]:
+def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[str]:
     parent_field = field.parent
+    assert parent_field is not None
     relation_from_parent = field_name_to_relationship(parent_field.return_type.sqla_model, field.name)
     local_table_name = get_table_name(field.return_type.sqla_model)
 
@@ -52,7 +54,7 @@ def to_join_clause(field, parent_block_name: str) -> typing.List[str]:
     return join_clause
 
 
-def to_pkey_clause(field, pkey_eq: typing.List[str]) -> typing.List[str]:
+def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[str]:
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
     pkey_cols = get_primary_key_columns(local_table)
@@ -106,7 +108,7 @@ def to_pagination_clause(field: ASTNode) -> str:
     return left + op + right
 
 
-def to_limit(field) -> int:
+def to_limit(field: ASTNode) -> int:
     args = field.args
     default = 10
     first = int(args.get("first", default))
@@ -115,7 +117,7 @@ def to_limit(field) -> int:
     return limit
 
 
-def to_conditions_clause(field) -> typing.List[str]:
+def to_conditions_clause(field: ASTNode) -> typing.List[str]:
     return_sqla_model = field.return_type.sqla_model
     local_table_name = get_table_name(return_sqla_model)
     args = field.args
@@ -132,7 +134,7 @@ def to_conditions_clause(field) -> typing.List[str]:
     return res
 
 
-def build_scalar(field, sqla_model) -> typing.Tuple[str, typing.Union[str, StrSQLCompiler]]:
+def build_scalar(field: ASTNode, sqla_model: TableProtocol) -> typing.Tuple[str, typing.Union[str, StrSQLCompiler]]:
     return_type = field.return_type
     if return_type == NodeID:
         return (field.alias, to_global_id_sql(sqla_model))
@@ -141,11 +143,11 @@ def build_scalar(field, sqla_model) -> typing.Tuple[str, typing.Union[str, StrSQ
     return (field.alias, column.name)
 
 
-def build_relationship(field, block_name):
+def build_relationship(field: ASTNode, block_name: str) -> typing.Tuple[str, str]:
     return (field.name, sql_builder(field, block_name))
 
 
-def sql_builder(tree, parent_name=None):
+def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> str:
     return_type = tree.return_type
 
     # SQL Function handler
@@ -161,13 +163,13 @@ def sql_builder(tree, parent_name=None):
     raise Exception("sql builder could not match return type")
 
 
-def sql_finalize(return_name, expr):
+def sql_finalize(return_name: str, expr: str) -> str:
     return f"""select
     jsonb_build_object('{return_name}', ({expr}))
     """
 
 
-def row_block(field, parent_name=None):
+def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> str:
     return_type = field.return_type
     sqla_model = return_type.sqla_model
 
@@ -211,17 +213,17 @@ def row_block(field, parent_name=None):
 
 
 @cached(cache={}, key=lambda x: x.return_type.sqla_model)
-def to_order_clause(field):
+def to_order_clause(field: ASTNode) -> str:
     sqla_model = field.return_type.sqla_model
     return "(" + ", ".join([x.name for x in get_primary_key_columns(sqla_model)]) + ")"
 
 
-def check_has_total(field) -> bool:
+def check_has_total(field: ASTNode) -> bool:
     "Check if 'totalCount' is requested in the query result set"
     return any(x.name in "totalCount" for x in field.fields)
 
 
-def connection_block(field, parent_name):
+def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
     return_type = field.return_type
     sqla_model = return_type.sqla_model
 
@@ -360,6 +362,6 @@ def connection_block(field, parent_name):
     return block
 
 
-def secure_random_string(length=8):
+def secure_random_string(length: int = 8) -> str:
     letters = string.ascii_lowercase
     return "".join([secrets.choice(letters) for _ in range(length)])

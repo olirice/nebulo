@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Replace string with JWT serializer
-import typing
 from functools import lru_cache
 
 import jwt
@@ -10,15 +9,13 @@ from nebulo.gql.convert.column import convert_type
 from nebulo.gql.resolver.asynchronous import async_resolver
 from nebulo.gql.resolver.synchronous import sync_resolver
 from nebulo.sql.composite import CompositeType as SQLACompositeType
-
-if typing.TYPE_CHECKING:
-    from nebulo.sql.table_base import TableBase
+from nebulo.sql.reflection.function import SQLFunction
 
 __all__ = ["jwt_function_factory"]
 
 
 @lru_cache()
-def jwt_function_factory(sql_function: TableBase, jwt_secret: str, resolve_async: bool = False):
+def jwt_function_factory(sql_function: SQLFunction, jwt_secret: str, resolve_async: bool = False) -> Field:
     assert issubclass(sql_function.return_sqla_type, SQLACompositeType)
 
     gql_args = {

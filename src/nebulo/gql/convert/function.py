@@ -1,22 +1,19 @@
 from __future__ import annotations
 
 # Replace string with JWT serializer
-import typing
 from functools import lru_cache
 
 from nebulo.gql.alias import Argument, Field, NonNull
 from nebulo.gql.convert.column import convert_type
 from nebulo.gql.resolver.asynchronous import async_resolver
 from nebulo.gql.resolver.synchronous import sync_resolver
-
-if typing.TYPE_CHECKING:
-    from nebulo.sql.table_base import TableBase
+from nebulo.sql.reflection.function import SQLFunction
 
 __all__ = ["function_factory"]
 
 
 @lru_cache()
-def function_factory(sql_function: TableBase, resolve_async: bool = False):
+def function_factory(sql_function: SQLFunction, resolve_async: bool = False) -> Field:
     gql_args = {
         arg_name: Argument(NonNull(convert_type(arg_sqla_type)))
         for arg_name, arg_sqla_type in zip(sql_function.arg_names, sql_function.arg_sqla_types)

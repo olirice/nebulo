@@ -9,12 +9,12 @@ from nebulo.gql.convert.column import convert_column
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
 from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, is_nullable
-from nebulo.sql.table_base import TableBase
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm import interfaces
 
 
 @lru_cache()
-def table_factory(sqla_model: TableBase) -> TableType:
+def table_factory(sqla_model: DeclarativeMeta) -> TableType:
     """
     Reflects a SQLAlchemy table into a graphql-core GraphQLObjectType
 

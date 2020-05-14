@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import typing
 
 from nebulo.gql.alias import ObjectType, ResolveInfo, ScalarType
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.query_builder import sql_builder, sql_finalize
 
 
-async def async_resolver(_, info: ResolveInfo, **kwargs):
+async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     """Awaitable GraphQL Entrypoint resolver
 
     Expects:
