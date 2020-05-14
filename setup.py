@@ -40,6 +40,7 @@ setup(
         "parse==1.15.0",
         "flupy==1.0.12",
         "pyjwt==1.7.1",
+        "appdirs==1.4.3",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov", "requests"],
