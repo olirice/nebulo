@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Replace string with JWT serializer
+import typing
 from functools import lru_cache
 
 import jwt
@@ -34,3 +34,8 @@ def jwt_function_factory(sql_function: SQLFunction, jwt_secret: str, resolve_asy
 
     return_type.sql_function = sql_function
     return Field(return_type, args=gql_args, resolve=async_resolver if resolve_async else sync_resolver, description="")
+
+
+def is_jwt_function(sql_function: SQLFunction, jwt_identifier: typing.Optional[str]):
+    function_return_type_identifier = sql_function.return_pg_type_schema + "." + sql_function.return_pg_type
+    return function_return_type_identifier == jwt_identifier

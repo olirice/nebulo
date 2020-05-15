@@ -1,4 +1,4 @@
-from nebulo.gql.convert.node_interface import to_global_id
+from nebulo.gql.relay.node_interface import to_global_id
 
 SQL_UP = """
 CREATE TYPE full_name AS (

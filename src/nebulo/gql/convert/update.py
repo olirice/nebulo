@@ -5,7 +5,7 @@ from functools import lru_cache
 from nebulo.config import Config
 from nebulo.gql.alias import Field, InputObjectType, ObjectType, String
 from nebulo.gql.convert.column import convert_column_to_input
-from nebulo.gql.convert.node_interface import NodeID
+from nebulo.gql.relay.node_interface import NodeID
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
 

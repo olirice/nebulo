@@ -36,6 +36,7 @@ SQLA_TO_GQL = {
     # Number
     types.Integer: Int,
     types.INTEGER: Int,
+    types.BIGINT: Int,
     types.String: String,
     # Text
     types.Text: String,
@@ -55,10 +56,6 @@ SQLA_TO_GQL = {
 
 @lru_cache()
 def convert_type(sqla_type: typing.Type[TypeEngine]):
-    if hasattr(sqla_type, "__table__"):
-        from .table import table_factory
-
-        return table_factory(sqla_type)
     if issubclass(sqla_type, SQLACompositeType):
         return composite_factory(sqla_type)
     return SQLA_TO_GQL.get(sqla_type, String)

@@ -6,7 +6,7 @@ from functools import lru_cache
 from nebulo.config import Config
 from nebulo.gql.alias import Argument, Field, NonNull, TableType
 from nebulo.gql.convert.column import convert_column
-from nebulo.gql.convert.node_interface import NodeID, NodeInterface
+from nebulo.gql.relay.node_interface import NodeID, NodeInterface
 from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, is_nullable
 from nebulo.sql.table_base import TableProtocol

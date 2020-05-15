@@ -6,7 +6,7 @@ from nebulo.gql.alias import ObjectType, Schema
 from nebulo.gql.convert.connection import connection_field_factory
 from nebulo.gql.convert.create import create_entrypoint_factory
 from nebulo.gql.convert.function import function_factory
-from nebulo.gql.convert.jwt_function import jwt_function_factory
+from nebulo.gql.convert.jwt_function import is_jwt_function, jwt_function_factory
 from nebulo.gql.convert.table import table_field_factory
 from nebulo.gql.convert.update import update_entrypoint_factory
 from nebulo.gql.resolver.asynchronous import async_resolver
@@ -48,25 +48,16 @@ def sqla_models_to_graphql_schema(
 
     # Mutations
     for sql_function in sql_functions:
-        field_key = f"{snake_to_camel(sql_function.name, upper=False)}"
-
+        field_key = snake_to_camel(sql_function.name, upper=False)
         if is_jwt_function(sql_function, jwt_identifier):
-            mutation_fields[field_key] = jwt_function_factory(
-                sql_function=sql_function, jwt_secret=jwt_secret, resolve_async=resolve_async
-            )
+            field = jwt_function_factory(sql_function=sql_function, jwt_secret=jwt_secret, resolve_async=resolve_async)
         else:
-            mutation_fields[field_key] = function_factory(sql_function=sql_function, resolve_async=resolve_async)
+            field = function_factory(sql_function=sql_function, resolve_async=resolve_async)
 
-    schema_kwargs = {}
-    if len(query_fields) > 0:
-        schema_kwargs["query"] = ObjectType(name="Query", fields=lambda: query_fields)
+        mutation_fields[field_key] = field
 
-    if len(mutation_fields) > 0:
-        schema_kwargs["mutation"] = ObjectType(name="Mutation", fields=lambda: mutation_fields)
-
-    return Schema(**schema_kwargs)
-
-
-def is_jwt_function(sql_function: SQLFunction, jwt_identifier: typing.Optional[str]):
-    function_return_type_identifier = sql_function.return_pg_type_schema + "." + sql_function.return_pg_type
-    return function_return_type_identifier == jwt_identifier
+    schema_kwargs = {
+        "query": ObjectType(name="Query", fields=query_fields),
+        "mutation": ObjectType(name="Mutation", fields=mutation_fields),
+    }
+    return Schema(**{k: v for k, v in schema_kwargs.items() if v.fields})

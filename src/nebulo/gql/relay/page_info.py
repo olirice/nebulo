@@ -1,5 +1,5 @@
 from nebulo.gql.alias import Boolean, Field, NonNull, ObjectType
-from nebulo.gql.convert.cursor import Cursor
+from nebulo.gql.relay.cursor import Cursor
 
 PageInfo = ObjectType(
     name="PageInfo",

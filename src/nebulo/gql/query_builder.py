@@ -9,14 +9,30 @@ from functools import lru_cache
 from cachetools import cached
 from nebulo.config import Config
 from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
-from nebulo.gql.convert.cursor import to_cursor_sql
-from nebulo.gql.convert.node_interface import NodeID, to_global_id_sql
 from nebulo.gql.parse_info import ASTNode
+from nebulo.gql.relay.cursor import to_cursor_sql
+from nebulo.gql.relay.node_interface import NodeID, to_global_id_sql
 from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import Column
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.compiler import StrSQLCompiler
+
+
+def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> str:
+    return_type = tree.return_type
+
+    # SQL Function handler
+    if hasattr(return_type, "sql_function"):
+        return return_type.sql_function.to_executable(tree.args)
+
+    if isinstance(return_type, TableType):
+        return row_block(field=tree, parent_name=parent_name)
+
+    if isinstance(return_type, ConnectionType):
+        return connection_block(field=tree, parent_name=parent_name)
+
+    raise Exception("sql builder could not match return type")
 
 
 def sanitize(text: str) -> str:
@@ -145,22 +161,6 @@ def build_scalar(field: ASTNode, sqla_model: TableProtocol) -> typing.Tuple[str,
 
 def build_relationship(field: ASTNode, block_name: str) -> typing.Tuple[str, str]:
     return (field.name, sql_builder(field, block_name))
-
-
-def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> str:
-    return_type = tree.return_type
-
-    # SQL Function handler
-    if hasattr(return_type, "sql_function"):
-        return return_type.sql_function.to_executable(tree.args)
-
-    if isinstance(return_type, TableType):
-        return row_block(field=tree, parent_name=parent_name)
-
-    if isinstance(return_type, ConnectionType):
-        return connection_block(field=tree, parent_name=parent_name)
-
-    raise Exception("sql builder could not match return type")
 
 
 def sql_finalize(return_name: str, expr: str) -> str:

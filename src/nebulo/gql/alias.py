@@ -111,6 +111,14 @@ class CompositeType(ObjectType, HasSQLAComposite):
     pass
 
 
+class CreatePayloadType(ObjectType):
+    pass
+
+
+class UpdatePayloadType(ObjectType):
+    pass
+
+
 class InputObjectType(GraphQLInputObjectType, HasSQLAModel):
     def __init__(
         self,
@@ -133,3 +141,15 @@ class InputObjectType(GraphQLInputObjectType, HasSQLAModel):
             extension_ast_nodes=extension_ast_nodes,
         )
         self.sqla_model = sqla_model
+
+
+class CreateInputType(InputObjectType):
+    pass
+
+
+class TableInputType(InputObjectType):
+    pass
+
+
+class UpdateInputType(InputObjectType):
+    pass

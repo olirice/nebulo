@@ -3,8 +3,18 @@ from __future__ import annotations
 from functools import lru_cache
 
 from nebulo.config import Config
-from nebulo.gql.alias import Field, InputObjectType, ObjectType, String
+from nebulo.gql.alias import (
+    CreateInputType,
+    CreatePayloadType,
+    Field,
+    InputObjectType,
+    NonNull,
+    ObjectType,
+    String,
+    TableInputType,
+)
 from nebulo.gql.convert.column import convert_column_to_input
+from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
 
@@ -26,7 +36,7 @@ def create_entrypoint_factory(sqla_model: TableProtocol, resolver) -> Field:
 
 
 @lru_cache()
-def create_input_type_factory(sqla_model: TableProtocol) -> InputObjectType:
+def create_input_type_factory(sqla_model: TableProtocol) -> CreateInputType:
     """CreateAccountInput!"""
     relevant_type_name = Config.table_type_name_mapper(sqla_model)
     result_name = f"Create{relevant_type_name}Input"
@@ -34,10 +44,10 @@ def create_input_type_factory(sqla_model: TableProtocol) -> InputObjectType:
     input_object_name = Config.table_name_mapper(sqla_model)
 
     attrs = {"clientMutationId": String, input_object_name: input_type_factory(sqla_model)}
-    return InputObjectType(result_name, attrs, description=f"All input for the create {relevant_type_name} mutation.")
+    return CreateInputType(result_name, attrs, description=f"All input for the create {relevant_type_name} mutation.")
 
 
-def input_type_factory(sqla_model: TableProtocol) -> InputObjectType:
+def input_type_factory(sqla_model: TableProtocol) -> TableInputType:
     """AccountInput"""
     relevant_type_name = Config.table_type_name_mapper(sqla_model)
     result_name = f"{relevant_type_name}Input"
@@ -46,11 +56,11 @@ def input_type_factory(sqla_model: TableProtocol) -> InputObjectType:
     for column in get_columns(sqla_model):
         field_key = Config.column_name_mapper(column)
         attrs[field_key] = convert_column_to_input(column)
-    return InputObjectType(result_name, attrs, description=f"An input for mutations affecting {relevant_type_name}.")
+    return TableInputType(result_name, attrs, description=f"An input for mutations affecting {relevant_type_name}.")
 
 
 @lru_cache()
-def create_payload_factory(sqla_model: TableProtocol) -> InputObjectType:
+def create_payload_factory(sqla_model: TableProtocol) -> CreatePayloadType:
     """CreateAccountPayload"""
     from nebulo.gql.convert.table import table_factory
 
@@ -59,10 +69,14 @@ def create_payload_factory(sqla_model: TableProtocol) -> InputObjectType:
     result_name = f"Create{relevant_type_name}Payload"
 
     attrs = {
-        "clientMutationId": Field(String),
+        "clientMutationId": Field(String, resolve=default_resolver),
         relevant_attr_name: Field(
-            table_factory(sqla_model), description=f"The {relevant_type_name} that was created by this mutation."
+            NonNull(table_factory(sqla_model)),
+            description=f"The {relevant_type_name} that was created by this mutation.",
+            resolve=default_resolver,
         ),
     }
 
-    return ObjectType(result_name, attrs, description=f"The output of our create {relevant_type_name} mutation")
+    return CreatePayloadType(
+        result_name, attrs, description=f"The output of our create {relevant_type_name} mutation", sqla_model=sqla_model
+    )

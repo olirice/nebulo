@@ -4,7 +4,16 @@ import asyncio
 import json
 import typing
 
-from nebulo.gql.alias import ObjectType, ResolveInfo, ScalarType
+from nebulo.gql.alias import (
+    CompositeType,
+    ConnectionType,
+    CreatePayloadType,
+    ObjectType,
+    ResolveInfo,
+    ScalarType,
+    TableType,
+)
+from nebulo.gql.insert_builder import build_insert, row_to_create_result
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.query_builder import sql_builder, sql_finalize
 
@@ -19,7 +28,6 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     database = context["database"]
     jwt_claims = context["jwt_claims"]
     tree = parse_resolve_info(info)
-    base_query = sql_builder(tree)
 
     async with database.transaction():
         # GraphQL automatically resolves the top level object name
@@ -35,17 +43,25 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         if coroutines:
             await asyncio.wait(coroutines)
 
-        if isinstance(tree.return_type, ObjectType):
+        if isinstance(tree.return_type, CreatePayloadType):
+            insert_stmt = build_insert(tree)
+            row = await database.fetch_one(query=insert_stmt)
+            result = row_to_create_result(tree, row)
+
+        elif isinstance(tree.return_type, ObjectType):
+            base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["jsonb_build_object"]
             result = json.loads(str_result)
         elif isinstance(tree.return_type, ScalarType):
+            base_query = sql_builder(tree)
             query = base_query
             query_coro = database.fetch_one(query=query)
             scalar_result = await query_coro
             result = next(scalar_result._row.values())  # pylint: disable=protected-access
+
         else:
             raise Exception("sql builder could not handle return type")
 
