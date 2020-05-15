@@ -10,9 +10,15 @@ ENV = EnvManager.get_environ()
 
 class Config:
     @staticmethod
-    def table_name_mapper(sqla_table: TableBase) -> str:
+    def table_type_name_mapper(sqla_table: TableBase) -> str:
         table_name = get_table_name(sqla_table)
         return snake_to_camel(table_name)
+
+    @classmethod
+    def table_name_mapper(cls, sqla_table: TableBase) -> str:
+        """Return the type name with the first character lower case"""
+        type_name = cls.table_type_name_mapper(sqla_table)
+        return type_name[0].lower() + type_name[1:]
 
     @staticmethod
     def column_name_mapper(column: Column) -> str:

@@ -4,4 +4,4 @@ from starlette.responses import JSONResponse
 
 
 async def http_exception(request: Request, exc: HTTPException):
-    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+    return JSONResponse({"data": None, "errors": [exc.detail]}, status_code=exc.status_code)

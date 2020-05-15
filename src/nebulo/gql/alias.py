@@ -1,7 +1,12 @@
 # pylint: disable=missing-class-docstring,invalid-name
 import typing
 
-from graphql.language import ObjectTypeDefinitionNode, ObjectTypeExtensionNode
+from graphql.language import (
+    InputObjectTypeDefinitionNode,
+    InputObjectTypeExtensionNode,
+    ObjectTypeDefinitionNode,
+    ObjectTypeExtensionNode,
+)
 from graphql.type import (
     GraphQLArgument,
     GraphQLBoolean,
@@ -10,6 +15,7 @@ from graphql.type import (
     GraphQLField,
     GraphQLFieldMap,
     GraphQLID,
+    GraphQLInputFieldMap,
     GraphQLInputObjectType,
     GraphQLInt,
     GraphQLInterfaceType,
@@ -24,6 +30,7 @@ from graphql.type import (
     GraphQLType,
     Thunk,
 )
+from graphql.type.definition import GraphQLInputFieldOutType
 from nebulo.sql.composite import CompositeType as SQLACompositeType
 
 # Handle name changes from graphql-core and graphql-core-next
@@ -42,7 +49,6 @@ ScalarType = GraphQLScalarType
 ID = GraphQLID
 InterfaceType = GraphQLInterfaceType
 Int = GraphQLInt
-InputObjectType = GraphQLInputObjectType
 InputField = GraphQLInputField
 ResolveInfo = GraphQLResolveInfo
 EnumType = GraphQLEnumType
@@ -103,3 +109,27 @@ class TableType(ObjectType):
 
 class CompositeType(ObjectType, HasSQLAComposite):
     pass
+
+
+class InputObjectType(GraphQLInputObjectType, HasSQLAModel):
+    def __init__(
+        self,
+        name: str,
+        fields: Thunk[GraphQLInputFieldMap],
+        description: typing.Optional[str] = None,
+        out_type: typing.Optional[GraphQLInputFieldOutType] = None,
+        extensions: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        ast_node: typing.Optional[InputObjectTypeDefinitionNode] = None,
+        extension_ast_nodes: typing.Optional[typing.Collection[InputObjectTypeExtensionNode]] = None,
+        sqla_model=None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            fields=fields,
+            description=description,
+            out_type=out_type,
+            extensions=extensions,
+            ast_node=ast_node,
+            extension_ast_nodes=extension_ast_nodes,
+        )
+        self.sqla_model = sqla_model

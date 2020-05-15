@@ -26,7 +26,7 @@ def jwt_function_factory(sql_function: SQLFunction, jwt_secret: str, resolve_asy
     return_type = convert_type(sql_function.return_sqla_type)
 
     return_type = ScalarType(
-        "JWTToken",
+        "JWT",
         serialize=lambda result: jwt.encode({k: v for k, v in result.items()}, jwt_secret, algorithm="HS256").decode(
             "utf-8"
         ),

@@ -11,6 +11,8 @@ def get_jwt_claims_handler(secret: Optional[str]) -> Callable[[Request], Awaitab
     async def get_jwt_claims(request: Request) -> Dict[str, Any]:
         """Retrieve the JWT claims from the Starlette Request"""
 
+        return {}
+
         if secret is None:
             return {}
 
@@ -23,8 +25,13 @@ def get_jwt_claims_handler(secret: Optional[str]) -> Callable[[Request], Awaitab
             if scheme.lower() == "bearer":
                 contents = jwt.decode(token, secret, algorithms=["HS256"])
                 return contents
-        except (jwt.exceptions.DecodeError,):  # type: ignore
+        except jwt.exceptions.DecodeError:
             raise HTTPException(401, "Invalid JWT credentials")
+        except jwt.exceptions.ExpiredSignatureError:
+            raise HTTPException(401, "JWT has expired. Please reauthenticate")
+        # Generically catch all PyJWT errors
+        except jwt.exceptions.PyJWTError as exc:
+            raise HTTPException(401, str(exc))
         return {}
 
     return get_jwt_claims

@@ -4,17 +4,28 @@ from __future__ import annotations
 from functools import lru_cache
 
 from nebulo.config import Config
-from nebulo.gql.alias import Field, NonNull, TableType
+from nebulo.gql.alias import Argument, Field, NonNull, TableType
 from nebulo.gql.convert.column import convert_column
 from nebulo.gql.convert.node_interface import NodeID, NodeInterface
 from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, is_nullable
-from sqlalchemy.ext.declarative import DeclarativeMeta
+from nebulo.sql.table_base import TableProtocol
 from sqlalchemy.orm import interfaces
 
 
+def table_field_factory(sqla_model: TableProtocol, resolver, not_null=False) -> Field:
+    relevant_type_name = Config.table_type_name_mapper(sqla_model)
+    node = table_factory(sqla_model)
+    return Field(
+        NonNull(node) if not_null else node,
+        args={"nodeId": Argument(NonNull(NodeID))},
+        resolve=resolver,
+        description=f"Reads a single {relevant_type_name} using its globally unique ID",
+    )
+
+
 @lru_cache()
-def table_factory(sqla_model: DeclarativeMeta) -> TableType:
+def table_factory(sqla_model: TableProtocol) -> TableType:
     """
     Reflects a SQLAlchemy table into a graphql-core GraphQLObjectType
 
@@ -24,9 +35,9 @@ def table_factory(sqla_model: DeclarativeMeta) -> TableType:
         A SQLAlchemy ORM Table
 
     """
-    from .connection import connection_factory, connection_args_factory
+    from .connection import connection_field_factory
 
-    name = Config.table_name_mapper(sqla_model)
+    name = Config.table_type_name_mapper(sqla_model)
 
     def build_attrs():
         attrs = {}
@@ -54,14 +65,10 @@ def table_factory(sqla_model: DeclarativeMeta) -> TableType:
 
             # Otherwise, set it up as a connection
             elif direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
-
-                connection = connection_factory(to_sqla_model)
-                connection_args = connection_args_factory(to_sqla_model)
-                attrs[attr_key] = Field(
-                    connection if relationship_is_nullable else NonNull(connection),
-                    args=connection_args,
-                    resolve=default_resolver,
+                connection_field = connection_field_factory(
+                    to_sqla_model, resolver=default_resolver, not_null=relationship_is_nullable
                 )
+                attrs[attr_key] = connection_field
 
         return attrs
 
