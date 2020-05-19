@@ -274,7 +274,6 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
                         # Other than edges, pageInfo, and cursor stuff is
                         # all handled by default
 
-    # TODO(OR): Sanitize aliases
 
     block = f"""
 (

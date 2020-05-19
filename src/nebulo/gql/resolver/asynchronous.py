@@ -9,15 +9,17 @@ from nebulo.gql.alias import (
     CompositeType,
     ConnectionType,
     CreatePayloadType,
+    UpdatePayloadType,
     ObjectType,
     ResolveInfo,
     ScalarType,
     TableType,
 )
-from nebulo.gql.insert_builder import build_insert
+from nebulo.gql.mutation_builder import build_insert, build_update
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.query_builder import sql_builder, sql_finalize
-from nebulo.gql.relay.node_interface import from_global_id
+from nebulo.gql.relay.node_interface import from_global_id, to_global_id
+from nebulo.sql.inspect import get_table_name
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -49,8 +51,15 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             insert_stmt = build_insert(tree)
             row = await database.fetch_one(query=insert_stmt)
 
-            node_id = row["nodeId"]
-            maybe_mutation_id = tree.args.get("clientMutationId")
+            # Compute nodeId
+            sqla_model = tree.return_type.sqla_model
+            pkey_values = [x for x in row.values()]
+            # base 64 encoded
+            node_id = to_global_id(get_table_name(sqla_model), pkey_values)
+            # string representation
+            global_id = from_global_id(node_id)
+
+            maybe_mutation_id = tree.args['input'].get("clientMutationId")
             output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
 
             # Retrive the part of the info tree describing the return fields
@@ -65,18 +74,54 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             maybe_query_tree = [x for x in tree.fields if x.name == output_row_name]
             if maybe_query_tree:
                 query_tree = maybe_query_tree[0]
-                # append nodeId as a parameter to be resolved
-                # eeeeuugh. pretty hacky
-                global_id = from_global_id(node_id)
-                print("global id", global_id)
                 query_tree.args["nodeId"] = global_id
                 base_query = sql_builder(query_tree)
                 query = sql_finalize(query_tree.name, base_query)
-                print(query)
-                query_coro = await database.fetch_one(query=query)
+                coro_result = await database.fetch_one(query=query)
                 str_result: str = coro_result["jsonb_build_object"]
                 j_result = json.loads(str_result)
-                result[query_tree.alias] = j_result
+                result.update(j_result)
+
+            result = {tree.alias: result}
+
+        elif isinstance(tree.return_type, UpdatePayloadType):
+            global_id = tree.args['nodeId']
+            update_stmt = build_update(tree)
+            row = await database.fetch_one(query=update_stmt)
+
+            # Compute nodeId
+            sqla_model = tree.return_type.sqla_model
+            pkey_values = [x for x in row.values()]
+            # base 64 encoded
+            node_id = to_global_id(get_table_name(sqla_model), pkey_values)
+            # string representation
+            global_id = from_global_id(node_id)
+
+            maybe_mutation_id = tree.args['input'].get("clientMutationId")
+            output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
+
+            # Retrive the part of the info tree describing the return fields
+            # for the current model
+            result = {}
+
+            maybe_mut_id = [x for x in tree.fields if x.name == "clientMutationId"]
+            if maybe_mut_id:
+                mut_id = maybe_mut_id[0]
+                result[mut_id.alias] = maybe_mutation_id
+
+            maybe_query_tree = [x for x in tree.fields if x.name == output_row_name]
+            if maybe_query_tree:
+                query_tree = maybe_query_tree[0]
+                query_tree.args["nodeId"] = global_id
+                base_query = sql_builder(query_tree)
+                query = sql_finalize(query_tree.name, base_query)
+                coro_result = await database.fetch_one(query=query)
+                str_result: str = coro_result["jsonb_build_object"]
+                j_result = json.loads(str_result)
+                result.update(j_result)
+
+            result = {tree.alias: result}
+
 
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
