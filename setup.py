@@ -32,6 +32,7 @@ setup(
         "graphql-core==3.1.0",
         "flask==1.1.1",
         "click==7.1.1",
+        "typing-extensions",
         "inflect==4.1.0",
         "cachetools==4.0.0",
         "starlette==0.13.2",
