@@ -45,7 +45,7 @@ def field_name_to_column(sqla_model: TableProtocol, gql_field_name: str) -> Colu
     for column in get_columns(sqla_model):
         if Config.column_name_mapper(column) == gql_field_name:
             return column
-    raise Exception(f"No column corresponding to field {gql_field_name}")
+    raise KeyError(f"No column corresponding to field {gql_field_name}")
 
 
 @lru_cache()

@@ -30,18 +30,15 @@ class ASTNode:
         variable_values,
         parent_type,
     ):
-
-        # _args = get_argument_values(arg_defs=field_def.args, arg_asts=field_node.arguments)
         self.name = field_node.name.value
 
-        field_def = get_field_def(schema, parent_type, self.name)  # A connection/edge/etc class
+        # A connection/edge/etc class
+        field_def = get_field_def(schema, parent_type, self.name)
 
         _args = get_argument_values(type_def=field_def, node=field_node, variable_values=variable_values)
 
         selection_set = field_node.selection_set
         field_type = field_to_type(field_def)
-
-        # import pdb; pdb.set_trace()
 
         self.alias = (field_node.alias.value if field_node.alias else None) or field_node.name.value
         self.return_type = field_type
@@ -63,7 +60,6 @@ class ASTNode:
                         schema=schema,
                         parent=self,
                         variable_values=variable_values,
-                        # TODO(OR): Maybe wrong type
                         parent_type=field_type,
                     )
                 )
@@ -108,7 +104,6 @@ def parse_resolve_info(info: ResolveInfo) -> ASTNode:
     }
     """
     # Root info
-    # import pdb; pdb.set_trace()
     field_node = info.field_nodes[0]
     schema = info.schema
 

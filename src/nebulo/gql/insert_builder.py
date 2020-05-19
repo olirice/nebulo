@@ -6,6 +6,7 @@ import typing
 from nebulo.config import Config
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.query_builder import field_name_to_column
+from nebulo.sql.inspect import get_primary_key_columns
 
 
 def build_insert(tree: ASTNode):
@@ -20,8 +21,9 @@ def build_insert(tree: ASTNode):
         col_name_to_value[col.name] = arg_value
 
     core_table = return_sqla_model.__table__
-    query = core_table.insert().values(**col_name_to_value).returning(*core_table.columns)
-
+    # query = core_table.insert().values(**col_name_to_value).returning(*core_table.columns, func.upper(literal("email")))
+    # node_id_selector = to_global_id_sql(return_sqla_model)
+    query = core_table.insert().values(**col_name_to_value).returning(*get_primary_key_columns(return_sqla_model))
     return query
 
 
@@ -37,6 +39,7 @@ def row_to_create_result(tree: ASTNode, row: typing.Dict[str, typing.Any]) -> ty
     # Find the table type
     return_sqla_model = return_type.sqla_model
 
+    # Load a table_field_factory
     result = {}
     for field in tree.fields:
         if field.name == "clientMutationId":
@@ -45,8 +48,12 @@ def row_to_create_result(tree: ASTNode, row: typing.Dict[str, typing.Any]) -> ty
             table_output_alias = field.alias
             result[table_output_alias] = {}
             for col_field in field.fields:
-                col = field_name_to_column(return_sqla_model, col_field.name)
-                result[table_output_alias][col_field.alias] = row[col.name]
+                try:
+                    col = field_name_to_column(return_sqla_model, col_field.name)
+                    result[table_output_alias][col_field.alias] = row[col.name]
+                except KeyError:
+                    # Wasn't a column field
+                    pass
         else:
             raise Exception(f"unexpected return field on create object {field.name}")
     result = {tree.alias: result}
