@@ -126,7 +126,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
-            print(query)
+            #print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["jsonb_build_object"]
@@ -140,7 +140,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
         else:
             raise Exception("sql builder could not handle return type")
-    print(json.dumps(result, indent=2))
+    #print(json.dumps(result, indent=2))
     # Stash result on context to enable dumb resolvers to not fail
     context["result"] = result
     return result

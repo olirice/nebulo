@@ -77,3 +77,4 @@ def table_factory(sqla_model: TableProtocol) -> TableType:
     )
 
     return return_type
+
