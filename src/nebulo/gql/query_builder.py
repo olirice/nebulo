@@ -377,12 +377,18 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
     ).alias(block_name)
 
     relations = []
-    for key, value in new_relation_selects :
+    for key, value in new_relation_selects:
         relations.append(literal(key))
-        relations.append(value.alias())
+        dial_eng = create_engine('postgresql://')
+        sql =  text(str(value.compile(compile_kwargs={'literal_binds': True, 'engine': dial_eng})))
+        relations.append(sql)
+        #select([value.c.ret_json]).select_from(value).alias())
+
+    #final =  select([func.jsonb_build_object(literal(return_name), expr.c.ret_json).label('json')]).select_from(expr)
+
+
 
     final = (
-
         select([
             func.jsonb_build_object(
                 literal(totalCount_alias), func.min(total_block.c.total_count),
@@ -398,6 +404,7 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
                     func.jsonb_build_object(
                         literal(cursor_alias), p3_block.c.nodeId,
                         literal(node_alias), func.row_to_json(literal_column(block_name)),
+                        *relations
                     )
                     
 

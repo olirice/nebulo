@@ -131,7 +131,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
             query =  str(query.compile(compile_kwargs={'literal_binds': True, 'engine': dial_eng}))
-            #print(query)
+            print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]
