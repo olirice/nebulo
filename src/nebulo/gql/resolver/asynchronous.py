@@ -22,6 +22,9 @@ from nebulo.gql.relay.node_interface import from_global_id, to_global_id
 from nebulo.sql.inspect import get_table_name
 
 
+from sqlalchemy import create_engine
+dial_eng = create_engine('postgresql://')
+
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     """Awaitable GraphQL Entrypoint resolver
 
@@ -41,11 +44,12 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         coroutines = []
         for claim_key, claim_value in jwt_claims.items():
             claim_sql = f"set local jwt.claims.{claim_key} to {claim_value};"
-            claim_coroutine = database.execute(claim_sql)
-            coroutines.append(claim_coroutine)
+            #claim_coroutine = database.execute(claim_sql)
+            #coroutines.append(claim_coroutine)
 
         if coroutines:
-            await asyncio.wait(coroutines)
+            pass
+            #await asyncio.wait(coroutines)
 
         if isinstance(tree.return_type, CreatePayloadType):
             insert_stmt = build_insert(tree)
@@ -126,10 +130,11 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
+            query =  str(query.compile(compile_kwargs={'literal_binds': True, 'engine': dial_eng}))
             #print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
-            str_result: str = coro_result["jsonb_build_object"]
+            str_result: str = coro_result["json"]
             result = json.loads(str_result)
         elif isinstance(tree.return_type, ScalarType):
             base_query = sql_builder(tree)

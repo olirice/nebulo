@@ -24,6 +24,10 @@ from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.compiler import StrSQLCompiler
 
 
+from sqlalchemy import text, column, select, literal_column, func, literal, and_, asc, desc, tuple_, table
+from sqlalchemy import create_engine
+
+
 def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> str:
     return_type = tree.return_type
 
@@ -177,10 +181,8 @@ def build_relationship(field: ASTNode, block_name: str) -> typing.Tuple[str, str
 
 
 def sql_finalize(return_name: str, expr: str) -> str:
-    return f"""select
-    jsonb_build_object('{return_name}', ({expr}))
-    """
-
+    final =  select([func.jsonb_build_object(literal(return_name), expr.c.ret_json).label('json')]).select_from(expr)
+    return final
 
 def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> str:
     return_type = field.return_type
@@ -250,8 +252,6 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
     filter_conditions = to_conditions_clause(field)
     limit = to_limit(field)
     has_total = check_has_total(field)
-    order = to_order_clause(field)
-    reverse_order = to_order_clause(field) + "desc"
 
     pagination = to_pagination_clause(field)
     is_page_after = "after" in field.args
@@ -265,17 +265,15 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
     node_alias = field.get_subfield_alias(["edges", "node"])
     cursor_alias = field.get_subfield_alias(["edges", "cursor"])
 
-    pageInfo_alias = sanitize(field.get_subfield_alias(["pageInfo"]))
-    hasNextPage_alias = sanitize(field.get_subfield_alias(["pageInfo", "hasNextPage"]))
-    hasPreviousPage_alias = sanitize(
+    pageInfo_alias = (field.get_subfield_alias(["pageInfo"]))
+    hasNextPage_alias = (field.get_subfield_alias(["pageInfo", "hasNextPage"]))
+    hasPreviousPage_alias = (
         field.get_subfield_alias(["pageInfo", "hasPreviousPage"])
     )
-    startCursor_alias = sanitize(field.get_subfield_alias(["pageInfo", "startCursor"]))
-    endCursor_alias = sanitize(field.get_subfield_alias(["pageInfo", "endCursor"]))
+    startCursor_alias = (field.get_subfield_alias(["pageInfo", "startCursor"]))
+    endCursor_alias = (field.get_subfield_alias(["pageInfo", "endCursor"]))
 
 
-    from sqlalchemy import text, column, select, literal_column, func, literal, and_, asc, desc, tuple_, table
-    from sqlalchemy import create_engine
 
     def build_scalar_select(field: ASTNode, sqla_model: TableProtocol):
         return_type = field.return_type
@@ -287,6 +285,7 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
 
     edge_node_selects = []
     new_edge_node_selects = []
+    new_relation_selects = []
     for cfield in field.fields:
         if cfield.name == "edges":
             for edge_field in cfield.fields:
@@ -298,10 +297,11 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
                         ):
                             elem = build_scalar(subfield, sqla_model)
                             c = build_scalar_select(subfield, sqla_model)
-                            print(c)
                             new_edge_node_selects.append(c)
                         else:
                             elem = build_relationship(subfield, block_name)
+                            new_relation_selects.append(elem)
+                            print('appended relation')
                         if cfield.name == "edges":
                             edge_node_selects.append(elem)
                         # Other than edges, pageInfo, and cursor stuff is
@@ -345,6 +345,8 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
                 text("and".join(join_conditions) or 'true'),
                 # Conditions
                 text(("and".join(filter_conditions) or 'true')),
+                # Pagination
+                text(pagination)
             )
         )
         .order_by(
@@ -374,8 +376,10 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
         .order_by(ordering)
     ).alias(block_name)
 
-    #import pdb; pdb.set_trace()
-
+    relations = []
+    for key, value in new_relation_selects :
+        relations.append(literal(key))
+        relations.append(value.alias())
 
     final = (
 
@@ -393,106 +397,24 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]):
                 literal(edges_alias), func.jsonb_agg(
                     func.jsonb_build_object(
                         literal(cursor_alias), p3_block.c.nodeId,
-                        literal(node_alias), func.row_to_json(literal_column(block_name))
+                        literal(node_alias), func.row_to_json(literal_column(block_name)),
                     )
                     
 
                 )
-            )
+            ).label('ret_json')
         ])
         .select_from(p3_block)
         .select_from(total_block)
-    ) 
+    ).alias()
 
-    dial_eng = create_engine('postgresql://')
-    print(str(final.compile(compile_kwargs={'literal_binds': True, 'engine': dial_eng})))
+    #dial_eng = create_engine('postgresql://')
+    #sql =  str(final.compile(compile_kwargs={'literal_binds': True, 'engine': dial_eng}))
+    #print(sql)
 
-    block = text(f"""
-(
-    with total as (
-        select
-            count(*) total_count
-        from
-            {table_name}
-        where
-            -- Join Clause
-            ({"and".join(join_conditions) or 'true'})
-            -- Conditions
-            and ({"and".join(filter_conditions) or 'true'})
-            -- Skip if not requested
-            and {'true' if has_total else 'false'}
-    ),
+    return final
 
-    -- Select table subset with (maybe) 1 extra row
-    {block_name}_p1 as (
-        select
-            *
-        from
-            {table_name}
-        where
-            ({"and".join(join_conditions) or 'true'})
-            and ({"and".join(filter_conditions) or 'true'})
-            and ({pagination})
-        order by
-            {reverse_order if is_page_before else order},
-            {order}
-        limit
-            {limit + 1}
-    ),
-
-    -- Remove possible extra row
-    {block_name}_p2 as (
-        select
-            *
-        from
-            {block_name}_p1
-        limit
-            {limit}
-    ),
-
-    {block_name} as (
-        select
-            row_number() over () as _row_num,
-            *
-        from
-            {block_name}_p2
-        order by
-            {order}
-        limit
-            {limit}
-    ),
-
-    has_next_page as (
-        select (select count(*) from {block_name}_p1) > {limit} as has_next
-    )
-
-    select
-        jsonb_build_object(
-            '{totalCount_alias}', (select total_count from total),
-
-            {pageInfo_alias}, jsonb_build_object(
-                {hasNextPage_alias}, (select has_next from has_next_page),
-                {hasPreviousPage_alias}, {'true' if is_page_after else 'false'},
-                {startCursor_alias}, (select {cursor} from {block_name} order by _row_num asc limit 1),
-                {endCursor_alias}, (select {cursor} from {block_name} order by _row_num desc limit 1)
-            ),
-            '{edges_alias}', jsonb_agg(
-                jsonb_build_object(
-                    '{cursor_alias}', {cursor},
-                    '{node_alias}', jsonb_build_object(
-                        {", ".join([f"'{name}', {expr}" for name, expr in edge_node_selects])}
-                    )
-                )
-            )
-        ) as result
-    from
-        {block_name}
-)
-    """)
-
-    return block
-
-
+    
 def secure_random_string(length: int = 8) -> str:
     letters = string.ascii_lowercase
     return "".join([secrets.choice(letters) for _ in range(length)])
