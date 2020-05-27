@@ -23,6 +23,7 @@ from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import Column
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.compiler import StrSQLCompiler
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 from sqlalchemy import (
@@ -180,16 +181,6 @@ def to_conditions_clause(field: ASTNode) -> typing.List[str]:
     return res
 
 
-def build_scalar(field: ASTNode, sqla_model: TableProtocol) -> Label:
-    return_type = field.return_type
-
-    if return_type == NodeID:
-        return select([text(str(to_global_id_sql(sqla_model)))]).label(field.alias)
-
-    col = field_name_to_column(sqla_model, field.name)
-    return sqla_model.__table__.c[col.name].label(field.alias)
-
-
 
 def build_relationship(field: ASTNode, block_name: str) -> Label:
     return sql_builder(field, block_name).as_scalar().label(field.alias)
@@ -248,12 +239,33 @@ def check_has_total(field: ASTNode) -> bool:
     return any(x.name in "totalCount" for x in field.fields)
 
 
+def get_edge_node_fields(field):
+    """Returns connection.edge.node fields"""
+    for cfield in field.fields:
+        if cfield.name == "edges":
+            for edge_field in cfield.fields:
+                if edge_field.name == "node":
+                    return edge_field.fields
+    return []
+
+
+
+def build_scalar(field: ASTNode, sqla_model: TableProtocol) -> Label:
+    return_type = field.return_type
+
+    if return_type == NodeID:
+        return select([text(str(to_global_id_sql(sqla_model)))]).label(field.alias)
+
+    col = field_name_to_column(sqla_model, field.name)
+    return sqla_model.__table__.c[col.name].label(field.alias)
+
+
+
 def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias:
     return_type = field.return_type
     sqla_model = return_type.sqla_model
 
     block_name = secure_random_string()
-    table_name = get_table_name(sqla_model)
     if parent_name is None:
         join_conditions = ["true"]
     else:
@@ -281,49 +293,48 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     startCursor_alias = field.get_subfield_alias(["pageInfo", "startCursor"])
     endCursor_alias = field.get_subfield_alias(["pageInfo", "endCursor"])
 
-    #edge_node_selects = []
-    new_edge_node_selects = []
-    new_relation_selects = []
-    for cfield in field.fields:
-        if cfield.name == "edges":
-            for edge_field in cfield.fields:
-                if edge_field.name == "node":
-                    for subfield in edge_field.fields:
-                        # Does anything other than NodeID go here?
-                        if isinstance(
-                            subfield.return_type, (ScalarType, CompositeType)
-                        ):
-                            elem = build_scalar(subfield, sqla_model)
-                            c = build_scalar(subfield, sqla_model)
-                            new_edge_node_selects.append(c)
-                        else:
-                            elem = build_relationship(subfield, block_name)
-                            new_relation_selects.append(elem)
-                        #if cfield.name == "edges":
-                        #    new_edge_node_selects.append(elem)
-                        # Other than edges, pageInfo, and cursor stuff is
-                        # all handled by default
 
+    # Apply Filters
     core_model = sqla_model.__table__
-
-    order_clause = [asc(col) for col in get_primary_key_columns(sqla_model)]
-    reverse_order_clause = [desc(col) for col in get_primary_key_columns(sqla_model)]
-
-    total_block = (
-        select([func.count(1).label("total_count")])
-        .select_from(core_model)
-        .where(
-            and_(
+    core_model_ref = (
+            select(core_model.c)
+            .select_from(core_model)
+            .where(
+                and_(
                 # Join clause
                 text("and".join(join_conditions) or "true"),
                 # Conditions
-                text(("and".join(filter_conditions) or "true")),
-                # Skip option
-                has_total,
+                text(("and".join(filter_conditions) or "true"))
+                )
             )
-        )
-    ).alias(block_name + "_total")
+            
+    ).alias(block_name)
 
+    new_edge_node_selects = []
+    new_relation_selects = []
+
+    for subfield in get_edge_node_fields(field):
+        # Does anything other than NodeID go here?
+        if subfield.return_type == NodeID:
+            return select([text(str(to_global_id_sql(sqla_model)))]).label(subfield.alias)
+        elif isinstance(
+            subfield.return_type, (ScalarType, CompositeType)
+        ):
+            col_name = field_name_to_column(sqla_model, subfield.name).name
+            elem = core_model_ref.c[col_name].label(subfield.alias)
+            new_edge_node_selects.append(elem)
+        else:
+            elem = build_relationship(subfield, block_name)
+            new_relation_selects.append(elem)
+
+    order_clause = [asc(core_model_ref.c[col.name]) for col in get_primary_key_columns(sqla_model)]
+    reverse_order_clause = [desc(core_model_ref.c[col.name]) for col in get_primary_key_columns(sqla_model)]
+
+    total_block = (
+        select([func.count(1).label("total_count")])
+        .select_from(core_model_ref.alias())
+        .where(has_total)
+    ).alias(block_name + "_total")
 
 
     # Select the right stuff
@@ -331,19 +342,17 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         select(
             [
                 *new_edge_node_selects,
+                *new_relation_selects,
                 # For internal Use
-                select([text(str(to_global_id_sql(sqla_model)))]).label("_nodeId"),
+                #select([text(str(to_global_id_sql(sqla_model)))]).label("_nodeId"),
+                select([1]).label("_nodeId"),
                 # For internal Use
                 func.row_number().over().label("_row_num"),
             ]
         )
-        .select_from(core_model)
+        .select_from(core_model_ref)
         .where(
             and_(
-                # Join clause
-                text("and".join(join_conditions) or "true"),
-                # Conditions
-                text(("and".join(filter_conditions) or "true")),
                 # Pagination
                 text(pagination),
             )
@@ -367,24 +376,17 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     )
 
     p3_block = (select(p2_block.c).select_from(p2_block).order_by(ordering)).alias(
-        block_name
+        block_name + "_p3"
     )
 
-    relations = func.jsonb_build_object()
-    for relation_label in new_relation_selects:
-        relations = relations.op("||")(
-            func.jsonb_build_object(literal(relation_label.key), relation_label)
-        )
 
-
-    from sqlalchemy.dialects.postgresql import JSONB
 
     final = (
         select(
             [
                 func.jsonb_build_object(
                     literal(totalCount_alias),
-                    func.min(total_block.c.total_count),
+                    func.min(total_block.c.total_count) if has_total else None,
                     literal(pageInfo_alias),
                     func.jsonb_build_object(
                         # literal(hasNextPage_alias), text(f"(select count(*) from {block_name}) < ")(select has_next from has_next_page),
@@ -402,16 +404,14 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                             literal(cursor_alias),
                             p3_block.c._nodeId,
                             literal(node_alias),
-                            func.cast(
-                                func.row_to_json(literal_column(block_name)), JSONB()
-                            ).op("||")(relations),
+                            func.cast(func.row_to_json(literal_column(p3_block.name)), JSONB())
                         )
                     ),
                 ).label("ret_json")
             ]
         )
         .select_from(p3_block)
-        .select_from(total_block)
+        .select_from(total_block if has_total else select([1]).alias())
     ).alias()
 
     return final
