@@ -5,32 +5,42 @@ import secrets
 import string
 import typing
 from functools import lru_cache
+from flupy import flu
 
+from cachetools import cached
 from nebulo.config import Config
 from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.relay.cursor import to_cursor_sql
 from nebulo.gql.relay.node_interface import NodeID, to_global_id_sql
-from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
-from nebulo.sql.table_base import TableProtocol
-from sqlalchemy import (
-    Column,
-    and_,
-    asc,
-    column,
-    create_engine,
-    desc,
-    func,
-    literal,
-    literal_column,
-    select,
-    table,
-    text,
-    tuple_,
+from nebulo.sql.inspect import (
+    get_columns,
+    get_primary_key_columns,
+    get_relationships,
+    get_table_name,
 )
+from nebulo.sql.table_base import TableProtocol
+from sqlalchemy import Column
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.compiler import StrSQLCompiler
+
+
+from sqlalchemy import (
+    text,
+    column,
+    select,
+    literal_column,
+    func,
+    literal,
+    and_,
+    asc,
+    desc,
+    tuple_,
+    table,
+)
+from sqlalchemy import create_engine
 from sqlalchemy.sql.selectable import Alias
+from sqlalchemy.sql.elements import Label
 
 
 def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> str:
@@ -63,7 +73,9 @@ def field_name_to_column(sqla_model: TableProtocol, gql_field_name: str) -> Colu
 
 
 @lru_cache()
-def field_name_to_relationship(sqla_model: TableProtocol, gql_field_name: str) -> RelationshipProperty:
+def field_name_to_relationship(
+    sqla_model: TableProtocol, gql_field_name: str
+) -> RelationshipProperty:
     for relationship in get_relationships(sqla_model):
         if Config.relationship_name_mapper(relationship) == gql_field_name:
             return relationship
@@ -73,14 +85,18 @@ def field_name_to_relationship(sqla_model: TableProtocol, gql_field_name: str) -
 def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[str]:
     parent_field = field.parent
     assert parent_field is not None
-    relation_from_parent = field_name_to_relationship(parent_field.return_type.sqla_model, field.name)
+    relation_from_parent = field_name_to_relationship(
+        parent_field.return_type.sqla_model, field.name
+    )
     local_table_name = get_table_name(field.return_type.sqla_model)
 
     join_clause = []
     for parent_col, local_col in relation_from_parent.local_remote_pairs:
         parent_col_name = parent_col.name
         local_col_name = local_col.name
-        join_clause.append(f"{parent_block_name}.{parent_col_name} = {local_table_name}.{local_col_name}")
+        join_clause.append(
+            f"{parent_block_name}.{parent_col_name} = {local_table_name}.{local_col_name}"
+        )
     return join_clause
 
 
@@ -164,64 +180,66 @@ def to_conditions_clause(field: ASTNode) -> typing.List[str]:
     return res
 
 
-def build_scalar(field: ASTNode, sqla_model: TableProtocol) -> typing.Tuple[str, typing.Union[str, StrSQLCompiler]]:
+def build_scalar(field: ASTNode, sqla_model: TableProtocol) -> Label:
     return_type = field.return_type
+
     if return_type == NodeID:
-        return (field.alias, to_global_id_sql(sqla_model))
+        return select([text(str(to_global_id_sql(sqla_model)))]).label(field.alias)
 
-    column = field_name_to_column(sqla_model, field.name)
-    return (field.alias, column.name)
+    col = field_name_to_column(sqla_model, field.name)
+    return sqla_model.__table__.c[col.name].label(field.alias)
 
 
-def build_relationship(field: ASTNode, block_name: str) -> typing.Tuple[str, str]:
-    return (field.name, sql_builder(field, block_name))
+
+def build_relationship(field: ASTNode, block_name: str) -> Label:
+    return sql_builder(field, block_name).as_scalar().label(field.alias)
 
 
 def sql_finalize(return_name: str, expr: str) -> str:
-    final = select([func.jsonb_build_object(literal(return_name), expr.c.ret_json).label("json")]).select_from(expr)
+    final = select(
+        [func.jsonb_build_object(literal(return_name), expr.c.ret_json).label("json")]
+    ).select_from(expr)
     return final
 
 
 def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> str:
     return_type = field.return_type
     sqla_model = return_type.sqla_model
+    core_model = sqla_model.__table__
 
     block_name = secure_random_string()
-    table_name = get_table_name(sqla_model)
     if parent_name is None:
         # If there is no parent, nodeId is mandatory
+        pkey_cols = get_primary_key_columns(sqla_model)
         _, pkey_eq = field.args["nodeId"]
-        pkey_clause = to_pkey_clause(field, pkey_eq)
-        join_clause = ["true"]
+        pkey_clause = [col == col_val for col, col_val in zip(pkey_cols, pkey_eq)]
+        join_clause = [True]
     else:
         # If there is a parent no arguments are accepted
         join_clause = to_join_clause(field, parent_name)
-        pkey_clause = ["true"]
+        pkey_clause = [True]
 
     select_clause = []
-    for field in field.fields:
-        if isinstance(field.return_type, (ScalarType, CompositeType)):
-            select_clause.append(build_scalar(field, sqla_model))
+    for subfield in field.fields:
+        if isinstance(subfield.return_type, (ScalarType, CompositeType)):
+            select_clause.append(build_scalar(subfield, sqla_model))
         else:
-            select_clause.append(build_relationship(field, block_name))
+            select_clause.append(build_relationship(subfield, block_name))
 
-    block = f"""
-(
-    with {block_name} as (
-        select
-            *
-        from
-            {table_name}
-        where
-            ({" and ".join(pkey_clause)})
-            and ({" and ".join(join_clause)})
-    )
-    select
-        jsonb_build_object({", ".join([f"'{name}', {expr}" for name, expr in select_clause])})
-    from
-        {block_name}
-)
-    """
+    core_model_ref = core_model.alias(block_name)
+
+    block = (
+        select(
+            [
+                func.jsonb_build_object(
+                    *flu(select_clause).map(lambda x: (literal(x.key), x)).flatten().collect()
+                ).label("ret_json")
+            ]
+        )
+        .select_from(core_model_ref)
+        .where(and_(*pkey_clause, *join_clause))
+    ).alias()
+
     return block
 
 
@@ -263,15 +281,7 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     startCursor_alias = field.get_subfield_alias(["pageInfo", "startCursor"])
     endCursor_alias = field.get_subfield_alias(["pageInfo", "endCursor"])
 
-    def build_scalar_select(field: ASTNode, sqla_model: TableProtocol):
-        return_type = field.return_type
-        column = field_name_to_column(sqla_model, field.name)
-
-        if return_type == NodeID:
-            return select([text(str(to_global_id_sql(sqla_model)))]).label(field.alias)
-        return sqla_model.__table__.c[column.name].label(field.alias)
-
-    edge_node_selects = []
+    #edge_node_selects = []
     new_edge_node_selects = []
     new_relation_selects = []
     for cfield in field.fields:
@@ -280,15 +290,17 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                 if edge_field.name == "node":
                     for subfield in edge_field.fields:
                         # Does anything other than NodeID go here?
-                        if isinstance(subfield.return_type, (ScalarType, CompositeType)):
+                        if isinstance(
+                            subfield.return_type, (ScalarType, CompositeType)
+                        ):
                             elem = build_scalar(subfield, sqla_model)
-                            c = build_scalar_select(subfield, sqla_model)
+                            c = build_scalar(subfield, sqla_model)
                             new_edge_node_selects.append(c)
                         else:
                             elem = build_relationship(subfield, block_name)
                             new_relation_selects.append(elem)
-                        if cfield.name == "edges":
-                            edge_node_selects.append(elem)
+                        #if cfield.name == "edges":
+                        #    new_edge_node_selects.append(elem)
                         # Other than edges, pageInfo, and cursor stuff is
                         # all handled by default
 
@@ -312,12 +324,16 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         )
     ).alias(block_name + "_total")
 
+
+
     # Select the right stuff
     p1_block = (
         select(
             [
                 *new_edge_node_selects,
-                select([text(str(to_global_id_sql(sqla_model)))]).label("nodeId"),
+                # For internal Use
+                select([text(str(to_global_id_sql(sqla_model)))]).label("_nodeId"),
+                # For internal Use
                 func.row_number().over().label("_row_num"),
             ]
         )
@@ -332,21 +348,34 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                 text(pagination),
             )
         )
-        .order_by(*(reverse_order_clause if is_page_before else order_clause), *order_clause)
+        .order_by(
+            *(reverse_order_clause if is_page_before else order_clause), *order_clause
+        )
         .limit(limit + 1)
     ).alias(block_name + "_p1")
 
     # Drop maybe extra row
 
-    p2_block = (select(p1_block.c).select_from(p1_block).limit(limit)).alias(block_name + "_p2")
+    p2_block = (select(p1_block.c).select_from(p1_block).limit(limit)).alias(
+        block_name + "_p2"
+    )
 
-    ordering = desc(literal_column("_row_num")) if is_page_before else asc(literal_column("_row_num"))
+    ordering = (
+        desc(literal_column("_row_num"))
+        if is_page_before
+        else asc(literal_column("_row_num"))
+    )
 
-    p3_block = (select([*p2_block.c]).select_from(p2_block).order_by(ordering)).alias(block_name)
+    p3_block = (select(p2_block.c).select_from(p2_block).order_by(ordering)).alias(
+        block_name
+    )
 
     relations = func.jsonb_build_object()
-    for key, value in new_relation_selects:
-        relations = relations.op("||")(func.jsonb_build_object(literal(key), value.as_scalar()))
+    for relation_label in new_relation_selects:
+        relations = relations.op("||")(
+            func.jsonb_build_object(literal(relation_label.key), relation_label)
+        )
+
 
     from sqlalchemy.dialects.postgresql import JSONB
 
@@ -361,17 +390,21 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                         # literal(hasNextPage_alias), text(f"(select count(*) from {block_name}) < ")(select has_next from has_next_page),
                         # literal(hasPreviousPage_alias), {'true' if is_page_after else 'false'},
                         literal(startCursor_alias),
-                        func.array_agg(p3_block.c.nodeId)[1],
+                        func.array_agg(p3_block.c._nodeId)[1],
                         literal(endCursor_alias),
-                        func.array_agg(p3_block.c.nodeId)[func.array_upper(func.array_agg(p3_block.c.nodeId), 1)],
+                        func.array_agg(p3_block.c._nodeId)[
+                            func.array_upper(func.array_agg(p3_block.c._nodeId), 1)
+                        ],
                     ),
                     literal(edges_alias),
                     func.jsonb_agg(
                         func.jsonb_build_object(
                             literal(cursor_alias),
-                            p3_block.c.nodeId,
+                            p3_block.c._nodeId,
                             literal(node_alias),
-                            func.cast(func.row_to_json(literal_column(block_name)), JSONB()).op("||")(relations),
+                            func.cast(
+                                func.row_to_json(literal_column(block_name)), JSONB()
+                            ).op("||")(relations),
                         )
                     ),
                 ).label("ret_json")
