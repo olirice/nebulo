@@ -399,16 +399,19 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                         ],
                     ),
                     literal(edges_alias),
-                    func.jsonb_agg(
-                        func.jsonb_build_object(
-                            literal(cursor_alias),
-                            p3_block.c._nodeId,
-                            literal(node_alias),
-                            func.cast(
-                                func.row_to_json(literal_column(p3_block.name)), JSONB()
-                            ),
-                        )
-                    ),
+                    func.coalesce(
+                        func.jsonb_agg(
+                            func.jsonb_build_object(
+                                literal(cursor_alias),
+                                p3_block.c._nodeId,
+                                literal(node_alias),
+                                func.cast(
+                                    func.row_to_json(literal_column(p3_block.name)), JSONB()
+                                ),
+                            )
+                        ),
+                        func.cast(literal('[]'), JSONB())
+                    )
                 ).label("ret_json")
             ]
         )
