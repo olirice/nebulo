@@ -13,7 +13,7 @@ from sqlalchemy.orm import RelationshipProperty
 @lru_cache()
 def get_table_name(sqla_model: TableProtocol) -> str:
     """Name of the table"""
-    return sqla_model.__table__.name
+    return str(sqla_model.__table__.name)
 
 
 @lru_cache()

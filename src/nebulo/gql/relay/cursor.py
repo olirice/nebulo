@@ -1,52 +1,65 @@
 # pylint: disable=comparison-with-callable
 from __future__ import annotations
 
+import json
 import typing
 
 from nebulo.gql.alias import ScalarType
-from nebulo.sql.inspect import get_table_name
-from nebulo.text_utils.base64 import from_base64, to_base64, to_base64_sql
-from sqlalchemy import asc, desc, text
-
-if typing.TYPE_CHECKING:
-    from sqlalchemy.sql.compiler import StrSQLCompiler
+from nebulo.sql.inspect import get_primary_key_columns, get_table_name
+from nebulo.text_utils.base64 import from_base64, to_base64
+from sqlalchemy import func, literal
+from sqlalchemy.sql.selectable import Alias
 
 __all__ = ["Cursor"]
 
 
-DIRECTION_TO_STR = {asc: "asc", desc: "desc"}
-STR_TO_DIRECTION = {v: k for k, v in DIRECTION_TO_STR.items()}
+class CursorStructure(typing.NamedTuple):
+    table_name: str
+    values: typing.Dict[str, typing.Any]
+
+    @classmethod
+    def from_dict(cls, contents: typing.Dict) -> CursorStructure:
+        res = cls(table_name=contents["table_name"], values=contents["values"])
+        return res
+
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        return {"table_name": self.table_name, "values": self.values}
+
+    def serialize(self) -> str:
+        ser = to_base64(json.dumps(self.to_dict()))
+        return ser
+
+    @classmethod
+    def deserialize(cls, serialized: str) -> CursorStructure:
+        contents = json.loads(from_base64(serialized))
+        return cls.from_dict(contents)
 
 
-def from_cursor(cursor: str) -> typing.Tuple[str, typing.List[str]]:
-    """Parses a cursor from form
-    offer[id:desc,age:asc](4)
-    """
-    # offer@1,5
-    cursor_str = from_base64(cursor)
-
-    # e.g. 'offer'
-    sqla_model_name, remain = cursor_str.split("@", 1)
-
-    # e.g. 'id,age'
-    values = [x for x in remain.split(",") if x]
-    return sqla_model_name, values
+def serialize(value: typing.Union[CursorStructure, typing.Dict]):
+    node_id = CursorStructure.from_dict(value) if isinstance(value, dict) else value
+    return node_id.serialize()
 
 
-Cursor = ScalarType("Cursor", serialize=str, parse_value=from_cursor, parse_literal=lambda x: from_cursor(x.value))
-
-
-def to_cursor(table_name, values: typing.List[typing.Any]) -> str:
-    str_to_encode = f"'{table_name}@" + ", ".join([str(x) for x in values])
-    return to_base64(str_to_encode)
-
-
-def to_cursor_sql(sqla_model) -> StrSQLCompiler:
+def to_cursor_sql(sqla_model, query_elem: Alias):
     table_name = get_table_name(sqla_model)
-    pkey_cols = list(sqla_model.__table__.primary_key.columns)
 
-    selector = ", ||".join([f'"{col.name}"' for col in pkey_cols])
+    pkey_cols = get_primary_key_columns(sqla_model)
 
-    str_to_encode = f"'{table_name}' || '@' || " + selector
+    # Columns selected from query element
+    vals = []
+    for col in pkey_cols:
+        col_name = str(col.name)
+        vals.extend([col_name, query_elem.c[col_name]])
 
-    return to_base64_sql(text(str_to_encode)).compile(compile_kwargs={"literal_binds": True})
+    return func.jsonb_build_object(
+        literal("table_name"), literal(table_name), literal("values"), func.jsonb_build_object(*vals)
+    )
+
+
+Cursor = ScalarType(
+    "Cursor",
+    description="Pagination point",
+    serialize=serialize,
+    parse_value=CursorStructure.deserialize,
+    parse_literal=lambda x: CursorStructure.deserialize(x.value),
+)

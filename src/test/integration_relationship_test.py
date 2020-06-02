@@ -1,6 +1,6 @@
 import json
 
-from nebulo.gql.relay.node_interface import to_global_id
+from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
 CREATE TABLE account (
@@ -43,7 +43,7 @@ INSERT INTO offer (currency, account_id_not_null, account_id_nullable) VALUES
 def test_query_one_to_many(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 2
-    node_id = to_global_id(table_name="account", values=[account_id])
+    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = f"""
     {{
         account(nodeId: "{node_id}") {{
@@ -76,7 +76,7 @@ def test_query_one_to_many(gql_exec_builder):
 def test_query_many_to_one(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 2
-    node_id = to_global_id(table_name="account", values=[account_id])
+    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = """
     {
       allOffers {

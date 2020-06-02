@@ -1,4 +1,4 @@
-from nebulo.gql.relay.node_interface import to_global_id
+from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
 CREATE TABLE account (
@@ -16,7 +16,7 @@ def test_round_trip_node_id(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
 
     account_id = 1
-    node_id = to_global_id(table_name="account", values=[account_id])
+    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
 
     gql_query = f"""
     {{
@@ -29,7 +29,7 @@ def test_round_trip_node_id(gql_exec_builder):
     assert result.errors is None
     assert result.data["account"]["nodeId"] == node_id
 
-    wrong_node_id = to_global_id(table_name="account", values=[2])
+    wrong_node_id = NodeIdStructure(table_name="account", values={"id": 2}).serialize()
     assert result.data["account"]["nodeId"] != wrong_node_id
 
 
@@ -47,4 +47,4 @@ def test_invalid_node_id(gql_exec_builder):
     """
     result = executor(gql_query)
     assert len(result.errors) == 1
-    assert "invalid" in str(result.errors[0])
+    assert "Expected value of type" in str(result.errors[0])

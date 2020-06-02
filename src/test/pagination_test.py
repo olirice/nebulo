@@ -1,4 +1,4 @@
-from nebulo.gql.relay.cursor import to_cursor
+from nebulo.gql.relay.cursor import CursorStructure
 
 SQL_UP = """
 CREATE TABLE account (
@@ -42,7 +42,7 @@ def test_get_cursor(gql_exec_builder):
 def test_invalid_cursor(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
 
-    cursor = to_cursor("wrong_name", [1])
+    cursor = CursorStructure(table_name="wrong_name", values={"id": 1}).serialize()
     # Query for 1 item after the cursor
     gql_query = f"""
     {{
@@ -77,7 +77,6 @@ def test_retrieve_1_after_cursor(gql_exec_builder):
     result = executor(gql_query)
     # Get a cursor to 2nd entry
     cursor = result.data["allAccounts"]["edges"][1]["cursor"]
-    print(cursor)
 
     # Query for 1 item after the cursor
     gql_query = f"""
@@ -192,7 +191,7 @@ def test_pagination_order(gql_exec_builder):
 
 def test_invalid_pagination_params(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
-    cursor = "YWNjb3VudEA3"
+    cursor = CursorStructure(table_name="not used", values={"id": 1}).serialize()
     # First with Before
     gql_query = f"""
     {{

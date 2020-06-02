@@ -1,4 +1,4 @@
-from nebulo.gql.relay.node_interface import to_global_id
+from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
 CREATE TABLE account (
@@ -18,7 +18,7 @@ INSERT INTO account (id, name) VALUES
 def test_query_one_field(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 1
-    node_id = to_global_id(table_name="account", values=[account_id])
+    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = f"""
     {{
         account(nodeId: "{node_id}") {{
@@ -36,7 +36,7 @@ def test_query_one_field(gql_exec_builder):
 def test_query_multiple_fields(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 1
-    node_id = to_global_id(table_name="account", values=[account_id])
+    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = f"""
     {{
         account(nodeId: "{node_id}") {{

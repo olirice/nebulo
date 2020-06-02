@@ -1,12 +1,10 @@
 # pylint: disable=invalid-name
 from __future__ import annotations
 
-import typing
-
 from nebulo.config import Config
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.query_builder import field_name_to_column
-from nebulo.sql.inspect import get_primary_key_columns
+from nebulo.gql.relay.node_interface import to_node_id_sql
 
 
 def build_insert(tree: ASTNode):
@@ -23,8 +21,10 @@ def build_insert(tree: ASTNode):
     core_table = return_sqla_model.__table__
     # query = core_table.insert().values(**col_name_to_value).returning(*core_table.columns, func.upper(literal("email")))
     # node_id_selector = to_global_id_sql(return_sqla_model)
-    query = core_table.insert().values(**col_name_to_value).returning(*get_primary_key_columns(return_sqla_model))
+    # query = core_table.insert().values(**col_name_to_value).returning(*get_primary_key_columns(return_sqla_model))
+    query = core_table.insert().values(**col_name_to_value).returning([to_node_id_sql(return_sqla_model, core_table)])
     return query
+
 
 def build_update(tree: ASTNode):
     return_type = tree.return_type
@@ -43,7 +43,5 @@ def build_update(tree: ASTNode):
     core_table = return_sqla_model.__table__
     # query = core_table.insert().values(**col_name_to_value).returning(*core_table.columns, func.upper(literal("email")))
     # node_id_selector = to_global_id_sql(return_sqla_model)
-    query = core_table.insert().values(**col_name_to_value).returning(*get_primary_key_columns(return_sqla_model))
+    query = core_table.insert().values(**col_name_to_value).returning([to_node_id_sql(return_sqla_model, core_table)])
     return query
-
-

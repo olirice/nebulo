@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import typing
 
@@ -9,21 +8,20 @@ from nebulo.gql.alias import (
     CompositeType,
     ConnectionType,
     CreatePayloadType,
-    UpdatePayloadType,
     ObjectType,
     ResolveInfo,
     ScalarType,
     TableType,
+    UpdatePayloadType,
 )
 from nebulo.gql.mutation_builder import build_insert, build_update
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.query_builder import sql_builder, sql_finalize
-from nebulo.gql.relay.node_interface import from_global_id, to_global_id
-from nebulo.sql.inspect import get_table_name
-
-
+from nebulo.gql.relay.node_interface import NodeIdStructure
 from sqlalchemy import create_engine
-dial_eng = create_engine('postgresql://')
+
+dial_eng = create_engine("postgresql://")
+
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     """Awaitable GraphQL Entrypoint resolver
@@ -44,12 +42,12 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         coroutines = []
         for claim_key, claim_value in jwt_claims.items():
             claim_sql = f"set local jwt.claims.{claim_key} to {claim_value};"
-            #claim_coroutine = database.execute(claim_sql)
-            #coroutines.append(claim_coroutine)
+            # claim_coroutine = database.execute(claim_sql)
+            # coroutines.append(claim_coroutine)
 
         if coroutines:
             pass
-            #await asyncio.wait(coroutines)
+            # await asyncio.wait(coroutines)
 
         if isinstance(tree.return_type, CreatePayloadType):
             insert_stmt = build_insert(tree)
@@ -57,13 +55,11 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
             # Compute nodeId
             sqla_model = tree.return_type.sqla_model
-            pkey_values = [x for x in row.values()]
-            # base 64 encoded
-            node_id = to_global_id(get_table_name(sqla_model), pkey_values)
+            node_id = NodeIdStructure.from_dict(row)
             # string representation
-            global_id = from_global_id(node_id)
+            # global_id = from_global_id(node_id)
 
-            maybe_mutation_id = tree.args['input'].get("clientMutationId")
+            maybe_mutation_id = tree.args["input"].get("clientMutationId")
             output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
 
             # Retrive the part of the info tree describing the return fields
@@ -78,7 +74,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             maybe_query_tree = [x for x in tree.fields if x.name == output_row_name]
             if maybe_query_tree:
                 query_tree = maybe_query_tree[0]
-                query_tree.args["nodeId"] = global_id
+                query_tree.args["nodeId"] = node_id
                 base_query = sql_builder(query_tree)
                 query = sql_finalize(query_tree.name, base_query)
                 coro_result = await database.fetch_one(query=query)
@@ -89,19 +85,14 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             result = {tree.alias: result}
 
         elif isinstance(tree.return_type, UpdatePayloadType):
-            global_id = tree.args['nodeId']
+            global_id = tree.args["nodeId"]
             update_stmt = build_update(tree)
             row = await database.fetch_one(query=update_stmt)
 
             # Compute nodeId
-            sqla_model = tree.return_type.sqla_model
-            pkey_values = [x for x in row.values()]
-            # base 64 encoded
-            node_id = to_global_id(get_table_name(sqla_model), pkey_values)
-            # string representation
-            global_id = from_global_id(node_id)
+            node_id = NodeIdStructure.from_dict(row)
 
-            maybe_mutation_id = tree.args['input'].get("clientMutationId")
+            maybe_mutation_id = tree.args["input"].get("clientMutationId")
             output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
 
             # Retrive the part of the info tree describing the return fields
@@ -116,7 +107,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             maybe_query_tree = [x for x in tree.fields if x.name == output_row_name]
             if maybe_query_tree:
                 query_tree = maybe_query_tree[0]
-                query_tree.args["nodeId"] = global_id
+                query_tree.args["nodeId"] = node_id
                 base_query = sql_builder(query_tree)
                 query = sql_finalize(query_tree.name, base_query)
                 coro_result = await database.fetch_one(query=query)
@@ -126,11 +117,12 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
             result = {tree.alias: result}
 
-
         elif isinstance(tree.return_type, ObjectType):
+            print("building_query")
             base_query = sql_builder(tree)
+            print("built")
             query = sql_finalize(tree.name, base_query)
-            query =  str(query.compile(compile_kwargs={'literal_binds': True, 'engine': dial_eng}))
+            query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
             print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
@@ -146,9 +138,8 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         else:
             raise Exception("sql builder could not handle return type")
 
-
-    #import pdb; pdb.set_trace()
-    #print(json.dumps(result, indent=2))
+    # import pdb; pdb.set_trace()
+    # print(json.dumps(result, indent=2))
     # Stash result on context to enable dumb resolvers to not fail
     context["result"] = result
     return result

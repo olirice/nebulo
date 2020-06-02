@@ -1,4 +1,4 @@
-from nebulo.gql.relay.node_interface import to_global_id
+from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
 CREATE TYPE full_name AS (
@@ -19,7 +19,7 @@ insert into account(name) values
 def test_query_multiple_fields(gql_exec_builder):
     executor = gql_exec_builder(SQL_UP)
     account_id = 1
-    node_id = to_global_id(table_name="account", values=[account_id])
+    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = f"""
     {{
         account(nodeId: "{node_id}") {{
@@ -30,7 +30,6 @@ def test_query_multiple_fields(gql_exec_builder):
         }}
     }}
     """
-
     result = executor(gql_query)
     assert result.errors is None
     assert result.data["account"]["id"] == account_id
