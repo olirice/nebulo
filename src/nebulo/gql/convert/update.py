@@ -3,7 +3,15 @@ from __future__ import annotations
 from functools import lru_cache
 
 from nebulo.config import Config
-from nebulo.gql.alias import Field, InputObjectType, ObjectType, String
+from nebulo.gql.alias import (
+    Field,
+    InputObjectType,
+    ObjectType,
+    String,
+    TableInputType,
+    UpdateInputType,
+    UpdatePayloadType,
+)
 from nebulo.gql.convert.column import convert_column_to_input
 from nebulo.gql.relay.node_interface import NodeID
 from nebulo.sql.inspect import get_columns
@@ -42,7 +50,7 @@ def update_input_type_factory(sqla_model: TableProtocol) -> InputObjectType:
     input_object_name = Config.table_name_mapper(sqla_model)
 
     attrs = {"nodeId": NodeID, "clientMutationId": String, input_object_name: patch_type_factory(sqla_model)}
-    return InputObjectType(result_name, attrs, description=f"All input for the create {relevant_type_name} mutation.")
+    return UpdateInputType(result_name, attrs, description=f"All input for the create {relevant_type_name} mutation.")
 
 
 def patch_type_factory(sqla_model: TableProtocol) -> InputObjectType:
@@ -56,7 +64,7 @@ def patch_type_factory(sqla_model: TableProtocol) -> InputObjectType:
         column_field = convert_column_to_input(column)
         # TODO Unwrap not null here
         attrs[field_key] = column_field
-    return InputObjectType(result_name, attrs, description=f"An input for mutations affecting {relevant_type_name}.")
+    return TableInputType(result_name, attrs, description=f"An input for mutations affecting {relevant_type_name}.")
 
 
 @lru_cache()
@@ -75,4 +83,6 @@ def update_payload_factory(sqla_model: TableProtocol) -> InputObjectType:
         ),
     }
 
-    return ObjectType(result_name, attrs, description=f"The output of our update {relevant_type_name} mutation")
+    return UpdatePayloadType(
+        result_name, attrs, description=f"The output of our update {relevant_type_name} mutation", sqla_model=sqla_model
+    )

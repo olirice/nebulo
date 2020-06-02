@@ -16,8 +16,10 @@ from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relatio
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import (
     Column,
+    Text,
     and_,
     asc,
+    cast,
     column,
     create_engine,
     desc,
@@ -128,7 +130,9 @@ def build_relationship(field: ASTNode, block_name: str) -> Label:
 
 
 def sql_finalize(return_name: str, expr: str) -> str:
-    final = select([func.jsonb_build_object(literal(return_name), expr.c.ret_json).label("json")]).select_from(expr)
+    final = select(
+        [func.jsonb_build_object(cast(literal(return_name), Text), expr.c.ret_json).label("json")]
+    ).select_from(expr)
     return final
 
 
@@ -169,7 +173,7 @@ def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> str:
         select(
             [
                 func.jsonb_build_object(
-                    *flu(select_clause).map(lambda x: (literal(x.key), x)).flatten().collect()
+                    *flu(select_clause).map(lambda x: (cast(literal(x.key), Text), x)).flatten().collect()
                 ).label("ret_json")
             ]
         ).select_from(core_model_ref)

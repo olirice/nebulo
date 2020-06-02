@@ -51,14 +51,9 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
         if isinstance(tree.return_type, CreatePayloadType):
             insert_stmt = build_insert(tree)
-            row = await database.fetch_one(query=insert_stmt)
-
+            row = json.loads((await database.fetch_one(query=insert_stmt))["nodeId"])
             # Compute nodeId
-            sqla_model = tree.return_type.sqla_model
             node_id = NodeIdStructure.from_dict(row)
-            # string representation
-            # global_id = from_global_id(node_id)
-
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
             output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
 
@@ -78,16 +73,19 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                 base_query = sql_builder(query_tree)
                 query = sql_finalize(query_tree.name, base_query)
                 coro_result = await database.fetch_one(query=query)
-                str_result: str = coro_result["jsonb_build_object"]
+                str_result: str = coro_result["json"]
                 j_result = json.loads(str_result)
                 result.update(j_result)
 
             result = {tree.alias: result}
 
         elif isinstance(tree.return_type, UpdatePayloadType):
-            global_id = tree.args["nodeId"]
+            import pdb
+
+            pdb.set_trace()
             update_stmt = build_update(tree)
             row = await database.fetch_one(query=update_stmt)
+            print(row)
 
             # Compute nodeId
             node_id = NodeIdStructure.from_dict(row)
@@ -118,12 +116,9 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             result = {tree.alias: result}
 
         elif isinstance(tree.return_type, ObjectType):
-            print("building_query")
             base_query = sql_builder(tree)
-            print("built")
             query = sql_finalize(tree.name, base_query)
             query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
-            print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]
