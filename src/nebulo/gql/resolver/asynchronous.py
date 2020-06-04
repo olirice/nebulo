@@ -13,6 +13,7 @@ from nebulo.gql.alias import (
     ScalarType,
     TableType,
     UpdatePayloadType,
+    MutationPayloadType,
 )
 from nebulo.gql.mutation_builder import build_insert, build_update
 from nebulo.gql.parse_info import parse_resolve_info
@@ -46,79 +47,53 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             # coroutines.append(claim_coroutine)
 
         if coroutines:
-            pass
             # await asyncio.wait(coroutines)
+            pass
 
-        if isinstance(tree.return_type, CreatePayloadType):
-            insert_stmt = build_insert(tree)
-            row = json.loads((await database.fetch_one(query=insert_stmt))["nodeId"])
-            # Compute nodeId
-            node_id = NodeIdStructure.from_dict(row)
-            maybe_mutation_id = tree.args["input"].get("clientMutationId")
-            output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
+        if isinstance(tree.return_type, MutationPayloadType):
+            stmt = (
+                build_insert(tree)
+                if isinstance(tree.return_type, CreatePayloadType)
+                else build_update(tree)
+            )
 
-            # Retrive the part of the info tree describing the return fields
-            # for the current model
-            result = {}
-
-            maybe_mut_id = [x for x in tree.fields if x.name == "clientMutationId"]
-            if maybe_mut_id:
-                mut_id = maybe_mut_id[0]
-                result[mut_id.alias] = maybe_mutation_id
-
-            maybe_query_tree = [x for x in tree.fields if x.name == output_row_name]
-            if maybe_query_tree:
-                query_tree = maybe_query_tree[0]
-                query_tree.args["nodeId"] = node_id
-                base_query = sql_builder(query_tree)
-                query = sql_finalize(query_tree.name, base_query)
-                coro_result = await database.fetch_one(query=query)
-                str_result: str = coro_result["json"]
-                j_result = json.loads(str_result)
-                result.update(j_result)
-
-            result = {tree.alias: result}
-
-        elif isinstance(tree.return_type, UpdatePayloadType):
-            import pdb
-
-            pdb.set_trace()
-            update_stmt = build_update(tree)
-            row = await database.fetch_one(query=update_stmt)
-            print(row)
-
-            # Compute nodeId
+            row = json.loads((await database.fetch_one(query=stmt))["nodeId"])
             node_id = NodeIdStructure.from_dict(row)
 
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
+            mutation_id_alias = next(
+                iter([x.alias for x in tree.fields if x.name == "clientMutationId"]),
+                "clientMutationId",
+            )
+            node_id_alias = next(
+                iter([x.alias for x in tree.fields if x.name == "nodeId"]),
+                "nodeId",
+            )
             output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
-
-            # Retrive the part of the info tree describing the return fields
-            # for the current model
-            result = {}
-
-            maybe_mut_id = [x for x in tree.fields if x.name == "clientMutationId"]
-            if maybe_mut_id:
-                mut_id = maybe_mut_id[0]
-                result[mut_id.alias] = maybe_mutation_id
-
-            maybe_query_tree = [x for x in tree.fields if x.name == output_row_name]
-            if maybe_query_tree:
-                query_tree = maybe_query_tree[0]
+            result = {
+                    tree.alias: {mutation_id_alias: maybe_mutation_id},
+                    node_id_alias: node_id
+                    }
+            query_tree = next(
+                iter([x for x in tree.fields if x.name == output_row_name]), None
+            )
+            if query_tree:
+                # Set the nodeid of the newly created record as an arg
                 query_tree.args["nodeId"] = node_id
                 base_query = sql_builder(query_tree)
                 query = sql_finalize(query_tree.name, base_query)
-                coro_result = await database.fetch_one(query=query)
-                str_result: str = coro_result["jsonb_build_object"]
-                j_result = json.loads(str_result)
-                result.update(j_result)
-
-            result = {tree.alias: result}
+                coro_result: str = (await database.fetch_one(query=query))["json"]
+                sql_result = json.loads(coro_result)
+                result[tree.alias].update(sql_result)
 
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
-            query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
+            query = str(
+                query.compile(
+                    compile_kwargs={"literal_binds": True, "engine": dial_eng}
+                )
+            )
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]
@@ -128,13 +103,13 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             query = base_query
             query_coro = database.fetch_one(query=query)
             scalar_result = await query_coro
-            result = next(scalar_result._row.values())  # pylint: disable=protected-access
+            result = next(
+                scalar_result._row.values()
+            )  # pylint: disable=protected-access
 
         else:
             raise Exception("sql builder could not handle return type")
 
-    # import pdb; pdb.set_trace()
-    # print(json.dumps(result, indent=2))
     # Stash result on context to enable dumb resolvers to not fail
     context["result"] = result
     return result

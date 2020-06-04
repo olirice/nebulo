@@ -12,11 +12,14 @@ from nebulo.gql.alias import (
     ObjectType,
     String,
     TableInputType,
+    NonNull,
+
 )
 from nebulo.gql.convert.column import convert_column_to_input
 from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
+from nebulo.gql.relay.node_interface import NodeID
 
 
 """
@@ -43,7 +46,7 @@ def create_input_type_factory(sqla_model: TableProtocol) -> CreateInputType:
 
     input_object_name = Config.table_name_mapper(sqla_model)
 
-    attrs = {"clientMutationId": String, input_object_name: input_type_factory(sqla_model)}
+    attrs = {"clientMutationId": String, input_object_name: NonNull(input_type_factory(sqla_model))}
     return CreateInputType(result_name, attrs, description=f"All input for the create {relevant_type_name} mutation.")
 
 
@@ -70,6 +73,7 @@ def create_payload_factory(sqla_model: TableProtocol) -> CreatePayloadType:
 
     attrs = {
         "clientMutationId": Field(String, resolve=default_resolver),
+        "nodeId": NodeID,
         relevant_attr_name: Field(
             NonNull(table_factory(sqla_model)),
             description=f"The {relevant_type_name} that was created by this mutation.",
