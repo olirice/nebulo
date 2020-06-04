@@ -111,7 +111,8 @@ class CompositeType(ObjectType, HasSQLAComposite):
     pass
 
 
-class MutationPayloadType(ObjectType): pass
+class MutationPayloadType(ObjectType):
+    pass
 
 
 class CreatePayloadType(MutationPayloadType):

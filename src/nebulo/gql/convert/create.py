@@ -12,14 +12,12 @@ from nebulo.gql.alias import (
     ObjectType,
     String,
     TableInputType,
-    NonNull,
-
 )
 from nebulo.gql.convert.column import convert_column_to_input
+from nebulo.gql.relay.node_interface import NodeID
 from nebulo.gql.resolver.default import default_resolver
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
-from nebulo.gql.relay.node_interface import NodeID
 
 
 """
@@ -33,7 +31,7 @@ def create_entrypoint_factory(sqla_model: TableProtocol, resolver) -> Field:
     """createAccount"""
     relevant_type_name = Config.table_type_name_mapper(sqla_model)
     name = f"create{relevant_type_name}"
-    args = {"input": create_input_type_factory(sqla_model)}
+    args = {"input": NonNull(create_input_type_factory(sqla_model))}
     payload = create_payload_factory(sqla_model)
     return {name: Field(payload, args=args, resolve=resolver, description=f"Creates a single {relevant_type_name}.")}
 

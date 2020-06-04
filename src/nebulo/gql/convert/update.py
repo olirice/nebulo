@@ -6,12 +6,12 @@ from nebulo.config import Config
 from nebulo.gql.alias import (
     Field,
     InputObjectType,
+    NonNull,
     ObjectType,
     String,
     TableInputType,
     UpdateInputType,
     UpdatePayloadType,
-    NonNull
 )
 from nebulo.gql.convert.column import convert_column_to_input
 from nebulo.gql.relay.node_interface import NodeID
@@ -31,7 +31,7 @@ def update_entrypoint_factory(sqla_model: TableProtocol, resolver) -> Field:
     """updateAccount"""
     relevant_type_name = Config.table_type_name_mapper(sqla_model)
     name = f"update{relevant_type_name}"
-    args = {"input": update_input_type_factory(sqla_model)}
+    args = {"input": NonNull(update_input_type_factory(sqla_model))}
     payload = update_payload_factory(sqla_model)
     return {
         name: Field(
@@ -51,7 +51,11 @@ def update_input_type_factory(sqla_model: TableProtocol) -> InputObjectType:
 
     input_object_name = Config.table_name_mapper(sqla_model)
 
-    attrs = {"nodeId": NonNull(NodeID), "clientMutationId": String, input_object_name: NonNull(patch_type_factory(sqla_model))}
+    attrs = {
+        "nodeId": NonNull(NodeID),
+        "clientMutationId": String,
+        input_object_name: NonNull(patch_type_factory(sqla_model)),
+    }
     return UpdateInputType(result_name, attrs, description=f"All input for the create {relevant_type_name} mutation.")
 
 
@@ -84,7 +88,7 @@ def update_payload_factory(sqla_model: TableProtocol) -> InputObjectType:
         relevant_attr_name: Field(
             table_factory(sqla_model),
             resolve=default_resolver,
-            description=f"The {relevant_type_name} that was created by this mutation."
+            description=f"The {relevant_type_name} that was created by this mutation.",
         ),
     }
 

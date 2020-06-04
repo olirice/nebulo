@@ -5,12 +5,7 @@ from nebulo.config import Config
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.query_builder import field_name_to_column
 from nebulo.gql.relay.node_interface import to_node_id_sql
-from nebulo.sql.inspect import (
-    get_columns,
-    get_primary_key_columns,
-    get_relationships,
-    get_table_name,
-)
+from nebulo.sql.inspect import get_primary_key_columns
 
 
 def build_insert(tree: ASTNode):
@@ -40,7 +35,7 @@ def build_update(tree: ASTNode):
 
     # Where Clause
     pkey_cols = get_primary_key_columns(sqla_model)
-    node_id = tree.args['input']["nodeId"]
+    node_id = tree.args["input"]["nodeId"]
     pkey_clause = [col == node_id.values[str(col.name)] for col in pkey_cols]
 
     # Find the table type

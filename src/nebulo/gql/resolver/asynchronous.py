@@ -8,12 +8,12 @@ from nebulo.gql.alias import (
     CompositeType,
     ConnectionType,
     CreatePayloadType,
+    MutationPayloadType,
     ObjectType,
     ResolveInfo,
     ScalarType,
     TableType,
     UpdatePayloadType,
-    MutationPayloadType,
 )
 from nebulo.gql.mutation_builder import build_insert, build_update
 from nebulo.gql.parse_info import parse_resolve_info
@@ -51,32 +51,19 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             pass
 
         if isinstance(tree.return_type, MutationPayloadType):
-            stmt = (
-                build_insert(tree)
-                if isinstance(tree.return_type, CreatePayloadType)
-                else build_update(tree)
-            )
+            stmt = build_insert(tree) if isinstance(tree.return_type, CreatePayloadType) else build_update(tree)
 
             row = json.loads((await database.fetch_one(query=stmt))["nodeId"])
             node_id = NodeIdStructure.from_dict(row)
 
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
             mutation_id_alias = next(
-                iter([x.alias for x in tree.fields if x.name == "clientMutationId"]),
-                "clientMutationId",
+                iter([x.alias for x in tree.fields if x.name == "clientMutationId"]), "clientMutationId"
             )
-            node_id_alias = next(
-                iter([x.alias for x in tree.fields if x.name == "nodeId"]),
-                "nodeId",
-            )
+            node_id_alias = next(iter([x.alias for x in tree.fields if x.name == "nodeId"]), "nodeId")
             output_row_name: str = Config.table_name_mapper(tree.return_type.sqla_model)
-            result = {
-                    tree.alias: {mutation_id_alias: maybe_mutation_id},
-                    node_id_alias: node_id
-                    }
-            query_tree = next(
-                iter([x for x in tree.fields if x.name == output_row_name]), None
-            )
+            result = {tree.alias: {mutation_id_alias: maybe_mutation_id}, node_id_alias: node_id}
+            query_tree = next(iter([x for x in tree.fields if x.name == output_row_name]), None)
             if query_tree:
                 # Set the nodeid of the newly created record as an arg
                 query_tree.args["nodeId"] = node_id
@@ -89,11 +76,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
-            query = str(
-                query.compile(
-                    compile_kwargs={"literal_binds": True, "engine": dial_eng}
-                )
-            )
+            query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]
@@ -103,9 +86,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             query = base_query
             query_coro = database.fetch_one(query=query)
             scalar_result = await query_coro
-            result = next(
-                scalar_result._row.values()
-            )  # pylint: disable=protected-access
+            result = next(scalar_result._row.values())  # pylint: disable=protected-access
 
         else:
             raise Exception("sql builder could not handle return type")
