@@ -22,6 +22,8 @@ from sqlalchemy import (
     cast,
     column,
     create_engine,
+    BigInteger,
+    Integer,
     desc,
     func,
     literal,
@@ -128,10 +130,12 @@ def to_conditions_clause(field: ASTNode) -> typing.List[BinaryExpression]:
 def build_relationship(field: ASTNode, block_name: str) -> Label:
     return sql_builder(field, block_name).as_scalar().label(field.alias)
 
+def literal_string(text):
+    return literal_column(f"'{text}'")
 
 def sql_finalize(return_name: str, expr: Alias) -> Select:
     final = select(
-        [func.jsonb_build_object(cast(literal(return_name), Text), expr.c.ret_json).label("json")]
+        [func.jsonb_build_object(literal_string(return_name), expr.c.ret_json).label("json")]
     ).select_from(expr)
     return final
 
@@ -173,7 +177,7 @@ def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> Alias
         select(
             [
                 func.jsonb_build_object(
-                    *flu(select_clause).map(lambda x: (cast(literal(x.key), Text), x)).flatten().collect()
+                    *flu(select_clause).map(lambda x: (literal_string(x.key), x)).flatten().collect()
                 ).label("ret_json")
             ]
         ).select_from(core_model_ref)
@@ -196,6 +200,8 @@ def get_edge_node_fields(field):
                     return edge_field.fields
     return []
 
+
+BOUND_ONE = literal_column('1')
 
 def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias:
     return_type = field.return_type
@@ -297,11 +303,13 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     reverse_order_clause = [desc(core_model_ref.c[col.name]) for col in get_primary_key_columns(sqla_model)]
 
     total_block = (
-        select([func.count(1).label("total_count")]).select_from(core_model_ref.alias()).where(has_total)
+        select([func.count(BOUND_ONE).label("total_count")]).select_from(core_model_ref.alias()).where(has_total)
     ).alias(block_name + "_total")
 
     node_id_sql = to_node_id_sql(sqla_model, core_model_ref)
     cursor_sql = to_cursor_sql(sqla_model, core_model_ref)
+
+
 
     # Select the right stuff
     p1_block = (
@@ -319,8 +327,11 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         .select_from(core_model_ref)
         .where(pagination_clause)
         .order_by(*(reverse_order_clause if is_page_before else order_clause), *order_clause)
-        .limit(limit + 1)
+        .limit(cast(limit + 1, Integer()))
     ).alias(block_name + "_p1")
+
+
+    #return p1_block
 
     # Drop maybe extra row
     p2_block = (select([
@@ -336,24 +347,24 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         select(
             [
                 func.jsonb_build_object(
-                    literal(totalCount_alias),
+                    literal_string(totalCount_alias),
                     func.min(total_block.c.total_count) if has_total else None,
-                    literal(pageInfo_alias),
+                    literal_string(pageInfo_alias),
                     func.jsonb_build_object(
-                        literal(hasNextPage_alias), func.array_agg(p3_block.c._has_next_page)[1],
-                        literal(hasPreviousPage_alias), (True if is_page_after else False),
-                        literal(startCursor_alias),
+                        literal_string(hasNextPage_alias), func.array_agg(p3_block.c._has_next_page)[1],
+                        literal_string(hasPreviousPage_alias), is_page_after,
+                        literal_string(startCursor_alias),
                         func.array_agg(p3_block.c._nodeId)[1],
-                        literal(endCursor_alias),
+                        literal_string(endCursor_alias),
                         func.array_agg(p3_block.c._nodeId)[func.array_upper(func.array_agg(p3_block.c._nodeId), 1)],
                     ),
-                    literal(edges_alias),
+                    literal_string(edges_alias),
                     func.coalesce(
                         func.jsonb_agg(
                             func.jsonb_build_object(
-                                literal(cursor_alias),
+                                literal_string(cursor_alias),
                                 p3_block.c._nodeId,
-                                literal(node_alias),
+                                literal_string(node_alias),
                                 func.cast(func.row_to_json(literal_column(p3_block.name)), JSONB()),
                             )
                         ),
