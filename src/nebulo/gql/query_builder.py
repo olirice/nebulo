@@ -33,8 +33,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import RelationshipProperty
-from sqlalchemy.sql.elements import Label
-from sqlalchemy.sql.selectable import Alias
+from sqlalchemy.sql import Alias, Select
+from sqlalchemy.sql.elements import BinaryExpression, Label
 
 
 def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> Alias:
@@ -74,13 +74,13 @@ def field_name_to_relationship(sqla_model: TableProtocol, gql_field_name: str) -
     raise Exception(f"No relationship corresponding to field {gql_field_name}")
 
 
-def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[str]:
+def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[BinaryExpression]:
     parent_field = field.parent
     assert parent_field is not None
     relation_from_parent = field_name_to_relationship(parent_field.return_type.sqla_model, field.name)
     local_table_name = get_table_name(field.return_type.sqla_model)
 
-    join_clause = []
+    join_clause: typing.List[BinaryExpression] = []
     for parent_col, local_col in relation_from_parent.local_remote_pairs:
         parent_col_name = parent_col.name
         local_col_name = local_col.name
@@ -88,14 +88,14 @@ def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[str]:
     return join_clause
 
 
-def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[str]:
+def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[BinaryExpression]:
     local_table = field.return_type.sqla_model
     local_table_name = get_table_name(field.return_type.sqla_model)
     pkey_cols = get_primary_key_columns(local_table)
 
     res = []
     for col, val in zip(pkey_cols, pkey_eq):
-        res.append(f"{local_table_name}.{col.name} = {sanitize(val)}")
+        res.append(text(f"{local_table_name}.{col.name}") == text(f"{sanitize(val)}"))
     return res
 
 
@@ -108,7 +108,7 @@ def to_limit(field: ASTNode) -> int:
     return limit
 
 
-def to_conditions_clause(field: ASTNode) -> typing.List[str]:
+def to_conditions_clause(field: ASTNode) -> typing.List[BinaryExpression]:
     return_sqla_model = field.return_type.sqla_model
     local_table_name = get_table_name(return_sqla_model)
     args = field.args
@@ -129,14 +129,14 @@ def build_relationship(field: ASTNode, block_name: str) -> Label:
     return sql_builder(field, block_name).as_scalar().label(field.alias)
 
 
-def sql_finalize(return_name: str, expr: str) -> str:
+def sql_finalize(return_name: str, expr: Alias) -> Select:
     final = select(
         [func.jsonb_build_object(cast(literal(return_name), Text), expr.c.ret_json).label("json")]
     ).select_from(expr)
     return final
 
 
-def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> str:
+def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> Alias:
     return_type = field.return_type
     sqla_model = return_type.sqla_model
     core_model = sqla_model.__table__
@@ -282,9 +282,6 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         if before_cursor is not None and first is not None:
             raise ValueError('"before" is not compatible with "first". Use "last"')
 
-        if after_cursor is None and before_cursor is None:
-            return True
-
         if cursor_table_name != local_table_name:
             raise ValueError("Invalid cursor for entity type")
 
@@ -326,8 +323,10 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     ).alias(block_name + "_p1")
 
     # Drop maybe extra row
-
-    p2_block = (select(p1_block.c).select_from(p1_block).limit(limit)).alias(block_name + "_p2")
+    p2_block = (select([
+        *p1_block.c,
+        (func.max(p1_block.c._row_num).over() > limit).label("_has_next_page")
+    ]).select_from(p1_block).limit(limit)).alias(block_name + "_p2")
 
     ordering = desc(literal_column("_row_num")) if is_page_before else asc(literal_column("_row_num"))
 
@@ -341,8 +340,8 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                     func.min(total_block.c.total_count) if has_total else None,
                     literal(pageInfo_alias),
                     func.jsonb_build_object(
-                        # literal(hasNextPage_alias), text(f"(select count(*) from {block_name}) < ")(select has_next from has_next_page),
-                        # literal(hasPreviousPage_alias), {'true' if is_page_after else 'false'},
+                        literal(hasNextPage_alias), func.array_agg(p3_block.c._has_next_page)[1],
+                        literal(hasPreviousPage_alias), (True if is_page_after else False),
                         literal(startCursor_alias),
                         func.array_agg(p3_block.c._nodeId)[1],
                         literal(endCursor_alias),
