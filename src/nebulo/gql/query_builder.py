@@ -55,11 +55,6 @@ def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> Alia
     raise Exception("sql builder could not match return type")
 
 
-def sanitize(text: str) -> str:
-    escape_key = secure_random_string()
-    return f"${escape_key}${text}${escape_key}$"
-
-
 @lru_cache()
 def field_name_to_column(sqla_model: TableProtocol, gql_field_name: str) -> Column:
     for column in get_columns(sqla_model):
@@ -123,7 +118,7 @@ def to_conditions_clause(field: ASTNode) -> typing.List[BinaryExpression]:
     res = []
     for field_name, val in conditions.items():
         column_name = field_name_to_column(return_sqla_model, field_name).name
-        res.append(text(f"{local_table_name}.{column_name} = {sanitize(val)}"))
+        res.append(literal_column(f"{local_table_name}.{column_name}") == val)
     return res
 
 
