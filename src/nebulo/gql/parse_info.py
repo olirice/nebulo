@@ -2,7 +2,7 @@ import typing
 
 from graphql.execution.execute import get_field_def
 from graphql.execution.values import get_argument_values
-from graphql.language import FieldNode
+from graphql.language import FieldNode, FragmentDefinitionNode, FragmentSpreadNode, InlineFragmentNode
 from nebulo.gql.alias import Field, List, NonNull, ObjectType, ResolveInfo, Schema
 
 __all__ = ["parse_resolve_info"]
@@ -29,6 +29,7 @@ class ASTNode:
         parent: typing.Optional["ASTNode"],
         variable_values,
         parent_type,
+        fragments: typing.Dict[str, FragmentDefinitionNode],
     ):
         self.name = field_node.name.value
 
@@ -47,23 +48,33 @@ class ASTNode:
         self.args: typing.Dict[str, typing.Any] = _args
         self.path: typing.List[str] = parent.path + [self.name] if parent is not None else ["root"]
 
-        sub_fields = []
-        if selection_set:
+        def from_selection_set(selection_set):
             for selection_ast in selection_set.selections:
-                selection_name = selection_ast.name.value
 
-                selection_field = field_type.fields[selection_name]
-                sub_fields.append(
-                    ASTNode(
+                # Handle fragments
+                if isinstance(selection_ast, FragmentSpreadNode):
+                    fragment_name = selection_ast.name.value
+                    fragment = fragments[fragment_name]
+                    fragment_selection_set = fragment.selection_set
+                    yield from from_selection_set(fragment_selection_set)
+
+                elif isinstance(selection_ast, InlineFragmentNode):
+                    yield from from_selection_set(selection_ast.selection_set)
+
+                else:
+                    selection_name = selection_ast.name.value
+                    selection_field = field_type.fields[selection_name]
+                    yield ASTNode(
                         field_node=selection_ast,
                         field_def=selection_field,
                         schema=schema,
                         parent=self,
                         variable_values=variable_values,
                         parent_type=field_type,
+                        fragments=fragments,
                     )
-                )
 
+        sub_fields = list(from_selection_set(selection_set)) if selection_set else []
         self.fields = sub_fields
 
     def get_subfield_alias(self, path: typing.List[str]):
@@ -107,6 +118,8 @@ def parse_resolve_info(info: ResolveInfo) -> ASTNode:
     field_node = info.field_nodes[0]
     schema = info.schema
 
+    fragments: typing.Dict[str, FragmentDefinitionNode] = info.fragments
+
     # Current field from parent
     parent_type = info.parent_type
     parent_lookup_name = field_node.name.value
@@ -118,5 +131,6 @@ def parse_resolve_info(info: ResolveInfo) -> ASTNode:
         parent=None,
         variable_values=info.variable_values,
         parent_type=info.parent_type,
+        fragments=fragments,
     )
     return parsed_info

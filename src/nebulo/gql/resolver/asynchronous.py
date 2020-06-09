@@ -75,10 +75,9 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             # print(base_query)
             query = sql_finalize(tree.name, base_query)
 
-            from sqlalchemy import create_engine
-
-            dial_eng = create_engine("postgresql://")
-            query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
+            # from sqlalchemy import create_engine
+            # dial_eng = create_engine("postgresql://")
+            # query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
             # print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
