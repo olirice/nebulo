@@ -6,8 +6,8 @@ PageInfo = ObjectType(
     fields={
         "hasNextPage": Field(NonNull(Boolean)),
         "hasPreviousPage": Field(NonNull(Boolean)),
-        "startCursor": Field(NonNull(Cursor)),
-        "endCursor": Field(NonNull(Cursor)),
+        "startCursor": Field(Cursor),
+        "endCursor": Field(Cursor),
     },
     description="",
 )

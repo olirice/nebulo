@@ -1,8 +1,6 @@
 # pylint: disable=invalid-name
 from __future__ import annotations
 
-import secrets
-import string
 import typing
 from functools import lru_cache
 
@@ -13,6 +11,7 @@ from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.relay.cursor import to_cursor_sql
 from nebulo.gql.relay.node_interface import NodeID, to_node_id_sql
 from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
+from nebulo.sql.sanitize import secure_random_string
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import (
     BigInteger,
@@ -81,7 +80,10 @@ def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[Binary
     for parent_col, local_col in relation_from_parent.local_remote_pairs:
         parent_col_name = parent_col.name
         local_col_name = local_col.name
-        join_clause.append(text(f"{parent_block_name}.{parent_col_name} = {local_table_name}.{local_col_name}"))
+        join_clause.append(
+            literal_column(f"{parent_block_name}.{parent_col_name}")
+            == literal_column(f"{local_table_name}.{local_col_name}")
+        )
     return join_clause
 
 
@@ -92,7 +94,7 @@ def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[Bin
 
     res = []
     for col, val in zip(pkey_cols, pkey_eq):
-        res.append(text(f"{local_table_name}.{col.name}") == val)
+        res.append(literal_column(f"{local_table_name}.{col.name}") == val)
     return res
 
 
@@ -199,6 +201,7 @@ def get_edge_node_fields(field):
 
 
 ONE = literal_column("1")
+ZERO = literal_column("0")
 TRUE = literal_column("true")
 FALSE = literal_column("false")
 
@@ -344,11 +347,11 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
             [
                 func.jsonb_build_object(
                     literal_string(totalCount_alias),
-                    func.min(total_block.c.total_count) if has_total else None,
+                    func.coalesce(func.min(total_block.c.total_count), ZERO) if has_total else None,
                     literal_string(pageInfo_alias),
                     func.jsonb_build_object(
                         literal_string(hasNextPage_alias),
-                        func.array_agg(p3_block.c._has_next_page)[ONE],
+                        func.coalesce(func.array_agg(p3_block.c._has_next_page)[ONE], FALSE),
                         literal_string(hasPreviousPage_alias),
                         TRUE if is_page_after else FALSE,
                         literal_string(startCursor_alias),
@@ -376,8 +379,3 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     ).alias()
 
     return final
-
-
-def secure_random_string(length: int = 8) -> str:
-    letters = string.ascii_lowercase
-    return "".join([secrets.choice(letters) for _ in range(length)])

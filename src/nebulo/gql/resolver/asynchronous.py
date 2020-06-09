@@ -72,13 +72,19 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
+            # print(base_query)
             query = sql_finalize(tree.name, base_query)
-            # dial_eng = create_engine("postgresql://")
-            # query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
+
+            from sqlalchemy import create_engine
+
+            dial_eng = create_engine("postgresql://")
+            query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
+            # print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]
             result = json.loads(str_result)
+            # print(result)
         elif isinstance(tree.return_type, ScalarType):
             base_query = sql_builder(tree)
             query = base_query
