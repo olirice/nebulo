@@ -5,13 +5,10 @@ import typing
 
 from nebulo.gql.alias import Field, InterfaceType, NonNull, ScalarType
 from nebulo.sql.inspect import get_primary_key_columns, get_table_name
+from nebulo.sql.statement_helpers import literal_string
 from nebulo.text_utils.base64 import from_base64, to_base64
-from sqlalchemy import Text, func, literal
-from sqlalchemy.sql.expression import cast
+from sqlalchemy import func
 from sqlalchemy.sql.selectable import Alias
-
-if typing.TYPE_CHECKING:
-    pass
 
 
 class NodeIdStructure(typing.NamedTuple):
@@ -50,12 +47,12 @@ def to_node_id_sql(sqla_model, query_elem: Alias):
     vals = []
     for col in pkey_cols:
         col_name = str(col.name)
-        vals.extend([cast(literal(col_name), Text), query_elem.c[col_name]])
+        vals.extend([literal_string(col_name), query_elem.c[col_name]])
 
     return func.jsonb_build_object(
-        cast(literal("table_name"), Text),
-        cast(literal(table_name), Text),
-        cast(literal("values"), Text),
+        literal_string("table_name"),
+        literal_string(table_name),
+        literal_string("values"),
         func.jsonb_build_object(*vals),
     )
 

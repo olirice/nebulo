@@ -41,7 +41,7 @@ def connection_str():
 @pytest.fixture(scope="session")
 def engine(connection_str: str):
     """ SQLAlchemy engine """
-    _engine = create_engine(connection_str)
+    _engine = create_engine(connection_str, echo=True)
     # Make sure the schema is clean
     _engine.execute(SQL_DOWN)
     yield _engine

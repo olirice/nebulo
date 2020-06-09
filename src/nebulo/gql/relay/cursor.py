@@ -6,11 +6,10 @@ import typing
 
 from nebulo.gql.alias import ScalarType
 from nebulo.sql.inspect import get_primary_key_columns, get_table_name
+from nebulo.sql.statement_helpers import literal_string
 from nebulo.text_utils.base64 import from_base64, to_base64
-from sqlalchemy import func, literal
+from sqlalchemy import func
 from sqlalchemy.sql.selectable import Alias
-
-__all__ = ["Cursor"]
 
 
 class CursorStructure(typing.NamedTuple):
@@ -49,10 +48,13 @@ def to_cursor_sql(sqla_model, query_elem: Alias):
     vals = []
     for col in pkey_cols:
         col_name = str(col.name)
-        vals.extend([col_name, query_elem.c[col_name]])
+        vals.extend([literal_string(col_name), query_elem.c[col_name]])
 
     return func.jsonb_build_object(
-        literal("table_name"), literal(table_name), literal("values"), func.jsonb_build_object(*vals)
+        literal_string("table_name"),
+        literal_string(table_name),
+        literal_string("values"),
+        func.jsonb_build_object(*vals),
     )
 
 

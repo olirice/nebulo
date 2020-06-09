@@ -15,15 +15,15 @@ from nebulo.gql.relay.node_interface import NodeID, to_node_id_sql
 from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import (
+    BigInteger,
     Column,
+    Integer,
     Text,
     and_,
     asc,
     cast,
     column,
     create_engine,
-    BigInteger,
-    Integer,
     desc,
     func,
     literal,
@@ -97,7 +97,7 @@ def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[Bin
 
     res = []
     for col, val in zip(pkey_cols, pkey_eq):
-        res.append(text(f"{local_table_name}.{col.name}") == text(f"{sanitize(val)}"))
+        res.append(text(f"{local_table_name}.{col.name}") == val)
     return res
 
 
@@ -130,13 +130,15 @@ def to_conditions_clause(field: ASTNode) -> typing.List[BinaryExpression]:
 def build_relationship(field: ASTNode, block_name: str) -> Label:
     return sql_builder(field, block_name).as_scalar().label(field.alias)
 
+
 def literal_string(text):
     return literal_column(f"'{text}'")
 
+
 def sql_finalize(return_name: str, expr: Alias) -> Select:
-    final = select(
-        [func.jsonb_build_object(literal_string(return_name), expr.c.ret_json).label("json")]
-    ).select_from(expr)
+    final = select([func.jsonb_build_object(literal_string(return_name), expr.c.ret_json).label("json")]).select_from(
+        expr
+    )
     return final
 
 
@@ -201,7 +203,10 @@ def get_edge_node_fields(field):
     return []
 
 
-BOUND_ONE = literal_column('1')
+ONE = literal_column("1")
+TRUE = literal_column("true")
+FALSE = literal_column("false")
+
 
 def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias:
     return_type = field.return_type
@@ -303,13 +308,11 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     reverse_order_clause = [desc(core_model_ref.c[col.name]) for col in get_primary_key_columns(sqla_model)]
 
     total_block = (
-        select([func.count(BOUND_ONE).label("total_count")]).select_from(core_model_ref.alias()).where(has_total)
+        select([func.count(ONE).label("total_count")]).select_from(core_model_ref.alias()).where(has_total)
     ).alias(block_name + "_total")
 
     node_id_sql = to_node_id_sql(sqla_model, core_model_ref)
     cursor_sql = to_cursor_sql(sqla_model, core_model_ref)
-
-
 
     # Select the right stuff
     p1_block = (
@@ -330,14 +333,12 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         .limit(cast(limit + 1, Integer()))
     ).alias(block_name + "_p1")
 
-
-    #return p1_block
-
     # Drop maybe extra row
-    p2_block = (select([
-        *p1_block.c,
-        (func.max(p1_block.c._row_num).over() > limit).label("_has_next_page")
-    ]).select_from(p1_block).limit(limit)).alias(block_name + "_p2")
+    p2_block = (
+        select([*p1_block.c, (func.max(p1_block.c._row_num).over() > limit).label("_has_next_page")])
+        .select_from(p1_block)
+        .limit(limit)
+    ).alias(block_name + "_p2")
 
     ordering = desc(literal_column("_row_num")) if is_page_before else asc(literal_column("_row_num"))
 
@@ -351,12 +352,14 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
                     func.min(total_block.c.total_count) if has_total else None,
                     literal_string(pageInfo_alias),
                     func.jsonb_build_object(
-                        literal_string(hasNextPage_alias), func.array_agg(p3_block.c._has_next_page)[1],
-                        literal_string(hasPreviousPage_alias), is_page_after,
+                        literal_string(hasNextPage_alias),
+                        func.array_agg(p3_block.c._has_next_page)[ONE],
+                        literal_string(hasPreviousPage_alias),
+                        TRUE if is_page_after else FALSE,
                         literal_string(startCursor_alias),
-                        func.array_agg(p3_block.c._nodeId)[1],
+                        func.array_agg(p3_block.c._nodeId)[ONE],
                         literal_string(endCursor_alias),
-                        func.array_agg(p3_block.c._nodeId)[func.array_upper(func.array_agg(p3_block.c._nodeId), 1)],
+                        func.array_agg(p3_block.c._nodeId)[func.array_upper(func.array_agg(p3_block.c._nodeId), ONE)],
                     ),
                     literal_string(edges_alias),
                     func.coalesce(

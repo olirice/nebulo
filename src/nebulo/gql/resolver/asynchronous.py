@@ -19,9 +19,6 @@ from nebulo.gql.mutation_builder import build_insert, build_update
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.query_builder import sql_builder, sql_finalize
 from nebulo.gql.relay.node_interface import NodeIdStructure
-from sqlalchemy import create_engine
-
-dial_eng = create_engine("postgresql://")
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -76,7 +73,8 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         elif isinstance(tree.return_type, ObjectType):
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
-            query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
+            # dial_eng = create_engine("postgresql://")
+            # query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]
@@ -92,5 +90,6 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             raise Exception("sql builder could not handle return type")
 
     # Stash result on context to enable dumb resolvers to not fail
+    # print(json.dumps(result))
     context["result"] = result
     return result

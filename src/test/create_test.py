@@ -1,4 +1,5 @@
 import json
+
 from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
@@ -38,13 +39,13 @@ mutation {
     """
 
     with client:
-        resp = client.post('/', json={'query': query})
+        resp = client.post("/", json={"query": query})
     assert resp.status_code == 200
     payload = json.loads(resp.text)
-    assert isinstance(payload['data']['createAccount']["account"], dict)
-    assert payload['data']['createAccount']["account"]["dd"] == 31
-    assert payload['data']['createAccount']["account"]["name"] == "Buddy"
-    assert len(payload['errors']) == 0
+    assert isinstance(payload["data"]["createAccount"]["account"], dict)
+    assert payload["data"]["createAccount"]["account"]["dd"] == 31
+    assert payload["data"]["createAccount"]["account"]["name"] == "Buddy"
+    assert len(payload["errors"]) == 0
 
 
 def test_update_mutation(client_builder):
@@ -72,10 +73,10 @@ mutation {{
     """
 
     with client:
-        resp = client.post('/', json={'query': query})
+        resp = client.post("/", json={"query": query})
     assert resp.status_code == 200
     payload = json.loads(resp.text)
-    assert isinstance(payload['data']['updateAccount']["account"], dict)
-    assert payload['data']['updateAccount']["account"]["dd"] == account_id
-    assert payload['data']['updateAccount']["account"]["name"] == "Buddy"
-    assert len(payload['errors']) == 0
+    assert isinstance(payload["data"]["updateAccount"]["account"], dict)
+    assert payload["data"]["updateAccount"]["account"]["dd"] == account_id
+    assert payload["data"]["updateAccount"]["account"]["name"] == "Buddy"
+    assert len(payload["errors"]) == 0
