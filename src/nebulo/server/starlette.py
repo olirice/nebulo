@@ -10,7 +10,8 @@ from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 
 
 def create_app(
@@ -35,7 +36,11 @@ def create_app(
     # Build Starlette app
     graphql_endpoint = get_graphql_endpoint(gql_schema, database, jwt_secret)
 
-    routes = [Route("/", graphql_endpoint, methods=["POST"]), Route("/graphiql", graphiql_endpoint, methods=["GET"])]
+    routes = [
+        Route("/", graphql_endpoint, methods=["POST"]),
+        Route("/graphiql", graphiql_endpoint, methods=["GET"]),
+        Mount("/static", StaticFiles(directory="static"), name="static"),
+    ]
 
     middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
 
