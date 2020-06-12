@@ -15,7 +15,7 @@ from nebulo.gql.alias import (
     ScalarType,
     String,
 )
-from nebulo.gql.resolver.default import default_resolver
+from nebulo.gql.resolve.resolvers.default import default_resolver
 from nebulo.sql.composite import CompositeType as SQLACompositeType
 from nebulo.text_utils import snake_to_camel
 from sqlalchemy import Column, types

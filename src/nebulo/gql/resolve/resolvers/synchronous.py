@@ -4,7 +4,7 @@ import typing
 
 from nebulo.gql.alias import ObjectType, ResolveInfo, ScalarType
 from nebulo.gql.parse_info import parse_resolve_info
-from nebulo.gql.query_builder import sql_builder, sql_finalize
+from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
 
 
 def sync_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:

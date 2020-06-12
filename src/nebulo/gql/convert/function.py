@@ -5,8 +5,8 @@ from functools import lru_cache
 
 from nebulo.gql.alias import Argument, Field, NonNull
 from nebulo.gql.convert.column import convert_type
-from nebulo.gql.resolver.asynchronous import async_resolver
-from nebulo.gql.resolver.synchronous import sync_resolver
+from nebulo.gql.resolve.resolvers.asynchronous import async_resolver
+from nebulo.gql.resolve.resolvers.synchronous import sync_resolver
 from nebulo.sql.reflection.function import SQLFunction
 
 __all__ = ["function_factory"]

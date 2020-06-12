@@ -15,10 +15,10 @@ from nebulo.gql.alias import (
     TableType,
     UpdatePayloadType,
 )
-from nebulo.gql.mutation_builder import build_insert, build_update
 from nebulo.gql.parse_info import parse_resolve_info
-from nebulo.gql.query_builder import sql_builder, sql_finalize
 from nebulo.gql.relay.node_interface import NodeIdStructure
+from nebulo.gql.resolve.transpile.mutation_builder import build_insert, build_update
+from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -37,7 +37,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         # At time of writing, only required for scalar functions
 
         # TODO(OR): Can't get databases to execute these as prepared statements
-        coroutines = []
+        coroutines: typing.List[typing.Coroutine] = []
         for claim_key, claim_value in jwt_claims.items():
             claim_sql = f"set local jwt.claims.{claim_key} to {claim_value};"
             # claim_coroutine = database.execute(claim_sql)
@@ -81,13 +81,12 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             # print(query)
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
-            str_result: str = coro_result["json"]
+            str_result: str = coro_result["json"]  # type: ignore
             result = json.loads(str_result)
             # print(result)
         elif isinstance(tree.return_type, ScalarType):
             base_query = sql_builder(tree)
-            query = base_query
-            query_coro = database.fetch_one(query=query)
+            query_coro = database.fetch_one(query=base_query)
             scalar_result = await query_coro
             result = next(scalar_result._row.values())  # pylint: disable=protected-access
 

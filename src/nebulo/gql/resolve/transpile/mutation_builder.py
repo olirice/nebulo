@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from nebulo.config import Config
 from nebulo.gql.parse_info import ASTNode
-from nebulo.gql.query_builder import field_name_to_column
 from nebulo.gql.relay.node_interface import to_node_id_sql
+from nebulo.gql.resolve.transpile.query_builder import field_name_to_column
 from nebulo.sql.inspect import get_primary_key_columns
 
 

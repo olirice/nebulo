@@ -1,4 +1,5 @@
 # pylint: disable=invalid-name
+# mypy: ignore-errors
 from __future__ import annotations
 
 import typing

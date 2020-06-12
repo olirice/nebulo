@@ -6,8 +6,8 @@ from functools import lru_cache
 import jwt
 from nebulo.gql.alias import Argument, Field, NonNull, ScalarType
 from nebulo.gql.convert.column import convert_type
-from nebulo.gql.resolver.asynchronous import async_resolver
-from nebulo.gql.resolver.synchronous import sync_resolver
+from nebulo.gql.resolve.resolvers.asynchronous import async_resolver
+from nebulo.gql.resolve.resolvers.synchronous import sync_resolver
 from nebulo.sql.composite import CompositeType as SQLACompositeType
 from nebulo.sql.reflection.function import SQLFunction
 

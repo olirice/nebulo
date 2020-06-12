@@ -7,7 +7,7 @@ from nebulo.gql.alias import Argument, ConnectionType, EdgeType, Field, InputObj
 from nebulo.gql.convert.column import convert_column_to_input
 from nebulo.gql.relay.cursor import Cursor
 from nebulo.gql.relay.page_info import PageInfo
-from nebulo.gql.resolver.default import default_resolver
+from nebulo.gql.resolve.resolvers.default import default_resolver
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
 

@@ -9,8 +9,8 @@ from nebulo.gql.convert.function import function_factory
 from nebulo.gql.convert.jwt_function import is_jwt_function, jwt_function_factory
 from nebulo.gql.convert.table import table_field_factory
 from nebulo.gql.convert.update import update_entrypoint_factory
-from nebulo.gql.resolver.asynchronous import async_resolver
-from nebulo.gql.resolver.synchronous import sync_resolver
+from nebulo.gql.resolve.resolvers.asynchronous import async_resolver
+from nebulo.gql.resolve.resolvers.synchronous import sync_resolver
 from nebulo.sql.inspect import get_table_name
 from nebulo.sql.reflection.function import SQLFunction
 from nebulo.text_utils import snake_to_camel, to_plural
