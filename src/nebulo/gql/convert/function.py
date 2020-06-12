@@ -14,9 +14,10 @@ __all__ = ["function_factory"]
 
 @lru_cache()
 def function_factory(sql_function: SQLFunction, resolve_async: bool = False) -> Field:
+
     gql_args = {
-        arg_name: Argument(NonNull(convert_type(arg_sqla_type)))
-        for arg_name, arg_sqla_type in zip(sql_function.arg_names, sql_function.arg_sqla_types)
+        (arg_name if arg_name else f"param{ix}"): Argument(NonNull(convert_type(arg_sqla_type)))
+        for ix, (arg_name, arg_sqla_type) in enumerate(zip(sql_function.arg_names, sql_function.arg_sqla_types))
     }
 
     return_type = convert_type(sql_function.return_sqla_type)

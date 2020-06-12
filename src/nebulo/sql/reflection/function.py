@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument,invalid-name,line-too-long,unsubscriptable-object
 from __future__ import annotations
 
+from itertools import zip_longest
 from typing import Any, List, Optional, Type
 
 from nebulo.exceptions import SQLParseError
@@ -40,7 +41,7 @@ class SQLFunction:
 
     def to_executable(self, kwargs):
 
-        if len(kwargs) != len(self.arg_names):
+        if len(kwargs) != len(self.arg_pg_types):
             raise SQLParseError(f"Invalid number of parameters for SQLFunction {self.schema}.{self.name}")
 
         call_sig = ", ".join(
@@ -109,6 +110,7 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
     ) in rows:
         arg_names = arg_names or []
         pg_arg_types = pg_arg_types or []
+        pg_arg_names = [arg_name for arg_name, _ in zip_longest(arg_names, pg_arg_types, fillvalue=None)]
         arg_type_schemas = arg_type_schemas or []
         sqla_arg_types = [
             type_map.get(pg_type_name, sqltypes.NULLTYPE)
@@ -119,7 +121,7 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
         function = SQLFunction(
             schema=func_schema,
             name=func_name,
-            arg_names=arg_names,
+            arg_names=pg_arg_names,
             arg_pg_types=pg_arg_types,
             arg_sqla_types=sqla_arg_types,
             return_sqla_type=sqla_return_type,

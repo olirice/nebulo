@@ -35,17 +35,8 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     async with database.transaction():
         # GraphQL automatically resolves the top level object name
         # At time of writing, only required for scalar functions
-
-        # TODO(OR): Can't get databases to execute these as prepared statements
-        coroutines: typing.List[typing.Coroutine] = []
         for claim_key, claim_value in jwt_claims.items():
-            claim_sql = f"set local jwt.claims.{claim_key} to {claim_value};"
-            # claim_coroutine = database.execute(claim_sql)
-            # coroutines.append(claim_coroutine)
-
-        if coroutines:
-            # await asyncio.wait(coroutines)
-            pass
+            await database.execute(f"set local jwt.claims.{claim_key} to {claim_value};")
 
         if isinstance(tree.return_type, MutationPayloadType):
             stmt = build_insert(tree) if isinstance(tree.return_type, CreatePayloadType) else build_update(tree)
