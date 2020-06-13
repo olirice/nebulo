@@ -5,7 +5,7 @@ import typing
 from nebulo.gql.alias import ObjectType, Schema
 from nebulo.gql.convert.connection import connection_field_factory
 from nebulo.gql.convert.create import create_entrypoint_factory
-from nebulo.gql.convert.function import function_factory
+from nebulo.gql.convert.function import immutable_function_entrypoint_factory, mutable_function_entrypoint_factory
 from nebulo.gql.convert.jwt_function import is_jwt_function, jwt_function_factory
 from nebulo.gql.convert.table import table_field_factory
 from nebulo.gql.convert.update import update_entrypoint_factory
@@ -32,6 +32,7 @@ def sqla_models_to_graphql_schema(
     query_fields = {}
     mutation_fields = {}
 
+    # Tables
     for sqla_model in sqla_models:
         # e.g. account(nodeId: NodeID)
         single_name = snake_to_camel(get_table_name(sqla_model), upper=False)
@@ -46,15 +47,23 @@ def sqla_models_to_graphql_schema(
         # e.g. updateAccount(input: UpdateAccountInput)
         mutation_fields.update(update_entrypoint_factory(sqla_model, resolver=resolver))
 
-    # Mutations
+    # Functions
     for sql_function in sql_functions:
         field_key = snake_to_camel(sql_function.name, upper=False)
         if is_jwt_function(sql_function, jwt_identifier):
             field = jwt_function_factory(sql_function=sql_function, jwt_secret=jwt_secret, resolve_async=resolve_async)
+            mutation_fields[field_key] = field
         else:
-            field = function_factory(sql_function=sql_function, resolve_async=resolve_async)
 
-        mutation_fields[field_key] = field
+            # Immutable functions are queries
+            if sql_function.is_immutable:
+                query_fields.update(immutable_function_entrypoint_factory(sql_function=sql_function, resolver=resolver))
+
+            # Mutable functions are mutations
+            else:
+                mutation_fields.update(
+                    mutable_function_entrypoint_factory(sql_function=sql_function, resolver=resolver)
+                )
 
     schema_kwargs = {
         "query": ObjectType(name="Query", fields=query_fields),

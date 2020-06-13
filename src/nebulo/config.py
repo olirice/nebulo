@@ -1,5 +1,6 @@
 from nebulo.env import EnvManager
 from nebulo.sql.inspect import get_table_name
+from nebulo.sql.reflection.function import SQLFunction
 from nebulo.sql.table_base import TableBase
 from nebulo.text_utils import snake_to_camel, to_plural
 from sqlalchemy.orm import RelationshipProperty
@@ -9,6 +10,16 @@ ENV = EnvManager.get_environ()
 
 
 class Config:
+    @staticmethod
+    def function_name_mapper(sql_function: SQLFunction) -> str:
+        """to_upper -> toUpper"""
+        return snake_to_camel(sql_function.name, upper=False)
+
+    @staticmethod
+    def function_type_name_mapper(sql_function: SQLFunction) -> str:
+        """to_upper -> ToUpper"""
+        return snake_to_camel(sql_function.name, upper=True)
+
     @staticmethod
     def table_type_name_mapper(sqla_table: TableBase) -> str:
         table_name = get_table_name(sqla_table)

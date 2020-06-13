@@ -123,6 +123,10 @@ class UpdatePayloadType(MutationPayloadType):
     pass
 
 
+class FunctionPayloadType(MutationPayloadType):
+    pass
+
+
 class InputObjectType(GraphQLInputObjectType, HasSQLAModel):
     def __init__(
         self,
@@ -157,3 +161,27 @@ class TableInputType(InputObjectType):
 
 class UpdateInputType(InputObjectType):
     pass
+
+
+class FunctionInputType(GraphQLInputObjectType):
+    def __init__(
+        self,
+        name: str,
+        fields: Thunk[GraphQLInputFieldMap],
+        description: typing.Optional[str] = None,
+        out_type: typing.Optional[GraphQLInputFieldOutType] = None,
+        extensions: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        ast_node: typing.Optional[InputObjectTypeDefinitionNode] = None,
+        extension_ast_nodes: typing.Optional[typing.Collection[InputObjectTypeExtensionNode]] = None,
+        sql_function=None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            fields=fields,
+            description=description,
+            out_type=out_type,
+            extensions=extensions,
+            ast_node=ast_node,
+            extension_ast_nodes=extension_ast_nodes,
+        )
+        self.sql_function = sql_function

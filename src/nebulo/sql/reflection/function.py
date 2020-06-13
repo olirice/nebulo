@@ -27,6 +27,7 @@ class SQLFunction:
         return_sqla_type: Type[TypeEngine[Any]],
         return_pg_type_schema: str,
         return_pg_type: str,
+        is_immutable: bool,
     ):
         if len(arg_names) != len(arg_sqla_types) != len(arg_pg_types):
             raise SQLParseError("SQLFunction requires same number of arg_names and sqla_types")
@@ -38,6 +39,7 @@ class SQLFunction:
         self.return_sqla_type = return_sqla_type
         self.return_pg_type_schema = return_pg_type_schema
         self.return_pg_type = return_pg_type
+        self.is_immutable = is_immutable
 
     def to_executable(self, kwargs):
 
@@ -82,7 +84,8 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
         (select array_agg((select typnamespace::regnamespace::text from pg_type where oid=type_oid)) from unnest(proargtypes) x(type_oid)) arg_types_schema,
         (select array_agg(type_oid::regtype::text) from unnest(proargtypes) x(type_oid)) arg_types,
         t.typnamespace::regnamespace::text as return_type_schema,
-        t.typname as return_type
+        t.typname as return_type,
+        p.provolatile = 'i' is_immutable
     from
         pg_proc p
         left join pg_namespace n on p.pronamespace = n.oid
@@ -107,6 +110,7 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
         pg_arg_types,
         pg_return_type_schema,
         pg_return_type_name,
+        is_immutable,
     ) in rows:
         arg_names = arg_names or []
         pg_arg_types = pg_arg_types or []
@@ -127,6 +131,7 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
             return_sqla_type=sqla_return_type,
             return_pg_type_schema=pg_return_type_schema,
             return_pg_type=pg_return_type_name,
+            is_immutable=is_immutable,
         )
         functions.append(function)
 
