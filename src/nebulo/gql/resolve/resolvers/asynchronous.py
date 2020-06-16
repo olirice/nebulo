@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import typing
 
+from flupy import flu
 from nebulo.config import Config
 from nebulo.gql.alias import (
     CompositeType,
     ConnectionType,
     CreatePayloadType,
+    FunctionPayloadType,
     MutationPayloadType,
     ObjectType,
     ResolveInfo,
@@ -17,8 +19,9 @@ from nebulo.gql.alias import (
 )
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.relay.node_interface import NodeIdStructure
-from nebulo.gql.resolve.transpile.mutation_builder import build_insert, build_update
+from nebulo.gql.resolve.transpile.mutation_builder import build_mutation
 from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
+from sqlalchemy import select
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -38,10 +41,24 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         for claim_key, claim_value in jwt_claims.items():
             await database.execute(f"set local jwt.claims.{claim_key} to {claim_value};")
 
-        if isinstance(tree.return_type, MutationPayloadType):
-            stmt = build_insert(tree) if isinstance(tree.return_type, CreatePayloadType) else build_update(tree)
+        if isinstance(tree.return_type, FunctionPayloadType):
+            sql_function = tree.return_type.sql_function
+            function_args = [val for key, val in tree.args["input"].items() if key != "clientMutationId"]
+            func_call = sql_function.to_executable(function_args)
+            stmt = select([func_call.label("result")])
+            stmt_result = await database.fetch_one(query=stmt)
 
-            row = json.loads((await database.fetch_one(query=stmt))["nodeId"])
+            maybe_mutation_id = tree.args["input"].get("clientMutationId")
+            mutation_id_alias = next(
+                iter([x.alias for x in tree.fields if x.name == "clientMutationId"]), "clientMutationId"
+            )
+
+            result = {tree.alias: {**stmt_result, **{mutation_id_alias: maybe_mutation_id}}}
+
+        elif isinstance(tree.return_type, MutationPayloadType):
+            stmt = build_mutation(tree)
+            stmt_result = await database.fetch_one(query=stmt)
+            row = json.loads(stmt_result["nodeId"])
             node_id = NodeIdStructure.from_dict(row)
 
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
@@ -61,30 +78,32 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                 sql_result = json.loads(coro_result)
                 result[tree.alias].update(sql_result)
 
-        elif isinstance(tree.return_type, ObjectType):
+        elif isinstance(tree.return_type, (ObjectType, ScalarType)):
             base_query = sql_builder(tree)
-            # print(base_query)
             query = sql_finalize(tree.name, base_query)
 
             # from sqlalchemy import create_engine
             # dial_eng = create_engine("postgresql://")
             # query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
             # print(query)
+
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]  # type: ignore
-            result = json.loads(str_result)
-            # print(result)
-        elif isinstance(tree.return_type, ScalarType):
-            base_query = sql_builder(tree)
-            query_coro = database.fetch_one(query=base_query)
-            scalar_result = await query_coro
-            result = next(scalar_result._row.values())  # pylint: disable=protected-access
+
+            query_json_result = json.loads(str_result)
+
+            if isinstance(tree.return_type, ScalarType):
+                # If its a scalar, unwrap the top level name
+                result = flu(query_json_result.values()).first(None)
+            else:
+                result = query_json_result
 
         else:
             raise Exception("sql builder could not handle return type")
 
-    # Stash result on context to enable dumb resolvers to not fail
     # print(json.dumps(result))
+
+    # Stash result on context to enable dumb resolvers to not fail
     context["result"] = result
     return result

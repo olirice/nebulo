@@ -44,7 +44,9 @@ def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> Alia
 
     # SQL Function handler
     if hasattr(return_type, "sql_function"):
-        return return_type.sql_function.to_executable(tree.args)
+        # Immutable function
+        sql_func_callable = return_type.sql_function.to_executable(tree.args.values())
+        return select([sql_func_callable.label("ret_json")]).alias()
 
     if isinstance(return_type, TableType):
         return row_block(field=tree, parent_name=parent_name)

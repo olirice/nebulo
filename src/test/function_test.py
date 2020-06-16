@@ -1,4 +1,7 @@
+import json
+
 from nebulo.sql.reflection.function import reflect_functions
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import base as pg_base
 
 CREATE_FUNCTION = """
@@ -34,20 +37,26 @@ def test_call_function(engine, session):
     functions = reflect_functions(engine, schema="public", type_map=pg_base.ischema_names)
     to_upper = [x for x in functions if x.name == "to_upper"][0]
 
-    query = to_upper.to_executable({"some_text": "abc"})
-    result = session.execute(query).fetchone()["to_upper"]
+    query = select([to_upper.to_executable(["abc"]).label("result")])
+    result = session.execute(query).fetchone()["result"]
     assert result == "ABC"
 
 
-def test_integration_function(gql_exec_builder):
-    executor = gql_exec_builder(CREATE_FUNCTION)
+def test_integration_function(client_builder):
+    client = client_builder(CREATE_FUNCTION)
 
-    gql_query = """
+    query = """
     mutation {
-        toUpper(some_text: "abc")
+        toUpper(input: {some_text: "abc", clientMutationId: "some_client_id"}) {
+            result
+            clientMutationId
+        }
     }
     """
 
-    result = executor(gql_query)
-    assert result.errors is None
-    assert result.data["toUpper"] == "ABC"
+    with client:
+        resp = client.post("/", json={"query": query})
+    result = json.loads(resp.text)
+    assert resp.status_code == 200
+    assert result["errors"] == []
+    assert result["data"]["toUpper"]["result"] == "ABC"

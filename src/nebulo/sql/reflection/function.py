@@ -5,7 +5,7 @@ from itertools import zip_longest
 from typing import Any, List, Optional, Type
 
 from nebulo.exceptions import SQLParseError
-from nebulo.sql.sanitize import sanitize
+from sqlalchemy import cast, func
 from sqlalchemy import text as sql_text
 from sqlalchemy.sql import sqltypes
 from sqlalchemy.sql.type_api import TypeEngine
@@ -41,17 +41,19 @@ class SQLFunction:
         self.return_pg_type = return_pg_type
         self.is_immutable = is_immutable
 
-    def to_executable(self, kwargs):
+    def to_executable(self, args: List):
 
-        if len(kwargs) != len(self.arg_pg_types):
+        if len(args) != len(self.arg_pg_types):
             raise SQLParseError(f"Invalid number of parameters for SQLFunction {self.schema}.{self.name}")
 
-        call_sig = ", ".join(
-            [f"{sanitize(arg_value)}::{arg_type}" for arg_value, arg_type in zip(kwargs.values(), self.arg_pg_types)]
-        )
-
-        executable = sql_text(f"select {self.schema}.{self.name}({call_sig})")
-        return executable
+        # SQLAlchemy dynamic representation of the function
+        sqla_func = getattr(getattr(func, self.schema), self.name)
+        # Bind and typecast user parameters
+        call_sig = [cast(arg_value, arg_sqla_type) for arg_value, arg_sqla_type in zip(args, self.arg_sqla_types)]
+        return sqla_func(*call_sig)
+        # Create the select statement
+        # executable = select([sqla_func(*call_sig).label('ret_json')]).alias()
+        # return executable
 
 
 def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:

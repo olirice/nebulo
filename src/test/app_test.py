@@ -21,7 +21,7 @@ INSERT INTO account (id, name) VALUES
 
 
 CREATE FUNCTION to_lower(some_text text) returns text as
-$$ select lower(some_text) $$ language sql;
+$$ select lower(some_text) $$ language sql immutable;
 """
 
 
@@ -71,7 +71,7 @@ def test_app_serves_mutation_function(client_builder):
     client = client_builder(SQL_UP)
 
     query = """
-    mutation {
+    query {
         toLower(some_text: "AbC")
     }
     """

@@ -123,7 +123,7 @@ class UpdatePayloadType(MutationPayloadType):
     pass
 
 
-class FunctionPayloadType(MutationPayloadType):
+class FunctionPayloadType(MutationPayloadType, HasSQLFunction):
     pass
 
 

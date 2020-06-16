@@ -108,10 +108,12 @@ def function_payload_factory(sql_function: SQLFunction) -> FunctionPayloadType:
     attrs = {
         "clientMutationId": Field(String, resolve=default_resolver),
         "result": Field(
-            NonNull(function_return_type),
+            function_return_type,
             description=f"The {result_name} that was created by this mutation.",
             resolve=default_resolver,
         ),
     }
 
-    return FunctionPayloadType(result_name, attrs, description=f"The output of our create {function_name} mutation")
+    payload = FunctionPayloadType(result_name, attrs, description=f"The output of our create {function_name} mutation")
+    payload.sql_function = sql_function
+    return payload

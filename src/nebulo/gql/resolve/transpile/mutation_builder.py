@@ -2,10 +2,25 @@
 from __future__ import annotations
 
 from nebulo.config import Config
+from nebulo.gql.alias import CreatePayloadType, UpdatePayloadType
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.relay.node_interface import to_node_id_sql
 from nebulo.gql.resolve.transpile.query_builder import field_name_to_column
 from nebulo.sql.inspect import get_primary_key_columns
+
+
+def build_mutation(tree: ASTNode):
+    """Dispatch for Mutation Types
+
+    Returns an executable sqlalchemy statment and a result post-processor
+    """
+
+    if isinstance(tree.return_type, CreatePayloadType):
+        return build_insert(tree)
+    elif isinstance(tree.return_type, UpdatePayloadType):
+        return build_update(tree)
+    else:
+        raise Exception("Unknown mutation type")
 
 
 def build_insert(tree: ASTNode):
