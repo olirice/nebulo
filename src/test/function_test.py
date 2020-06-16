@@ -16,7 +16,6 @@ $$ language sql;
 create table trash (
     id serial primary key
 );
-
 """
 
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+import jwt
 from nebulo.config import Config
 from nebulo.gql.alias import (
     Argument,
@@ -16,6 +17,7 @@ from nebulo.gql.alias import (
     InputObjectType,
     NonNull,
     ObjectType,
+    ScalarType,
     String,
     TableInputType,
 )
@@ -59,9 +61,14 @@ def immutable_function_entrypoint_factory(
     return {function_name: return_field}
 
 
+def is_jwt_function(sql_function: SQLFunction, jwt_identifier: typing.Optional[str]):
+    function_return_type_identifier = sql_function.return_pg_type_schema + "." + sql_function.return_pg_type
+    return function_return_type_identifier == jwt_identifier
+
+
 @lru_cache()
 def mutable_function_entrypoint_factory(
-    sql_function: SQLFunction, resolver: typing.Callable
+    sql_function: SQLFunction, resolver: typing.Callable, jwt_secret: typing.Optional[str] = None
 ) -> typing.Dict[str, Field]:
     """authenticate"""
     # TODO(OR): need seperate mapper
@@ -71,7 +78,12 @@ def mutable_function_entrypoint_factory(
         raise Exception(f"SQLFunction {sql_function.name} is immutable, use immutable_function_entrypoint")
 
     args = {"input": NonNull(function_input_type_factory(sql_function))}
-    payload = function_payload_factory(sql_function)
+
+    if jwt_secret is not None:
+        payload = jwt_function_payload_factory(sql_function, jwt_secret)
+    else:
+        payload = function_payload_factory(sql_function)
+
     return {
         function_name: Field(payload, args=args, resolve=resolver, description=f"Call the function {function_name}.")
     }
@@ -104,6 +116,33 @@ def function_payload_factory(sql_function: SQLFunction) -> FunctionPayloadType:
     # TODO(OR): handle functions with no return
     function_return_type = convert_type(sql_function.return_sqla_type)
     function_return_type.sql_function = sql_function
+
+    attrs = {
+        "clientMutationId": Field(String, resolve=default_resolver),
+        "result": Field(
+            function_return_type,
+            description=f"The {result_name} that was created by this mutation.",
+            resolve=default_resolver,
+        ),
+    }
+
+    payload = FunctionPayloadType(result_name, attrs, description=f"The output of our create {function_name} mutation")
+    payload.sql_function = sql_function
+    return payload
+
+
+@lru_cache()
+def jwt_function_payload_factory(sql_function: SQLFunction, jwt_secret: str) -> FunctionPayloadType:
+    """CreateAccountPayload"""
+    function_name = Config.function_type_name_mapper(sql_function)
+    result_name = f"{function_name}Payload"
+
+    function_return_type = ScalarType(
+        "JWT",
+        serialize=lambda result: jwt.encode({k: v for k, v in result.items()}, jwt_secret, algorithm="HS256").decode(
+            "utf-8"
+        ),
+    )
 
     attrs = {
         "clientMutationId": Field(String, resolve=default_resolver),

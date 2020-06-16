@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
-from typing import Callable
+from typing import Callable, Optional
 
 import pytest
 from graphql import graphql_sync as execute_graphql
@@ -108,26 +108,28 @@ def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str],
 
 
 @pytest.fixture
-def app_builder(event_loop, connection_str, session) -> Callable[[str], Starlette]:
-    def build(sql: str) -> Starlette:
+def app_builder(event_loop, connection_str, session) -> Callable[[str, Optional[str], Optional[str]], Starlette]:
+    def build(sql: str, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
         session.execute(sql)
         session.commit()
 
         # Create the schema
-        app = create_app(connection_str)
+        app = create_app(connection_str, jwt_identifier=jwt_identifier, jwt_secret=jwt_secret)
         return app
 
     return build
 
 
 @pytest.fixture
-def client_builder(app_builder: Callable[[str], Starlette]) -> Callable[[str], TestClient]:
+def client_builder(
+    app_builder: Callable[[str, Optional[str], Optional[str]], Starlette]
+) -> Callable[[str, Optional[str], Optional[str]], TestClient]:
     # NOTE: Client must be used as a context manager for on_startup and on_shutdown to execute
     # e.g. connect to the database
 
-    def build(sql: str) -> TestClient:
+    def build(sql: str, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> TestClient:
         importlib.reload(table_base)
-        app = app_builder(sql)
+        app = app_builder(sql, jwt_identifier, jwt_secret)
         client = TestClient(app)
         return client
 

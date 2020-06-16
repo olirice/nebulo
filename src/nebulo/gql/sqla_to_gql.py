@@ -5,8 +5,11 @@ import typing
 from nebulo.gql.alias import ObjectType, Schema
 from nebulo.gql.convert.connection import connection_field_factory
 from nebulo.gql.convert.create import create_entrypoint_factory
-from nebulo.gql.convert.function import immutable_function_entrypoint_factory, mutable_function_entrypoint_factory
-from nebulo.gql.convert.jwt_function import is_jwt_function, jwt_function_factory
+from nebulo.gql.convert.function import (
+    immutable_function_entrypoint_factory,
+    is_jwt_function,
+    mutable_function_entrypoint_factory,
+)
 from nebulo.gql.convert.table import table_field_factory
 from nebulo.gql.convert.update import update_entrypoint_factory
 from nebulo.gql.resolve.resolvers.asynchronous import async_resolver
@@ -49,10 +52,10 @@ def sqla_models_to_graphql_schema(
 
     # Functions
     for sql_function in sql_functions:
-        field_key = snake_to_camel(sql_function.name, upper=False)
         if is_jwt_function(sql_function, jwt_identifier):
-            field = jwt_function_factory(sql_function=sql_function, jwt_secret=jwt_secret, resolve_async=resolve_async)
-            mutation_fields[field_key] = field
+            mutation_fields.update(
+                mutable_function_entrypoint_factory(sql_function=sql_function, resolver=resolver, jwt_secret=jwt_secret)
+            )
         else:
 
             # Immutable functions are queries
