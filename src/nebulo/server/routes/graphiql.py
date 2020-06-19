@@ -42,21 +42,20 @@ GRAPHIQL = """
     ></script>
 
     <script>
-      const graphQLFetcher = graphQLParams =>
-        fetch({{REQUEST_PATH}}, {
-          method: 'post',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(graphQLParams),
-        })
-          .then(response => response.json())
-          .catch(() => response.text());
-      ReactDOM.render(
-        React.createElement(GraphiQL, {
+
+        let graphQLFetcher = (graphQLParams, opts = { headers: {} }) => {
+          return fetch(window.location.origin + {{REQUEST_PATH}}, {
+            method: 'post',
+            headers: Object.assign({ 'Content-Type': 'application/json', 'User-Agent': 'GraphiQL' }, opts.headers),
+            body: JSON.stringify(graphQLParams),
+          }).then(response => response.json());
+        }
+
+        ReactDOM.render(
+          React.createElement(GraphiQL, {
             fetcher: graphQLFetcher,
-
-            headerEditorEnabled: true
-
-        }),
+            headerEditorEnabled: true,
+          }),
         document.getElementById('graphiql'),
       );
     </script>
