@@ -1,6 +1,7 @@
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 import jwt
+from jwt.exceptions import DecodeError, ExpiredSignatureError, PyJWTError
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 
@@ -10,8 +11,6 @@ def get_jwt_claims_handler(secret: Optional[str]) -> Callable[[Request], Awaitab
 
     async def get_jwt_claims(request: Request) -> Dict[str, Any]:
         """Retrieve the JWT claims from the Starlette Request"""
-
-        return {}
 
         if secret is None:
             return {}
@@ -25,12 +24,15 @@ def get_jwt_claims_handler(secret: Optional[str]) -> Callable[[Request], Awaitab
             if scheme.lower() == "bearer":
                 contents = jwt.decode(token, secret, algorithms=["HS256"])
                 return contents
-        except jwt.exceptions.DecodeError:
+        except ValueError:
+            # The user probably forgot to prepend "Bearer "
+            raise HTTPException(401, "Invalid JWT Authorization header. Expected 'Bearer <JWT>'")
+        except DecodeError:
             raise HTTPException(401, "Invalid JWT credentials")
-        except jwt.exceptions.ExpiredSignatureError:
+        except ExpiredSignatureError:
             raise HTTPException(401, "JWT has expired. Please reauthenticate")
         # Generically catch all PyJWT errors
-        except jwt.exceptions.PyJWTError as exc:
+        except PyJWTError as exc:
             raise HTTPException(401, str(exc))
         return {}
 

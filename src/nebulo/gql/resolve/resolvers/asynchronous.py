@@ -21,7 +21,7 @@ from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.relay.node_interface import NodeIdStructure
 from nebulo.gql.resolve.transpile.mutation_builder import build_mutation
 from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
-from sqlalchemy import select
+from sqlalchemy import Text, func, literal, select
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -36,10 +36,19 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     tree = parse_resolve_info(info)
 
     async with database.transaction():
-        # GraphQL automatically resolves the top level object name
-        # At time of writing, only required for scalar functions
-        for claim_key, claim_value in jwt_claims.items():
-            await database.execute(f"set local jwt.claims.{claim_key} to {claim_value};")
+
+        if jwt_claims:
+            # Setting local variables an not be done in prepared statement
+            # since JWT claims are signed, literal binds should be ok
+            claims = [
+                func.set_config(
+                    literal("jwt.claims.").op("||")(func.cast(claim_key, Text())),
+                    func.cast(str(claim_value), Text()),
+                    True,
+                )
+                for claim_key, claim_value in jwt_claims.items()
+            ]
+            await database.execute(select(claims))
 
         if isinstance(tree.return_type, FunctionPayloadType):
             sql_function = tree.return_type.sql_function
@@ -82,11 +91,6 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
 
-            # from sqlalchemy import create_engine
-            # dial_eng = create_engine("postgresql://")
-            # query = str(query.compile(compile_kwargs={"literal_binds": True, "engine": dial_eng}))
-            # print(query)
-
             query_coro = database.fetch_one(query=query)
             coro_result = await query_coro
             str_result: str = coro_result["json"]  # type: ignore
@@ -101,8 +105,6 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
         else:
             raise Exception("sql builder could not handle return type")
-
-    # print(json.dumps(result))
 
     # Stash result on context to enable dumb resolvers to not fail
     context["result"] = result
