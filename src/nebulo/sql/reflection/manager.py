@@ -21,11 +21,12 @@ def reflect_sqla_models(
 
     # Reflect composite types (not supported by sqla)
     composites = reflect_composites(engine, schema, basic_type_map)
-    # Register compostie types with SQLA to make them available during reflection
-    # NOTE: types are not schema namespaced so colisions can occur reflecting tables
-    pg_base.ischema_names.update({type_name: type_ for (type_schema, type_name), type_ in composites.items()})
-    # Retrive a copy of the full type map
 
+    # Register composite types with SQLA to make them available during reflection
+    pg_base.ischema_names.update({type_name: type_ for (type_schema, type_name), type_ in composites.items()})
+
+    # Retrive a copy of the full type map
+    # NOTE: types are not schema namespaced so colisions can occur reflecting tables
     type_map = pg_base.ischema_names.copy()
 
     declarative_base.prepare(
@@ -37,8 +38,8 @@ def reflect_sqla_models(
         name_for_collection_relationship=rename_to_many_collection,
     )
 
+    # Register tables as types so functions can return a row of a table
     tables = list(declarative_base.classes)
-
     for table in tables:
         type_map[table.__table__.name] = table
 

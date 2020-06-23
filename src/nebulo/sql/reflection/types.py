@@ -44,7 +44,24 @@ WITH types AS (
 ),
 cols AS (
     SELECT n.nspname::text AS schema_name,
-            pg_catalog.format_type ( t.oid, NULL ) AS obj_name,
+            /*
+            When the schema is public, pg_catalog.format_type does not
+            include a schema prefix, but when its any other schema, it does.
+            This function removes the schema prefix if it exists for
+            consistency
+            */
+            (
+                string_to_array(
+                    pg_catalog.format_type ( t.oid, NULL ),
+                    '.'
+                )
+            )[array_upper(
+                string_to_array(
+                    pg_catalog.format_type ( t.oid, NULL ),
+                    '.'
+                ),
+                1)
+            ] as obj_name,
             a.attname::text AS column_name,
             pg_catalog.format_type ( a.atttypid, a.atttypmod ) AS data_type,
             a.attnotnull AS is_required,
@@ -99,5 +116,4 @@ SELECT
         # sqla_composite = CompositeType(py_composite_name, columns)
         sqla_composite = composite_type_factory(py_composite_name, columns, composite_name, schema_name)
         composites[(schema_name, composite_name)] = sqla_composite
-
     return composites

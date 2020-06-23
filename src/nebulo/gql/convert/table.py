@@ -13,11 +13,11 @@ from nebulo.sql.table_base import TableProtocol
 from sqlalchemy.orm import interfaces
 
 
-def table_field_factory(sqla_model: TableProtocol, resolver, not_null=False) -> Field:
+def table_field_factory(sqla_model: TableProtocol, resolver) -> Field:
     relevant_type_name = Config.table_type_name_mapper(sqla_model)
     node = table_factory(sqla_model)
     return Field(
-        NonNull(node) if not_null else node,
+        node,
         args={"nodeId": Argument(NonNull(NodeID))},
         resolve=resolver,
         description=f"Reads a single {relevant_type_name} using its globally unique ID",
