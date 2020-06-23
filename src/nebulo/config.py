@@ -1,7 +1,7 @@
 from typing import Union
 
 from nebulo.env import EnvManager
-from nebulo.sql.inspect import get_table_name
+from nebulo.sql.inspect import get_comment, get_table_name
 from nebulo.sql.reflection.function import SQLFunction
 from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel, to_plural
@@ -71,7 +71,7 @@ class Config:
         operation: Union[Literal["read"], Literal["insert"], Literal["update"], Literal["delete"]],
     ) -> bool:
         """Shared SQL comment parsing logic for excludes"""
-        comment = entity.comment or ""
+        comment = get_comment(entity)
         lines = comment.split("\n")
         for line in lines:
             if "@exclude" in line and operation in line:

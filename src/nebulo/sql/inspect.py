@@ -1,8 +1,8 @@
 # pylint: disable=unsubscriptable-object, invalid-name
 from __future__ import annotations
 
-from functools import lru_cache
-from typing import List
+from functools import lru_cache, singledispatch
+from typing import List, Union
 
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import Column
@@ -32,6 +32,23 @@ def get_primary_key_columns(sqla_model: TableProtocol) -> List[Column]:
 def get_columns(sqla_model: TableProtocol) -> List[Column]:
     """Columns on the table"""
     return [x for x in sqla_model.__table__.columns]
+
+
+@singledispatch
+def get_comment(entity: Union[TableProtocol, Column]) -> str:
+    """Get comment on entity"""
+
+
+@get_comment.register
+def get_table_comment(entity: TableProtocol) -> str:
+    """Get comment on entity"""
+    return entity.__table__.comment or ""
+
+
+@get_comment.register
+def get_columne_comment(entity: Column) -> str:
+    """Get comment on entity"""
+    return entity.comment or ""
 
 
 @lru_cache()
