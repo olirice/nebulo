@@ -6,7 +6,7 @@ from functools import lru_cache
 from nebulo.config import Config
 from nebulo.gql.alias import Argument, Field, NonNull, TableType
 from nebulo.gql.convert.column import convert_column
-from nebulo.gql.relay.node_interface import NodeID, NodeInterface
+from nebulo.gql.relay.node_interface import ID, NodeInterface
 from nebulo.gql.resolve.resolvers.default import default_resolver
 from nebulo.sql.inspect import get_columns, get_relationships, is_nullable
 from nebulo.sql.table_base import TableProtocol
@@ -18,7 +18,7 @@ def table_field_factory(sqla_model: TableProtocol, resolver) -> Field:
     node = table_factory(sqla_model)
     return Field(
         node,
-        args={"nodeId": Argument(NonNull(NodeID))},
+        args={"nodeId": Argument(NonNull(ID))},
         resolve=resolver,
         description=f"Reads a single {relevant_type_name} using its globally unique ID",
     )
@@ -43,7 +43,7 @@ def table_factory(sqla_model: TableProtocol) -> TableType:
         attrs = {}
 
         # Override id to relay standard
-        attrs["nodeId"] = Field(NonNull(NodeID), resolve=default_resolver)
+        attrs["nodeId"] = Field(NonNull(ID), resolve=default_resolver)
 
         for column in get_columns(sqla_model):
             if not Config.exclude_read(column):

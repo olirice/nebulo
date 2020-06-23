@@ -14,7 +14,7 @@ from nebulo.gql.alias import (
     TableInputType,
 )
 from nebulo.gql.convert.column import convert_column_to_input
-from nebulo.gql.relay.node_interface import NodeID
+from nebulo.gql.relay.node_interface import ID
 from nebulo.gql.resolve.resolvers.default import default_resolver
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
@@ -72,7 +72,7 @@ def create_payload_factory(sqla_model: TableProtocol) -> CreatePayloadType:
 
     attrs = {
         "clientMutationId": Field(String, resolve=default_resolver),
-        "nodeId": NodeID,
+        "nodeId": ID,
         relevant_attr_name: Field(
             NonNull(table_factory(sqla_model)),
             description=f"The {relevant_type_name} that was created by this mutation.",

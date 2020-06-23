@@ -57,8 +57,8 @@ def to_node_id_sql(sqla_model, query_elem: Alias):
     )
 
 
-NodeID = ScalarType(
-    "NodeID",
+ID = ScalarType(
+    "ID",
     description="Unique ID for node",
     serialize=serialize,
     parse_value=NodeIdStructure.deserialize,
@@ -68,7 +68,7 @@ NodeID = ScalarType(
 NodeInterface = InterfaceType(
     "NodeInterface",
     description="An object with a nodeId",
-    fields={"nodeId": Field(NonNull(NodeID), description="The global id of the object.", resolve=None)},
+    fields={"nodeId": Field(NonNull(ID), description="The global id of the object.", resolve=None)},
     # Maybe not necessary
     resolve_type=lambda *args, **kwargs: None,
 )

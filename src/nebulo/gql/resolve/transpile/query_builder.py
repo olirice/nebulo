@@ -10,29 +10,11 @@ from nebulo.config import Config
 from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.relay.cursor import to_cursor_sql
-from nebulo.gql.relay.node_interface import NodeID, to_node_id_sql
+from nebulo.gql.relay.node_interface import ID, to_node_id_sql
 from nebulo.sql.inspect import get_columns, get_primary_key_columns, get_relationships, get_table_name
 from nebulo.sql.sanitize import secure_random_string
 from nebulo.sql.table_base import TableProtocol
-from sqlalchemy import (
-    BigInteger,
-    Column,
-    Integer,
-    Text,
-    and_,
-    asc,
-    cast,
-    column,
-    create_engine,
-    desc,
-    func,
-    literal,
-    literal_column,
-    select,
-    table,
-    text,
-    tuple_,
-)
+from sqlalchemy import Column, Integer, and_, asc, cast, desc, func, literal, literal_column, select, tuple_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql import Alias, Select
@@ -164,7 +146,7 @@ def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> Alias
     select_clause = []
     for subfield in field.fields:
 
-        if subfield.return_type == NodeID:
+        if subfield.return_type == ID:
             elem = select([to_node_id_sql(sqla_model, core_model_ref)]).label(subfield.alias)
             select_clause.append(elem)
         elif isinstance(subfield.return_type, (ScalarType, CompositeType)):
@@ -258,7 +240,7 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
 
     for subfield in get_edge_node_fields(field):
         # Does anything other than NodeID go here?
-        if subfield.return_type == NodeID:
+        if subfield.return_type == ID:
             # elem = select([to_node_id_sql(sqla_model, core_model_ref)]).label(subfield.alias)
             elem = to_node_id_sql(sqla_model, core_model_ref).label(subfield.alias)
             new_edge_node_selects.append(elem)
