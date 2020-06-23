@@ -46,8 +46,9 @@ def table_factory(sqla_model: TableProtocol) -> TableType:
         attrs["nodeId"] = Field(NonNull(NodeID), resolve=default_resolver)
 
         for column in get_columns(sqla_model):
-            key = Config.column_name_mapper(column)
-            attrs[key] = convert_column(column)
+            if not Config.exclude_read(column):
+                key = Config.column_name_mapper(column)
+                attrs[key] = convert_column(column)
 
         for relationship in get_relationships(sqla_model):
             direction = relationship.direction

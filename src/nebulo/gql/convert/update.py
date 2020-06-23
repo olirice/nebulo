@@ -66,10 +66,11 @@ def patch_type_factory(sqla_model: TableProtocol) -> InputObjectType:
 
     attrs = {}
     for column in get_columns(sqla_model):
-        field_key = Config.column_name_mapper(column)
-        column_field = convert_column_to_input(column)
-        # TODO Unwrap not null here
-        attrs[field_key] = column_field
+        if not Config.exclude_update(column):
+            field_key = Config.column_name_mapper(column)
+            column_field = convert_column_to_input(column)
+            # TODO Unwrap not null here
+            attrs[field_key] = column_field
     return TableInputType(result_name, attrs, description=f"An input for mutations affecting {relevant_type_name}.")
 
 
