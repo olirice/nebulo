@@ -61,7 +61,6 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             mutation_id_alias = next(
                 iter([x.alias for x in tree.fields if x.name == "clientMutationId"]), "clientMutationId"
             )
-
             result = {tree.alias: {**stmt_result, **{mutation_id_alias: maybe_mutation_id}}}
 
         elif isinstance(tree.return_type, MutationPayloadType):

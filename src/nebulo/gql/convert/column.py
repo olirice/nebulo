@@ -8,6 +8,7 @@ from nebulo.gql.alias import (
     Boolean,
     CompositeType,
     Field,
+    Float,
     InputField,
     InputObjectType,
     Int,
@@ -33,13 +34,18 @@ CIDRType = ScalarType(name="CIDR", serialize=str)
 
 SQLA_TO_GQL = {
     types.Boolean: Boolean,
-    # Number
+    # Integer
     types.Integer: Int,
     types.INTEGER: Int,
     types.BIGINT: Int,
-    types.String: String,
+    # Float
+    types.Float: Float,
+    types.Numeric: Float,
+    # required b/c json uses 32 bit integers
+    types.BigInteger: Float,
     # Text
     types.Text: String,
+    types.String: String,
     types.Unicode: String,
     types.UnicodeText: String,
     # Date
@@ -58,6 +64,7 @@ SQLA_TO_GQL = {
 def convert_type(sqla_type: typing.Type[TypeEngine]):
     if issubclass(sqla_type, SQLACompositeType):
         return composite_factory(sqla_type)
+    # TODO(OR): Enums
     return SQLA_TO_GQL.get(sqla_type, String)
 
 

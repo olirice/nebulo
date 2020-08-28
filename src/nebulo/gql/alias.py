@@ -14,6 +14,7 @@ from graphql.type import (
     GraphQLEnumValue,
     GraphQLField,
     GraphQLFieldMap,
+    GraphQLFloat,
     GraphQLID,
     GraphQLInputFieldMap,
     GraphQLInputObjectType,
@@ -55,6 +56,7 @@ EnumType = GraphQLEnumType
 EnumValue = GraphQLEnumValue
 Schema = GraphQLSchema
 Field = GraphQLField
+Float = GraphQLFloat
 
 
 class HasSQLAModel:  # pylint: disable= too-few-public-methods

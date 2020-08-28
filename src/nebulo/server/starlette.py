@@ -1,6 +1,7 @@
 from typing import Optional
 
 from databases import Database
+from nebulo import NEB_INSTALL_DIR
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphql_endpoint, graphiql_endpoint
@@ -25,7 +26,6 @@ def create_app(
     database = Database(connection)
     # Reflect database to sqla models
     sqla_engine = create_engine(connection)
-
     sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema=schema)
 
     # Convert sqla models to graphql schema
@@ -39,7 +39,7 @@ def create_app(
     routes = [
         Route("/", graphql_endpoint, methods=["POST"]),
         Route("/graphiql", graphiql_endpoint, methods=["GET"]),
-        Mount("/static", StaticFiles(directory="static"), name="static"),
+        Mount("/static", StaticFiles(directory=NEB_INSTALL_DIR / "static"), name="static"),
     ]
 
     middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
