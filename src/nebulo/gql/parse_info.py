@@ -63,6 +63,9 @@ class ASTNode:
 
                 else:
                     selection_name = selection_ast.name.value
+                    if selection_name.startswith("__"):
+                        # Reserved "introspection" field handled by framework
+                        continue
                     selection_field = field_type.fields[selection_name]
                     yield ASTNode(
                         field_node=selection_ast,

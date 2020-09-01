@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="nebulo",
-    version="0.0.7",
+    version="0.0.8",
     description="Nebulo: Reflect RDBMS to GraphQL API",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
@@ -29,7 +29,7 @@ setup(
     install_requires=[
         "sqlalchemy==1.3.15",
         "psycopg2-binary==2.8.4",
-        "graphql-core==3.1.0",
+        "graphql-core==3.1.2",
         "flask==1.1.1",
         "click==7.1.1",
         "aiofiles==0.5.0",
