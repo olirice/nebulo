@@ -19,7 +19,6 @@ from nebulo.gql.resolve.resolvers.default import default_resolver
 from nebulo.sql.inspect import get_columns
 from nebulo.sql.table_base import TableProtocol
 
-
 """
 updateAccount(input: UpdateAccountInput!):
     UpdateAccountPayload

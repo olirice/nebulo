@@ -58,10 +58,10 @@ def session_maker(engine):
 
 @pytest.fixture
 def reset_sqla() -> None:
-    """ SQLA Metadata is preserved between tests. When we build tables in tests
+    """SQLA Metadata is preserved between tests. When we build tables in tests
     and the tables have previously used names, the metadata is re-used and
     differences in added/deleted columns gets janked up. Reimporting resets
-    the metadata. """
+    the metadata."""
     importlib.reload(table_base)
 
 
@@ -96,7 +96,7 @@ def schema_builder(session, engine):
 @pytest.fixture
 def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str], ExecutionResult]]:
     """Return a function that accepts a sql string
-    and returns a graphql executor """
+    and returns a graphql executor"""
 
     def build(sql: str) -> Callable[[str], ExecutionResult]:
         schema = schema_builder(sql)
