@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="nebulo",
-    version="0.0.4",
+    version="0.0.7",
     description="Nebulo: Reflect RDBMS to GraphQL API",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
@@ -19,8 +19,8 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     python_requires=">=3.7",
-    packages=find_packages("src/"),
-    package_dir={"": "src/"},
+    package_dir={"": "src"},
+    packages=find_packages("src"),
     include_package_data=True,
     entry_points={
         "console_scripts": ["nebulo=nebulo.cli:main", "neb=nebulo.cli:main"],

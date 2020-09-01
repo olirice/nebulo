@@ -1,7 +1,8 @@
+import os
+from pathlib import Path
 from typing import Optional
 
 from databases import Database
-from nebulo import NEB_INSTALL_DIR
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphql_endpoint, graphiql_endpoint
@@ -13,6 +14,8 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
+
+STATIC_PATH = Path(os.path.abspath(__file__)).parent.parent.resolve() / "static"
 
 
 def create_app(
@@ -39,7 +42,7 @@ def create_app(
     routes = [
         Route("/", graphql_endpoint, methods=["POST"]),
         Route("/graphiql", graphiql_endpoint, methods=["GET"]),
-        Mount("/static", StaticFiles(directory=NEB_INSTALL_DIR / "static"), name="static"),
+        Mount("/static", StaticFiles(directory=STATIC_PATH), name="static"),
     ]
 
     middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
