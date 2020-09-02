@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+from nebulo.config import Config
 from nebulo.gql.alias import ObjectType, Schema
 from nebulo.gql.convert.connection import connection_field_factory
 from nebulo.gql.convert.create import create_entrypoint_factory
@@ -37,18 +38,23 @@ def sqla_models_to_graphql_schema(
 
     # Tables
     for sqla_model in sqla_models:
-        # e.g. account(nodeId: NodeID)
-        single_name = snake_to_camel(get_table_name(sqla_model), upper=False)
-        query_fields[single_name] = table_field_factory(sqla_model, resolver)
 
-        # e.g. allAccounts(first: Int, last: Int ....)
-        connection_name = "all" + snake_to_camel(to_plural(get_table_name(sqla_model)), upper=True)
-        query_fields[connection_name] = connection_field_factory(sqla_model, resolver)
+        if not Config.exclude_read(sqla_model):
+            # e.g. account(nodeId: NodeID)
+            single_name = snake_to_camel(get_table_name(sqla_model), upper=False)
+            query_fields[single_name] = table_field_factory(sqla_model, resolver)
 
-        # e.g. createAccount(input: CreateAccountInput)
-        mutation_fields.update(create_entrypoint_factory(sqla_model, resolver=resolver))
-        # e.g. updateAccount(input: UpdateAccountInput)
-        mutation_fields.update(update_entrypoint_factory(sqla_model, resolver=resolver))
+            # e.g. allAccounts(first: Int, last: Int ....)
+            connection_name = "all" + snake_to_camel(to_plural(get_table_name(sqla_model)), upper=True)
+            query_fields[connection_name] = connection_field_factory(sqla_model, resolver)
+
+        if not Config.exclude_insert(sqla_model):
+            # e.g. createAccount(input: CreateAccountInput)
+            mutation_fields.update(create_entrypoint_factory(sqla_model, resolver=resolver))
+
+        if not Config.exclude_update(sqla_model):
+            # e.g. updateAccount(input: UpdateAccountInput)
+            mutation_fields.update(update_entrypoint_factory(sqla_model, resolver=resolver))
 
     # Functions
     for sql_function in sql_functions:

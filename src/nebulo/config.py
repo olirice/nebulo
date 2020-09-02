@@ -71,7 +71,7 @@ class Config:
         operation: Union[Literal["read"], Literal["insert"], Literal["update"], Literal["delete"]],
     ) -> bool:
         """Shared SQL comment parsing logic for excludes"""
-        comment = get_comment(entity)
+        comment: str = get_comment(entity)
         lines = comment.split("\n")
         for line in lines:
             if "@exclude" in line and operation in line:
