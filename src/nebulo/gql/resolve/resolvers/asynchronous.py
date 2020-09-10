@@ -50,6 +50,8 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             ]
             await database.execute(select(claims))
 
+        result: typing.Dict[str, typing.Any]
+
         if isinstance(tree.return_type, FunctionPayloadType):
             sql_function = tree.return_type.sql_function
             function_args = [val for key, val in tree.args["input"].items() if key != "clientMutationId"]
