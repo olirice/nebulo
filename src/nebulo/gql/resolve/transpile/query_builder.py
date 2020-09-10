@@ -85,7 +85,7 @@ def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[Bin
 
 def to_limit(field: ASTNode) -> int:
     args = field.args
-    default = 10
+    default = 20
     first = int(args.get("first", default))
     last = int(args.get("last", default))
     limit = min(first, last, default)
