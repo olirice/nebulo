@@ -31,7 +31,7 @@ setup(
         "psycopg2-binary==2.8.4",
         "graphql-core==3.1.2",
         "flask==1.1.1",
-        "click==7.1.1",
+        "click==7.1.2",
         "aiofiles==0.5.0",
         "typing-extensions",
         "inflect==4.1.0",
