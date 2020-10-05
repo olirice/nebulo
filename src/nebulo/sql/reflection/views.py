@@ -63,8 +63,7 @@ def reflect_views(engine, schema, declarative_base) -> List[TableProtocol]:
             ),
             {"__table__": view_tab},
         )
-
-        views.append(view_orm)
+        views.append(view_orm)  # type: ignore
 
     return views
 

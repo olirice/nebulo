@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.4.2
+    rev: v5.5.4
     hooks:
     -   id: isort
         args: ['--multi-line=3', '--trailing-comma', '--force-grid-wrap=0', '--use-parentheses', '--line-width=120']
