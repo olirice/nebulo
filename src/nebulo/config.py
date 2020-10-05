@@ -1,8 +1,10 @@
+from inspect import isclass
 from typing import Union
 
 from nebulo.env import EnvManager
 from nebulo.sql.inspect import get_comment, get_table_name
 from nebulo.sql.reflection.function import SQLFunction
+from nebulo.sql.reflection.views import ViewMixin
 from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel, to_plural
 from sqlalchemy.orm import RelationshipProperty
@@ -86,14 +88,28 @@ class Config:
     @classmethod
     def exclude_insert(cls, entity: Union[TableProtocol, Column]) -> bool:
         """Should the entity be excluded from inserts?"""
+        # Views do not support insert
+        if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
+            return True
+
         return cls._exclude_check(entity, "insert")
 
     @classmethod
     def exclude_update(cls, entity: Union[TableProtocol, Column]) -> bool:
         """Should the entity be excluded from updates?"""
+
+        # Views do not support updates
+        if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
+            return True
+
         return cls._exclude_check(entity, "update")
 
     @classmethod
     def exclude_delete(cls, entity: Union[TableProtocol, Column]) -> bool:
         """Should the entity be excluded from deletes?"""
+
+        # Views do not support deletes
+        if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
+            return True
+
         return cls._exclude_check(entity, "delete")

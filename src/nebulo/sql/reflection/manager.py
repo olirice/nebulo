@@ -5,6 +5,7 @@ from typing import List, Tuple
 from nebulo.sql.reflection.function import SQLFunction, reflect_functions
 from nebulo.sql.reflection.names import rename_table, rename_to_many_collection, rename_to_one_collection
 from nebulo.sql.reflection.types import reflect_composites
+from nebulo.sql.reflection.views import reflect_views
 from nebulo.sql.table_base import TableBase
 from sqlalchemy.dialects.postgresql import base as pg_base
 from sqlalchemy.engine import Engine
@@ -29,6 +30,9 @@ def reflect_sqla_models(
     # NOTE: types are not schema namespaced so colisions can occur reflecting tables
     type_map = pg_base.ischema_names.copy()
 
+    # Reflect views as SQLA ORM table
+    views = reflect_views(engine=engine, schema=schema, declarative_base=declarative_base)
+
     declarative_base.prepare(
         engine,
         reflect=True,
@@ -39,8 +43,8 @@ def reflect_sqla_models(
     )
 
     # Register tables as types so functions can return a row of a table
-    tables = list(declarative_base.classes)
-    for table in tables:
+    tables = list(declarative_base.classes) + views
+    for table in tables + views:
         type_map[table.__table__.name] = table
 
     # Reflect functions, allowing composite types
