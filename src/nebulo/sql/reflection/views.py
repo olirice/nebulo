@@ -84,7 +84,7 @@ def reflect_virtual_primary_key_constraint(comment: str) -> PrimaryKeyConstraint
         row = row.replace(" ", "")
 
         # Ex: (variant_id)referencespublic.variant(id)
-        col_names = row.split("(")[1][:-1].split(",")
+        col_names = row.split("(")[1].strip().strip(")").split(",")
         return PrimaryKeyConstraint(*col_names)
 
     raise Exception("Views must have a @primary_key comment")
@@ -118,7 +118,7 @@ def reflect_virtual_foreign_key_constraints(comment: str) -> List[ForeignKeyCons
 
         # Ex: ('public.variant', 'id)')
         remote_table, remote = remote.lstrip("references").split("(")
-        remote_col_names = remote.rstrip(")").split(",")
+        remote_col_names = remote.strip().rstrip(")").split(",")
 
         remote_qualified_col_names = [f"{remote_table}.{remote_col_name}" for remote_col_name in remote_col_names]
         foreign_key = ForeignKeyConstraint(local_col_names, remote_qualified_col_names)

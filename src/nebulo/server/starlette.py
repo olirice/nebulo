@@ -1,13 +1,14 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Callable, List, Optional
 
 from databases import Database
+from nebulo.gql.alias import Schema
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphql_endpoint, graphiql_endpoint
 from nebulo.sql.reflection.manager import reflect_sqla_models
-from sqlalchemy import create_engine
+from sqlalchemy import Table, create_engine
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
@@ -19,7 +20,11 @@ STATIC_PATH = Path(os.path.abspath(__file__)).parent.parent.resolve() / "static"
 
 
 def create_app(
-    connection: str, schema: str = "public", jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None
+    connection: str,
+    schema: str = "public",
+    jwt_identifier: Optional[str] = None,
+    jwt_secret: Optional[str] = None,
+    before_start: Optional[Callable[[Schema, List[Table], Database], Schema]] = None,
 ) -> Starlette:
     """Create an ASGI App"""
 
@@ -33,8 +38,16 @@ def create_app(
 
     # Convert sqla models to graphql schema
     gql_schema = sqla_models_to_graphql_schema(
-        sqla_models, sql_functions, jwt_identifier=jwt_identifier, jwt_secret=jwt_secret, resolve_async=True
+        sqla_models,
+        sql_functions,
+        jwt_identifier=jwt_identifier,
+        jwt_secret=jwt_secret,
+        resolve_async=True,
     )
+
+    if before_start:
+        core_tables = [x.__table__ for x in sqla_models]
+        gql_schema = before_start(gql_schema, core_tables, database)
 
     # Build Starlette app
     graphql_endpoint = get_graphql_endpoint(gql_schema, database, jwt_secret)
@@ -55,4 +68,5 @@ def create_app(
         on_startup=[database.connect],
         on_shutdown=[database.disconnect],
     )
+
     return _app
