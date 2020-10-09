@@ -53,6 +53,6 @@ Visit your shiny new GraphQL API at [http://localhost:5034/graphiql](http://loca
 
 ![graphiql image](docs/images/graphiql.png)
 
-Next, check out the [docs](https://olirice.github.io/nebulo/introduction/) guide for a small end-to-end example.
+Next, check out the [docs](https://olirice.github.io/nebulo/quickstart/) guide for a small end-to-end example.
 
 <p align="center">&mdash;&mdash;  &mdash;&mdash;</p>
