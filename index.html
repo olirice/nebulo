@@ -64,7 +64,11 @@
                     </li>
                 </ul>
                 <ul>
-                    <li class="toctree-l1"><a class="reference internal" href="roadmap/">Roadmap</a>
+                    <li class="toctree-l1"><a class="reference internal" href="authentication/">Authentication</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="supported_entities/">Supported Entities</a>
                     </li>
                 </ul>
       </div>
@@ -115,7 +119,6 @@
     </a>
 
 </p>
-
 <p>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python version" height="18"></a>
     <a href="https://github.com/olirice/nebulo/blob/master/LICENSE"><img src="https://img.shields.io/pypi/l/markdown-subtemplate.svg" alt="License" height="18"></a>
@@ -129,21 +132,18 @@
 <hr />
 <p><strong>Instant GraphQL API for PostgreSQL</strong></p>
 <p><a href="https://en.wikipedia.org/wiki/Reflection_(computer_programming)">Reflect</a> a highly performant <a href="https://graphql.org/learn/">GraphQL</a> API from an existing <a href="https://www.postgresql.org/">PostgreSQL</a> database.</p>
-<p>Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases wtih 0 code, and can also be added to existing <a href="https://www.sqlalchemy.org/">SQLAlchemy</a> projects.</p>
-<p>In contrast to existing options in the python ecosystem, Nebulo optimizes underlying SQL queries to solve the <a href="https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping">N+1 query problem</a> and minimize database IO. The result is a blazingly fast API with consistent performance for arbitrarily nested queries.</p>
+<p>Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases wtih 0 code or can be added to existing <a href="https://www.sqlalchemy.org/">SQLAlchemy</a> projects (pending documentation).</p>
 <p><strong>WARNING: Pre-Alpha Software</strong></p>
 <h2 id="tldr">TL;DR</h2>
 <p>First, install nebulo</p>
-<div class="codehilite"><pre><span></span><code>$ pip install nebulo
+<div class="shell codehilite"><pre><span></span><code>$ pip install nebulo
 </code></pre></div>
 
-
-<p>Then point the nebulo CLI at an existing  PostgreSQL database using connection string format <code class="codehilite"><span class="c">postgresql://&lt;user&gt;:&lt;password&gt;@&lt;host&gt;:&lt;port&gt;/&lt;database_name&gt;</span></code></p>
-<div class="codehilite"><pre><span></span><code>neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
+<p>Then point the CLI at an existing  PostgreSQL database using connection string format <code>postgresql://&lt;user&gt;:&lt;password&gt;@&lt;host&gt;:&lt;port&gt;/&lt;database_name&gt;</code></p>
+<div class="shell codehilite"><pre><span></span><code>neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 </code></pre></div>
 
-
-<p>Visit your shiny new GraphQL API at <a href="http://localhost:5018/graphql">http://localhost:5018/graphql</a></p>
+<p>Visit your shiny new GraphQL API at <a href="http://localhost:5034/graphiql">http://localhost:5034/graphiql</a></p>
 <p><img alt="graphiql image" src="images/graphiql.png" /></p>
 <p>Next, check out the <a href="quickstart/">quickstart</a> guide for a small end-to-end example.</p>
 <p align="center">&mdash;&mdash;  &mdash;&mdash;</p>
@@ -199,6 +199,6 @@
 </html>
 
 <!--
-MkDocs version : 1.1
-Build Date UTC : 2020-04-07 13:56:19
+MkDocs version : 1.1.2
+Build Date UTC : 2020-10-09 13:12:10.749584+00:00
 -->

@@ -68,7 +68,11 @@
                     </li>
                 </ul>
                 <ul>
-                    <li class="toctree-l1"><a class="reference internal" href="../roadmap/">Roadmap</a>
+                    <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Supported Entities</a>
                     </li>
                 </ul>
       </div>
@@ -108,8 +112,12 @@
                 <h2 id="quickstart">Quickstart</h2>
 <p>For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulo to reflect our GraphQL API. Finally, we'll query from that API.</p>
 <h3 id="database-setup">Database Setup</h3>
-<p>First, we need to define our database schema. We need a table for accounts, and another for blog posts. All blog posts must be associated with an author in the accounts table.</p>
-<div class="codehilite"><pre><span></span><code><span class="c1">-- blog_schema.sql</span>
+<p>If you don't have PostgreSQL installed locally, the following docker command creates an instance with the connection string used for the remainder of the quickstart guide.</p>
+<div class="shell codehilite"><pre><span></span><code>docker run --rm --name nebulo_demo -p <span class="m">4443</span>:5432 -d -e <span class="nv">POSTGRES_DB</span><span class="o">=</span>nebulo_db -e <span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span>password -e <span class="nv">POSTGRES_USER</span><span class="o">=</span>nebulo_user -d postgres
+</code></pre></div>
+
+<p>Next, we need to define our database schema. We need a table for accounts, and another for blog posts. All blog posts must be associated with an author in the accounts table. Additionally, we don't want to allow users to update or delete their blog post.</p>
+<div class="sql codehilite"><pre><span></span><code><span class="c1">-- blog_schema.sql</span>
 
 <span class="k">CREATE</span> <span class="k">TABLE</span> <span class="k">public</span><span class="p">.</span><span class="n">account</span> <span class="p">(</span>
     <span class="n">id</span> <span class="nb">SERIAL</span> <span class="k">PRIMARY</span> <span class="k">KEY</span><span class="p">,</span>
@@ -130,67 +138,68 @@
 <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Buddy&#39;</span><span class="p">);</span>
 
 <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">blog_post</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">author_id</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="k">VALUES</span>
-<span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;First Post!&#39;</span><span class="p">),</span>
+<span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;First Post&#39;</span><span class="p">),</span>
 <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Sanitize all the things!&#39;</span><span class="p">),</span>
 <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;To Bite or not to Bite&#39;</span><span class="p">);</span>
+
+
+<span class="k">COMMENT</span> <span class="k">ON</span> <span class="k">TABLE</span> <span class="n">blog_post</span> <span class="k">IS</span> <span class="n">E</span><span class="s1">&#39;@exclude update, delete&#39;</span><span class="p">;</span>
 </code></pre></div>
 
-
+<p>Note the comment to exclude updates and deletes from blog posts. The same comment format can also be applied to exclude columns from reflection e.g. password hashes.</p>
 <h3 id="graphql-schema">GraphQL Schema</h3>
-<p>Now we're ready to reflect our new database schema into a GraphQL schema. The GraphQL schema document describes our API's types, fields, and relationships between entities. If you're new to GraphQL check out their <a href="https://graphql.org/learn/">documentation</a> for more information.</p>
+<p>Now we're ready to reflect the database schema into a GraphQL schema. The GraphQL schema document describes our API's types, fields, and relationships between entities. If you're new to GraphQL check out their <a href="https://graphql.org/learn/">documentation</a> for more information.</p>
 <p>To inspect the GraphQL schema</p>
-<div class="codehilite"><pre><span></span><code>neb dump-schema -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
+<div class="shell codehilite"><pre><span></span><code>neb dump-schema -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 </code></pre></div>
 
-
-<p>where the connection string provided by <code class="codehilite"><span class="err">-c</span></code> is in the format <code class="codehilite"><span class="c">postgresql://&lt;user&gt;:&lt;password&gt;@&lt;host&gt;:&lt;port&gt;/&lt;database_name&gt;</span></code></p>
+<p>where the connection string provided by <code>-c</code> is in the format <code>postgresql://&lt;user&gt;:&lt;password&gt;@&lt;host&gt;:&lt;port&gt;/&lt;database_name&gt;</code></p>
 <p>Which outputs the schema below</p>
-<div class="codehilite"><pre><span></span><code><span class="k">schema</span> <span class="p">{</span>
-  query: <span class="k">Query</span>
+<div class="graphql codehilite"><pre><span></span><code><span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Reads a single Account using its globally unique ID&quot;&quot;&quot;</span>
+  <span class="k">account</span><span class="p">(</span>nodeId: <span class="k">ID</span><span class="p">!):</span> <span class="k">Account</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Reads and enables pagination through a set of Account&quot;&quot;&quot;</span>
+  <span class="k">allAccounts</span><span class="p">(</span>first: <span class="k">Int</span>, last: <span class="k">Int</span>, before: <span class="k">Cursor</span>, after: <span class="k">Cursor</span>, condition: <span class="k">accountCondition</span><span class="p">):</span> <span class="k">AccountConnection</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Reads a single BlogPost using its globally unique ID&quot;&quot;&quot;</span>
+  <span class="k">blogPost</span><span class="p">(</span>nodeId: <span class="k">ID</span><span class="p">!):</span> <span class="k">BlogPost</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Reads and enables pagination through a set of BlogPost&quot;&quot;&quot;</span>
+  <span class="k">allBlogPosts</span><span class="p">(</span>first: <span class="k">Int</span>, last: <span class="k">Int</span>, before: <span class="k">Cursor</span>, after: <span class="k">Cursor</span>, condition: <span class="k">blogPostCondition</span><span class="p">):</span> <span class="k">BlogPostConnection</span>
+<span class="p">}</span>
+
+<span class="kt">type</span> <span class="k">Mutation</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;Creates a single Account.&quot;&quot;&quot;</span>
+  <span class="k">createAccount</span><span class="p">(</span>input: <span class="k">CreateAccountInput</span><span class="p">!):</span> <span class="k">CreateAccountPayload</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Updates a single Account using its globally unique id and a patch.&quot;&quot;&quot;</span>
+  <span class="k">updateAccount</span><span class="p">(</span>input: <span class="k">UpdateAccountInput</span><span class="p">!):</span> <span class="k">UpdateAccountPayload</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Delete a single Account using its globally unique id and a patch.&quot;&quot;&quot;</span>
+  <span class="k">deleteAccount</span><span class="p">(</span>input: <span class="k">DeleteAccountInput</span><span class="p">!):</span> <span class="k">DeleteAccountPayload</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Creates a single BlogPost.&quot;&quot;&quot;</span>
+  <span class="k">createBlogPost</span><span class="p">(</span>input: <span class="k">CreateBlogPostInput</span><span class="p">!):</span> <span class="k">CreateBlogPostPayload</span>
 <span class="p">}</span>
 
 <span class="kt">type</span> <span class="k">Account</span> <span class="kt">implements</span> <span class="k">NodeInterface</span> <span class="p">{</span>
-  nodeId: <span class="k">NodeID</span><span class="p">!</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
   id: <span class="k">Int</span><span class="p">!</span>
-  <span class="k">blogPostsByAuthorId</span><span class="p">(</span>first: <span class="k">Int</span>, after: <span class="k">Cursor</span>, condition: <span class="k">BlogPostCondition</span><span class="p">):</span> <span class="k">BlogPostConnection</span>
   name: <span class="k">String</span><span class="p">!</span>
-  createdAt: <span class="k">String</span><span class="p">!</span>
+  createdAt: <span class="k">DateTime</span><span class="p">!</span>
+
+  <span class="c c-Multi">&quot;&quot;&quot;Reads and enables pagination through a set of BlogPost&quot;&quot;&quot;</span>
+  <span class="k">blogPostsByIdToAuthorId</span><span class="p">(</span>first: <span class="k">Int</span>, last: <span class="k">Int</span>, before: <span class="k">Cursor</span>, after: <span class="k">Cursor</span>, condition: <span class="k">blogPostCondition</span><span class="p">):</span> <span class="k">BlogPostConnection</span><span class="p">!</span>
 <span class="p">}</span>
 
-<span class="kt">input</span> <span class="k">AccountCondition</span> <span class="p">{</span>
-  id: <span class="k">Int</span>
-  name: <span class="k">String</span>
-  createdAt: <span class="k">String</span>
+<span class="c c-Multi">&quot;&quot;&quot;An object with a nodeId&quot;&quot;&quot;</span>
+<span class="kt">interface</span> <span class="k">NodeInterface</span> <span class="p">{</span>
+  <span class="c c-Multi">&quot;&quot;&quot;The global id of the object.&quot;&quot;&quot;</span>
+  nodeId: <span class="k">ID</span><span class="p">!</span>
 <span class="p">}</span>
 
-<span class="kt">type</span> <span class="k">AccountConnection</span> <span class="p">{</span>
-  edges: <span class="p">[</span><span class="k">AccountEdge</span><span class="p">!]!</span>
-  pageInfo: <span class="k">PageInfo</span><span class="p">!</span>
-  totalCount: <span class="k">Int</span><span class="p">!</span>
-<span class="p">}</span>
-
-<span class="kt">type</span> <span class="k">AccountEdge</span> <span class="p">{</span>
-  cursor: <span class="k">Cursor</span>
-  node: <span class="k">Account</span>
-<span class="p">}</span>
-
-<span class="kt">type</span> <span class="k">BlogPost</span> <span class="kt">implements</span> <span class="k">NodeInterface</span> <span class="p">{</span>
-  nodeId: <span class="k">NodeID</span><span class="p">!</span>
-  id: <span class="k">Int</span><span class="p">!</span>
-  accountByAuthorId: <span class="k">Account</span>
-  title: <span class="k">String</span><span class="p">!</span>
-  body: <span class="k">String</span>
-  authorId: <span class="k">Int</span>
-  createdAt: <span class="k">String</span><span class="p">!</span>
-<span class="p">}</span>
-
-<span class="kt">input</span> <span class="k">BlogPostCondition</span> <span class="p">{</span>
-  id: <span class="k">Int</span>
-  title: <span class="k">String</span>
-  body: <span class="k">String</span>
-  authorId: <span class="k">Int</span>
-  createdAt: <span class="k">String</span>
-<span class="p">}</span>
+<span class="k">scalar</span> <span class="k">DateTime</span>
 
 <span class="kt">type</span> <span class="k">BlogPostConnection</span> <span class="p">{</span>
   edges: <span class="p">[</span><span class="k">BlogPostEdge</span><span class="p">!]!</span>
@@ -205,36 +214,17 @@
 
 <span class="k">scalar</span> <span class="k">Cursor</span>
 
-<span class="k">scalar</span> <span class="k">NodeID</span>
 
-<span class="kt">interface</span> <span class="k">NodeInterface</span> <span class="p">{</span>
-  nodeId: <span class="k">NodeID</span><span class="p">!</span>
-<span class="p">}</span>
-
-<span class="kt">type</span> <span class="k">PageInfo</span> <span class="p">{</span>
-  hasNextPage: <span class="k">Boolean</span><span class="p">!</span>
-  hasPreviousPage: <span class="k">Boolean</span><span class="p">!</span>
-  startCursor: <span class="k">Cursor</span><span class="p">!</span>
-  endCursor: <span class="k">Cursor</span><span class="p">!</span>
-<span class="p">}</span>
-
-<span class="kt">type</span> <span class="k">Query</span> <span class="p">{</span>
-  <span class="k">account</span><span class="p">(</span>nodeId: <span class="k">NodeID</span><span class="p">):</span> <span class="k">Account</span>
-  <span class="k">blogPost</span><span class="p">(</span>nodeId: <span class="k">NodeID</span><span class="p">):</span> <span class="k">BlogPost</span>
-  <span class="k">allAccounts</span><span class="p">(</span>first: <span class="k">Int</span>, after: <span class="k">Cursor</span>, condition: <span class="k">AccountCondition</span><span class="p">):</span> <span class="k">AccountConnection</span>
-  <span class="k">allBlogPosts</span><span class="p">(</span>first: <span class="k">Int</span>, after: <span class="k">Cursor</span>, condition: <span class="k">BlogPostCondition</span><span class="p">):</span> <span class="k">BlogPostConnection</span>
-<span class="p">}</span>
+<span class="err">&lt;</span><span class="k">abridged</span> <span class="k">output</span><span class="err">&gt;</span>
 </code></pre></div>
 
-
-<p>Notice that our API detected the foreign key relationship between <code class="codehilite"><span class="err">Account</span></code> and <code class="codehilite"><span class="err">BlogPost</span></code> and created <code class="codehilite"><span class="err">blogPostsByAuthorId</span></code> and <code class="codehilite"><span class="err">accountByAuthorId</span></code> on their base types respectively.</p>
+<p>Notice that our API detected the foreign key relationship between <code>Account</code> and <code>BlogPost</code> and created <code>blogPostsByIdToAuthorId</code> and <code>accountByAuthorIdToId</code> on their base types respectively.</p>
 <h3 id="query-the-api">Query the API</h3>
-<p>To start the API server, execute <code class="codehilite"><span class="err">neb run</span></code> passing in a connection to the database.</p>
-<div class="codehilite"><pre><span></span><code>neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
+<p>To start the API server, execute <code>neb run</code> passing in a connection to the database.</p>
+<div class="shell codehilite"><pre><span></span><code>neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 </code></pre></div>
 
-
-<p>In addition to handling GraphQL requests, nebulo also serves the <a href="https://github.com/graphql/graphiql">GraphiQL explorer</a> locally at <a href="http://localhost:5018/graphql">http://localhost:5018/graphql</a>.</p>
+<p>In addition to handling GraphQL requests, nebulo also serves the <a href="https://github.com/graphql/graphiql">GraphiQL explorer</a> locally at <a href="http://localhost:5034/graphiql">http://localhost:5034/graphiql</a>.</p>
 <p><img alt="graphiql image" src="../images/graphiql.png" /></p>
 <p>Enter your query in GraphiQL and click the arrow icon to execute it.</p>
 <p>You're all done!</p>
