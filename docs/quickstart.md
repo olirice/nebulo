@@ -2,6 +2,14 @@
 
 For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulo to reflect our GraphQL API. Finally, we'll query from that API.
 
+### Installation
+
+Requires: Python 3.7+
+
+```shell
+pip install nebulo
+```
+
 ### Database Setup
 
 If you don't have PostgreSQL installed locally, the following docker command creates an instance with the connection string used for the remainder of the quickstart guide.
