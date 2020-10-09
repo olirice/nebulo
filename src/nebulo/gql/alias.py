@@ -125,6 +125,10 @@ class UpdatePayloadType(MutationPayloadType):
     pass
 
 
+class DeletePayloadType(MutationPayloadType):
+    pass
+
+
 class FunctionPayloadType(MutationPayloadType, HasSQLFunction):
     pass
 
@@ -162,6 +166,10 @@ class TableInputType(InputObjectType):
 
 
 class UpdateInputType(InputObjectType):
+    pass
+
+
+class DeleteInputType(InputObjectType):
     pass
 
 

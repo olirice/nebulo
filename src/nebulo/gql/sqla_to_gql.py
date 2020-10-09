@@ -6,6 +6,7 @@ from nebulo.config import Config
 from nebulo.gql.alias import ObjectType, Schema
 from nebulo.gql.convert.connection import connection_field_factory
 from nebulo.gql.convert.create import create_entrypoint_factory
+from nebulo.gql.convert.delete import delete_entrypoint_factory
 from nebulo.gql.convert.function import (
     immutable_function_entrypoint_factory,
     is_jwt_function,
@@ -55,6 +56,10 @@ def sqla_models_to_graphql_schema(
         if not Config.exclude_update(sqla_model):
             # e.g. updateAccount(input: UpdateAccountInput)
             mutation_fields.update(update_entrypoint_factory(sqla_model, resolver=resolver))
+
+        if not Config.exclude_delete(sqla_model):
+            # e.g. deleteAccount(input: DeleteAccountInput)
+            mutation_fields.update(delete_entrypoint_factory(sqla_model, resolver=resolver))
 
     # Functions
     for sql_function in sql_functions:

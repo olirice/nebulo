@@ -9,6 +9,7 @@ from nebulo.gql.alias import (
     CompositeType,
     ConnectionType,
     CreatePayloadType,
+    DeletePayloadType,
     FunctionPayloadType,
     MutationPayloadType,
     ObjectType,
@@ -86,7 +87,11 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                 query = sql_finalize(query_tree.name, base_query)
                 coro_result: str = (await database.fetch_one(query=query))["json"]
                 sql_result = json.loads(coro_result)
-            result = {tree.alias: {**sql_result, mutation_id_alias: maybe_mutation_id}, node_id_alias: node_id}
+            result = {
+                tree.alias: {**sql_result, mutation_id_alias: maybe_mutation_id},
+                mutation_id_alias: maybe_mutation_id,
+                node_id_alias: node_id,
+            }
 
         elif isinstance(tree.return_type, (ObjectType, ScalarType)):
             base_query = sql_builder(tree)

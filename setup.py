@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="nebulo",
-    version="0.1.2",
+    version="0.1.3",
     description="Nebulo: Reflect RDBMS to GraphQL API",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
@@ -40,7 +40,7 @@ setup(
         "databases[postgresql]==0.2.6",
         "uvicorn==0.11.7",
         "parse==1.15.0",
-        "flupy==1.0.12",
+        "flupy==1.1.4",
         "pyjwt==1.7.1",
         "appdirs==1.4.3",
     ],

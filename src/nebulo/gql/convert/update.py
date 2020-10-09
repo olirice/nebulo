@@ -83,7 +83,7 @@ def update_payload_factory(sqla_model: TableProtocol) -> InputObjectType:
     result_name = f"Update{relevant_type_name}Payload"
 
     attrs = {
-        "clientMutationId": Field(String),
+        "clientMutationId": Field(String, resolve=default_resolver),
         "nodeId": ID,
         relevant_attr_name: Field(
             table_factory(sqla_model),
