@@ -54,6 +54,8 @@
                 <ul class="current">
                     <li class="toctree-l1 current"><a class="reference internal current" href="./">Quickstart</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#database-setup">Database Setup</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#graphql-schema">GraphQL Schema</a>
@@ -111,6 +113,11 @@
               
                 <h2 id="quickstart">Quickstart</h2>
 <p>For this example we're going to create a simple blogging platform. We'll start by creating a minimal database schema. Then we'll use nebulo to reflect our GraphQL API. Finally, we'll query from that API.</p>
+<h3 id="installation">Installation</h3>
+<p>Requires: Python 3.7+</p>
+<div class="shell codehilite"><pre><span></span><code>pip install nebulo
+</code></pre></div>
+
 <h3 id="database-setup">Database Setup</h3>
 <p>If you don't have PostgreSQL installed locally, the following docker command creates an instance with the connection string used for the remainder of the quickstart guide.</p>
 <div class="shell codehilite"><pre><span></span><code>docker run --rm --name nebulo_demo -p <span class="m">4443</span>:5432 -d -e <span class="nv">POSTGRES_DB</span><span class="o">=</span>nebulo_db -e <span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span>password -e <span class="nv">POSTGRES_USER</span><span class="o">=</span>nebulo_user -d postgres
