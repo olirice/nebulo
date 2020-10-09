@@ -63,7 +63,6 @@ def create_app(
     _app = Starlette(
         routes=routes,
         middleware=middleware,
-        debug=True,
         exception_handlers={HTTPException: http_exception},
         on_startup=[database.connect],
         on_shutdown=[database.disconnect],

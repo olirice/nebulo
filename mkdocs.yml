@@ -11,7 +11,8 @@ nav:
     - Introduction: 'index.md'
     - Quickstart: 'quickstart.md'
     - Performance: 'performance.md'
-    - Roadmap: 'roadmap.md'
+    - Authentication: 'authentication.md'
+    - Supported Entities: 'supported_entities.md'
 
 markdown_extensions:
   - codehilite

@@ -15,13 +15,13 @@ def main(**kwargs):
 
 @main.command()
 @click.option("-c", "--connection", default="sqlite:///")
-@click.option("-p", "--port", default=5018)
+@click.option("-p", "--port", default=5034)
 @click.option("-h", "--host", default="0.0.0.0")
 @click.option("-w", "--workers", default=1)
 @click.option("-s", "--schema", default="public")
 @click.option("--jwt-identifier", default=None)
 @click.option("--jwt-secret", default=None)
-@click.option("--reload/--no-reload", default=True)
+@click.option("--reload/--no-reload", default=False)
 def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, workers):
     """Run the GraphQL Server"""
     if reload and workers > 1:
