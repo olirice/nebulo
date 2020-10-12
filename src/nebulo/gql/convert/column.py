@@ -64,6 +64,7 @@ SQLA_TO_GQL = {
 def convert_type(sqla_type: typing.Type[TypeEngine]):
     if issubclass(sqla_type, SQLACompositeType):
         return composite_factory(sqla_type)
+
     # TODO(OR): Enums
     return SQLA_TO_GQL.get(sqla_type, String)
 

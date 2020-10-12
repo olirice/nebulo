@@ -7,7 +7,7 @@ from nebulo.sql.reflection.names import rename_table, rename_to_many_collection,
 from nebulo.sql.reflection.types import reflect_composites
 from nebulo.sql.reflection.views import reflect_views
 from nebulo.sql.table_base import TableProtocol
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, types
 from sqlalchemy.dialects.postgresql import base as pg_base
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.automap import automap_base
@@ -33,6 +33,7 @@ def reflect_sqla_models(engine: Engine, schema: str = "public") -> Tuple[List[Ta
     # Retrive a copy of the full type map
     # NOTE: types are not schema namespaced so colisions can occur reflecting tables
     type_map = pg_base.ischema_names.copy()
+    type_map["bool"] = types.Boolean  # type: ignore
 
     # Reflect views as SQLA ORM table
     views = reflect_views(engine=engine, schema=schema, declarative_base=declarative_base)
