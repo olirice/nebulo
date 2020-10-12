@@ -6,8 +6,6 @@ import importlib
 from typing import Callable, Optional
 
 import pytest
-from graphql import graphql_sync as execute_graphql
-from graphql.execution.execute import ExecutionResult
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.starlette import create_app
 from nebulo.sql import table_base
@@ -57,16 +55,7 @@ def session_maker(engine):
 
 
 @pytest.fixture
-def reset_sqla() -> None:
-    """SQLA Metadata is preserved between tests. When we build tables in tests
-    and the tables have previously used names, the metadata is re-used and
-    differences in added/deleted columns gets janked up. Reimporting resets
-    the metadata."""
-    importlib.reload(table_base)
-
-
-@pytest.fixture
-def session(session_maker, reset_sqla):  # pylint: disable=unused-argument
+def session(session_maker):
     _session = session_maker
     _session.execute(SQL_DOWN)
     _session.commit()
@@ -85,26 +74,11 @@ def schema_builder(session, engine):
     def build(sql: str):
         session.execute(sql)
         session.commit()
-        TableBase = table_base.TableBase  # pylint: disable=invalid-name
-        tables, functions = reflect_sqla_models(engine, schema="public", declarative_base=TableBase)
-        schema = sqla_models_to_graphql_schema(tables, functions, resolve_async=False)
+        tables, functions = reflect_sqla_models(engine, schema="public")
+        schema = sqla_models_to_graphql_schema(tables, functions)
         return schema
 
     yield build
-
-
-@pytest.fixture
-def gql_exec_builder(schema_builder, session) -> Callable[[str], Callable[[str], ExecutionResult]]:
-    """Return a function that accepts a sql string
-    and returns a graphql executor"""
-
-    def build(sql: str) -> Callable[[str], ExecutionResult]:
-        schema = schema_builder(sql)
-        return lambda source_query: execute_graphql(
-            schema=schema, source=source_query, context_value={"session": session, "jwt_claims": {}}
-        )
-
-    return build
 
 
 @pytest.fixture
@@ -112,7 +86,6 @@ def app_builder(event_loop, connection_str, session) -> Callable[[str, Optional[
     def build(sql: str, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
         session.execute(sql)
         session.commit()
-
         # Create the schema
         app = create_app(connection_str, jwt_identifier=jwt_identifier, jwt_secret=jwt_secret)
         return app

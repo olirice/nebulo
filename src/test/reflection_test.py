@@ -1,6 +1,7 @@
 import sqlalchemy as sqla
-from nebulo.sql.table_base import TableBase
+from sqlalchemy import MetaData
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy.ext.automap import automap_base
 
 SQL_UP = """
 CREATE TABLE public.refl_numer (
@@ -21,6 +22,8 @@ CREATE TABLE public.refl_numer (
 def test_reflect_numeric_types(engine, session):
     session.execute(SQL_UP)
     session.commit()
+
+    TableBase = automap_base(metadata=MetaData())
 
     TableBase.prepare(engine, reflect=True, schema="public")
     tab = TableBase.classes["refl_numer"]

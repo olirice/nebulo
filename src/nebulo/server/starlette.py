@@ -42,7 +42,6 @@ def create_app(
         sql_functions,
         jwt_identifier=jwt_identifier,
         jwt_secret=jwt_secret,
-        resolve_async=True,
     )
 
     if before_start:

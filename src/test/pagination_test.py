@@ -19,8 +19,8 @@ INSERT INTO account (id, name, age) VALUES
 """
 
 
-def test_get_cursor(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_get_cursor(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts {{
@@ -33,14 +33,18 @@ def test_get_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is None
-    cursor = result.data["allAccounts"]["edges"][2]["cursor"]
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+
+    result = resp.json()
+    assert result["errors"] == []
+    cursor = result["data"]["allAccounts"]["edges"][2]["cursor"]
     assert cursor is not None
 
 
-def test_invalid_cursor(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_invalid_cursor(client_builder):
+    client = client_builder(SQL_UP)
 
     cursor = CursorStructure(table_name="wrong_name", values={"id": 1}).serialize()
     # Query for 1 item after the cursor
@@ -56,12 +60,15 @@ def test_invalid_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert "invalid" in result.errors[0].message.lower()
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert "invalid" in str(result["errors"][0]).lower()
 
 
-def test_retrieve_1_after_cursor(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_retrieve_1_after_cursor(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts {{
@@ -74,9 +81,13 @@ def test_retrieve_1_after_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
     # Get a cursor to 2nd entry
-    cursor = result.data["allAccounts"]["edges"][1]["cursor"]
+    cursor = result["data"]["allAccounts"]["edges"][1]["cursor"]
 
     # Query for 1 item after the cursor
     gql_query = f"""
@@ -91,12 +102,17 @@ def test_retrieve_1_after_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 3
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    assert result["data"]["allAccounts"]["edges"][0]["node"]["id"] == 3
 
 
-def test_retrieve_1_before_cursor(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_retrieve_1_before_cursor(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts {{
@@ -109,9 +125,14 @@ def test_retrieve_1_before_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
     # Get a cursor to 2nd entry
-    cursor = result.data["allAccounts"]["edges"][1]["cursor"]
+    cursor = result["data"]["allAccounts"]["edges"][1]["cursor"]
     print(cursor)
 
     # Query for 1 item after the cursor
@@ -127,12 +148,17 @@ def test_retrieve_1_before_cursor(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 1
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    assert result["data"]["allAccounts"]["edges"][0]["node"]["id"] == 1
 
 
-def test_pagination_order(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_pagination_order(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts {{
@@ -145,13 +171,18 @@ def test_pagination_order(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
     # Get a cursor to 2nd entry
     # Cursor for the "rachel" entry
     limit = 2
-    after_cursor = result.data["allAccounts"]["edges"][1]["cursor"]
+    after_cursor = result["data"]["allAccounts"]["edges"][1]["cursor"]
     # Cursor for the "buddy" entry, id = 4
-    before_cursor = result.data["allAccounts"]["edges"][3]["cursor"]
+    before_cursor = result["data"]["allAccounts"]["edges"][3]["cursor"]
 
     # Query for 2 rows after the cursor
     gql_query = f"""
@@ -167,9 +198,13 @@ def test_pagination_order(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    print(result.data)
-    after_result = [x["node"]["name"] for x in result.data["allAccounts"]["edges"]]
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    after_result = [x["node"]["name"] for x in result["data"]["allAccounts"]["edges"]]
     assert after_result == ["sophie", "buddy"]
 
     gql_query = f"""
@@ -185,12 +220,17 @@ def test_pagination_order(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert [x["node"]["name"] for x in result.data["allAccounts"]["edges"]] == ["rachel", "sophie"]
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    assert [x["node"]["name"] for x in result["data"]["allAccounts"]["edges"]] == ["rachel", "sophie"]
 
 
-def test_invalid_pagination_params(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_invalid_pagination_params(client_builder):
+    client = client_builder(SQL_UP)
     cursor = CursorStructure(table_name="not used", values={"id": 1}).serialize()
     # First with Before
     gql_query = f"""
@@ -205,8 +245,11 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is not None
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] != []
 
     # Last with After
     gql_query = f"""
@@ -221,8 +264,11 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is not None
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] != []
 
     # First and Last
     gql_query = f"""
@@ -237,8 +283,11 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is not None
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] != []
 
     # Before and After
     gql_query = f"""
@@ -253,5 +302,8 @@ def test_invalid_pagination_params(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is not None
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] != []

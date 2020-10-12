@@ -1,5 +1,3 @@
-import json
-
 from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
@@ -40,8 +38,8 @@ INSERT INTO offer (currency, account_id_not_null, account_id_nullable) VALUES
 """
 
 
-def test_query_one_to_many(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_one_to_many(client_builder):
+    client = client_builder(SQL_UP)
     account_id = 2
     node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = f"""
@@ -59,13 +57,14 @@ def test_query_one_to_many(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
 
-    print(json.dumps(result.data, indent=2))
-    assert result.errors is None
-    assert result.data["account"]["id"] == account_id
-
-    offers_by_id = result.data["account"]["offersByIdToAccountIdNullable"]
+    result = resp.json()
+    assert result["errors"] == []
+    assert result["data"]["account"]["id"] == account_id
+    offers_by_id = result["data"]["account"]["offersByIdToAccountIdNullable"]
     currencies = {x["node"]["currency"] for x in offers_by_id["edges"]}
     assert "usd" in currencies and "gbp" in currencies
 
@@ -73,10 +72,9 @@ def test_query_one_to_many(gql_exec_builder):
     assert len(offers_by_id["edges"]) == 2
 
 
-def test_query_many_to_one(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_many_to_one(client_builder):
+    client = client_builder(SQL_UP)
     account_id = 2
-    node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = """
     {
       allOffers {
@@ -91,7 +89,9 @@ def test_query_many_to_one(gql_exec_builder):
       }
     }
     """
-    result = executor(gql_query)
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
 
-    print(json.dumps(result.data, indent=2))
-    assert result.errors is None
+    result = resp.json()
+    assert result["errors"] == []

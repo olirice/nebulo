@@ -1,3 +1,5 @@
+import json
+
 SQL_UP = """
 CREATE TABLE account (
     id serial primary key,
@@ -14,8 +16,8 @@ INSERT INTO account (id, name, age) VALUES
 """
 
 
-def test_query_with_int_condition(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_with_int_condition(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts(condition: {{id: 1}}) {{
@@ -27,14 +29,23 @@ def test_query_with_int_condition(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is None
-    result_id = result.data["allAccounts"]["edges"][0]["node"]["id"]
+
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+
+    assert resp.status_code == 200
+    print(resp.text)
+
+    payload = json.loads(resp.text)
+    assert payload["errors"] == []
+
+    result_id = payload["data"]["allAccounts"]["edges"][0]["node"]["id"]
     assert result_id == 1
 
 
-def test_query_with_string_condition(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_with_string_condition(client_builder):
+    client = client_builder(SQL_UP)
+
     gql_query = f"""
     {{
         allAccounts(condition: {{name: "sophie"}}) {{
@@ -47,7 +58,15 @@ def test_query_with_string_condition(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is None
-    result_name = result.data["allAccounts"]["edges"][0]["node"]["name"]
+
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+
+    assert resp.status_code == 200
+    print(resp.text)
+
+    payload = json.loads(resp.text)
+    assert payload["errors"] == []
+
+    result_name = payload["data"]["allAccounts"]["edges"][0]["node"]["name"]
     assert result_name == "sophie"

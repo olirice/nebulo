@@ -14,8 +14,7 @@ from nebulo.gql.convert.function import (
 )
 from nebulo.gql.convert.table import table_field_factory
 from nebulo.gql.convert.update import update_entrypoint_factory
-from nebulo.gql.resolve.resolvers.asynchronous import async_resolver
-from nebulo.gql.resolve.resolvers.synchronous import sync_resolver
+from nebulo.gql.resolve.resolvers.asynchronous import async_resolver as resolver
 from nebulo.sql.inspect import get_table_name
 from nebulo.sql.reflection.function import SQLFunction
 from nebulo.text_utils import snake_to_camel, to_plural
@@ -26,13 +25,10 @@ __all__ = ["sqla_models_to_graphql_schema"]
 def sqla_models_to_graphql_schema(
     sqla_models,
     sql_functions: typing.List[SQLFunction],
-    resolve_async: bool = False,
     jwt_identifier: typing.Optional[str] = None,
     jwt_secret: typing.Optional[str] = None,
 ) -> Schema:
     """Creates a GraphQL Schema from SQLA Models"""
-
-    resolver = async_resolver if resolve_async else sync_resolver
 
     query_fields = {}
     mutation_fields = {}

@@ -1,6 +1,14 @@
 import json
 
 CREATE_FUNCTION = """
+-- Not used
+CREATE TABLE account (
+    id serial primary key,
+    name text not null,
+    created_at timestamp without time zone default (now() at time zone 'utc')
+);
+
+
 create type public.jwt_token as (
   role text,
   exp integer,
@@ -36,6 +44,8 @@ def test_jwt_function(client_builder):
         resp = client.post("/", json={"query": query})
     result = json.loads(resp.text)
     assert resp.status_code == 200
+
+    print(result)
     assert result["errors"] == []
     token = result["data"]["authenticate"]["result"]
     assert isinstance(token, str)

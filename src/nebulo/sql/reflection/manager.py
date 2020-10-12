@@ -6,15 +6,19 @@ from nebulo.sql.reflection.function import SQLFunction, reflect_functions
 from nebulo.sql.reflection.names import rename_table, rename_to_many_collection, rename_to_one_collection
 from nebulo.sql.reflection.types import reflect_composites
 from nebulo.sql.reflection.views import reflect_views
-from nebulo.sql.table_base import TableBase
+from nebulo.sql.table_base import TableProtocol
+from sqlalchemy import MetaData
 from sqlalchemy.dialects.postgresql import base as pg_base
 from sqlalchemy.engine import Engine
+from sqlalchemy.ext.automap import automap_base
 
 
-def reflect_sqla_models(
-    engine: Engine, schema: str = "public", declarative_base=TableBase
-) -> Tuple[List[TableBase], List[SQLFunction]]:
+def reflect_sqla_models(engine: Engine, schema: str = "public") -> Tuple[List[TableProtocol], List[SQLFunction]]:
     """Reflect SQLAlchemy Declarative Models from a database connection"""
+
+    meta = MetaData()
+    declarative_base = automap_base(metadata=meta)
+
     # Register event listeners to apply GQL attr keys to columns
 
     # Retrive a copy of the full type map

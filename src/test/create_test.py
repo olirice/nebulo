@@ -40,6 +40,7 @@ mutation {
         resp = client.post("/", json={"query": query})
     assert resp.status_code == 200
     payload = json.loads(resp.text)
+    print(payload)
     assert isinstance(payload["data"]["createAccount"]["account"], dict)
     assert payload["data"]["createAccount"]["account"]["dd"] == 31
     assert payload["data"]["createAccount"]["account"]["name"] == "Buddy"

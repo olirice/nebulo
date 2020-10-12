@@ -34,8 +34,8 @@ def test_reflect_view(schema_builder):
     assert "deleteAccountView" not in mutation_type.fields
 
 
-def test_query_view(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_view(client_builder):
+    client = client_builder(SQL_UP)
 
     gql_query = """
     query {
@@ -54,8 +54,12 @@ def test_query_view(gql_exec_builder):
     }
     """
 
-    result = executor(gql_query)
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    result = resp.json()
+    assert resp.status_code == 200
+
     print(result)
-    assert result.errors is None
-    assert result.data["allAccountViews"]["edges"][0]["node"]["accountId"] == 1
-    assert result.data["allAccountViews"]["edges"][0]["node"]["accountByAccountIdToId"]["name"] == "Oliver"
+    assert result["errors"] == []
+    assert result["data"]["allAccountViews"]["edges"][0]["node"]["accountId"] == 1
+    assert result["data"]["allAccountViews"]["edges"][0]["node"]["accountByAccountIdToId"]["name"] == "Oliver"

@@ -16,8 +16,8 @@ insert into account(name) values
 """
 
 
-def test_query_multiple_fields(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_multiple_fields(client_builder):
+    client = client_builder(SQL_UP)
     account_id = 1
     node_id = NodeIdStructure(table_name="account", values={"id": account_id}).serialize()
     gql_query = f"""
@@ -30,7 +30,12 @@ def test_query_multiple_fields(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is None
-    assert result.data["account"]["id"] == account_id
-    assert result.data["account"]["name"]["first_name"] == "oliver"
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+
+    result = resp.json()
+
+    assert result["errors"] == []
+    assert result["data"]["account"]["id"] == account_id
+    assert result["data"]["account"]["name"]["first_name"] == "oliver"

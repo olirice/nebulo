@@ -13,8 +13,8 @@ INSERT INTO account (id, name) VALUES
 """
 
 
-def test_query_multiple_fields(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_query_multiple_fields(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts {{
@@ -28,14 +28,18 @@ def test_query_multiple_fields(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is None
-    assert "edges" in result.data["allAccounts"]
-    assert "node" in result.data["allAccounts"]["edges"][0]
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+
+    result = resp.json()
+    assert result["errors"] == []
+    assert "edges" in result["data"]["allAccounts"]
+    assert "node" in result["data"]["allAccounts"]["edges"][0]
 
 
-def test_arg_first(gql_exec_builder):
-    executor = gql_exec_builder(SQL_UP)
+def test_arg_first(client_builder):
+    client = client_builder(SQL_UP)
     gql_query = f"""
     {{
         allAccounts(first: 2) {{
@@ -49,8 +53,14 @@ def test_arg_first(gql_exec_builder):
         }}
     }}
     """
-    result = executor(gql_query)
-    assert result.errors is None
-    assert len(result.data["allAccounts"]["edges"]) == 2
-    assert result.data["allAccounts"]["edges"][0]["node"]["id"] == 1
-    assert result.data["allAccounts"]["edges"][1]["node"]["id"] == 2
+
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+
+    result = resp.json()
+    assert result["errors"] == []
+
+    assert len(result["data"]["allAccounts"]["edges"]) == 2
+    assert result["data"]["allAccounts"]["edges"][0]["node"]["id"] == 1
+    assert result["data"]["allAccounts"]["edges"][1]["node"]["id"] == 2
