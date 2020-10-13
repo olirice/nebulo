@@ -35,7 +35,9 @@
 Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases wtih 0 code or can be added to existing [SQLAlchemy](https://www.sqlalchemy.org/) projects (pending documentation).
 
 
-**WARNING: Pre-Alpha Software**
+**Note: Alpha Software**
+
+The public API is expected to evolve over the next year. Production usage is not reccomended at this stage.
 
 ## TL;DR
 
@@ -51,8 +53,8 @@ neb run -c postgresql://nebulo_user:password@localhost:4443/nebulo_db
 
 Visit your shiny new GraphQL API at [http://localhost:5034/graphiql](http://localhost:5034/graphiql)
 
-![graphiql image](images/graphiql.png)
+![graphiql image](docs/images/graphiql.png)
 
-Next, check out the [docs](https://olirice.github.io/nebulo/introduction/) guide for a small end-to-end example.
+Next, check out the [docs](https://olirice.github.io/nebulo/quickstart/) guide for a small end-to-end example.
 
 <p align="center">&mdash;&mdash;  &mdash;&mdash;</p>
