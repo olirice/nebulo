@@ -18,6 +18,7 @@ from nebulo.gql.alias import (
 )
 from nebulo.gql.resolve.resolvers.default import default_resolver
 from nebulo.sql.composite import CompositeType as SQLACompositeType
+from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel
 from sqlalchemy import Column, types
 from sqlalchemy.dialects import postgresql
@@ -64,6 +65,11 @@ SQLA_TO_GQL = {
 def convert_type(sqla_type: typing.Type[TypeEngine]):
     if issubclass(sqla_type, SQLACompositeType):
         return composite_factory(sqla_type)
+
+    if isinstance(sqla_type, TableProtocol):
+        from .table import table_factory
+
+        return table_factory(sqla_type)
 
     # TODO(OR): Enums
     return SQLA_TO_GQL.get(sqla_type, String)

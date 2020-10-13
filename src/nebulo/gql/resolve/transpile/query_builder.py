@@ -24,17 +24,17 @@ from sqlalchemy.sql.elements import BinaryExpression, Label
 def sql_builder(tree: ASTNode, parent_name: typing.Optional[str] = None) -> Alias:
     return_type = tree.return_type
 
-    # SQL Function handler
-    if hasattr(return_type, "sql_function"):
-        # Immutable function
-        sql_func_callable = return_type.sql_function.to_executable(tree.args.values())
-        return select([sql_func_callable.label("ret_json")]).alias()
-
     if isinstance(return_type, TableType):
         return row_block(field=tree, parent_name=parent_name)
 
     if isinstance(return_type, ConnectionType):
         return connection_block(field=tree, parent_name=parent_name)
+
+    # SQL Function handler for immutable functions
+    if hasattr(return_type, "sql_function"):
+        # Immutable function
+        sql_func_callable = return_type.sql_function.to_executable(tree.args.values())
+        return select([sql_func_callable.label("ret_json")]).alias()
 
     raise Exception("sql builder could not match return type")
 

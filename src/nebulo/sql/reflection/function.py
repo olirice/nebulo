@@ -50,11 +50,7 @@ class SQLFunction:
         sqla_func = getattr(getattr(func, self.schema), self.name)
         # Bind and typecast user parameters
         call_sig = [cast(arg_value, arg_sqla_type) for arg_value, arg_sqla_type in zip(args, self.arg_sqla_types)]
-
         return sqla_func(*call_sig)
-        # Create the select statement
-        # executable = select([sqla_func(*call_sig).label('ret_json')]).alias()
-        # return executable
 
 
 def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
