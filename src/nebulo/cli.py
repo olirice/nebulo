@@ -22,7 +22,8 @@ def main(**kwargs):
 @click.option("--jwt-identifier", default=None)
 @click.option("--jwt-secret", default=None)
 @click.option("--reload/--no-reload", default=False)
-def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, workers):
+@click.option("--default-role", type=str, default=None)
+def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, workers, default_role):
     """Run the GraphQL Server"""
     if reload and workers > 1:
         print("Reload not supported with workers > 1")
@@ -33,6 +34,7 @@ def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, work
             NEBULO_SCHEMA=schema,
             NEBULO_JWT_IDENTIFIER=jwt_identifier,
             NEBULO_JWT_SECRET=jwt_secret,
+            NEBULO_DEFAULT_ROLE=default_role,
         ):
 
             uvicorn.run("nebulo.server.app:APP", host=host, workers=workers, port=port, log_level="info", reload=reload)

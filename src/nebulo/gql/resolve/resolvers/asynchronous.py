@@ -26,6 +26,42 @@ from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import Text, func, literal, select
 
 
+def jwt_claims_to_statement(jwt_claims: typing.Dict[str, typing.Any]):
+    """Emit statement to set 'jwt.claims.<key>' for each claim in claims dict"""
+    # Setting local variables an not be done in prepared statement
+    # since JWT claims are signed, literal binds should be ok
+    role_key = "role"
+
+    # Set all jwt.claims.*
+    claims = [
+        func.set_config(
+            literal("jwt.claims.").op("||")(func.cast(claim_key, Text())),
+            func.cast(str(claim_value), Text()),
+            True,
+        )
+        for claim_key, claim_value in jwt_claims.items()
+    ]
+    # Set all role claim if exists from jwt
+    if role_key in jwt_claims:
+        claims.append(
+            func.set_config(
+                func.cast(role_key, Text()),
+                func.cast(str(jwt_claims[role_key]), Text()),
+                True,
+            )
+        )
+    # Set default role from config if provided
+    elif Config.DEFAULT_ROLE is not None:
+        claims.append(
+            func.set_config(
+                func.cast(role_key, Text()),
+                func.cast(str(Config.DEFAULT_ROLE), Text()),
+                True,
+            )
+        )
+    return select(claims)
+
+
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     """Awaitable GraphQL Entrypoint resolver
 
@@ -38,19 +74,10 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     tree = parse_resolve_info(info)
 
     async with database.transaction():
-
+        # Set claims for transaction
         if jwt_claims:
-            # Setting local variables an not be done in prepared statement
-            # since JWT claims are signed, literal binds should be ok
-            claims = [
-                func.set_config(
-                    literal("jwt.claims.").op("||")(func.cast(claim_key, Text())),
-                    func.cast(str(claim_value), Text()),
-                    True,
-                )
-                for claim_key, claim_value in jwt_claims.items()
-            ]
-            await database.execute(select(claims))
+            claims = jwt_claims_to_statement(jwt_claims)
+            await database.execute(claims)
 
         result: typing.Dict[str, typing.Any]
 
