@@ -20,7 +20,7 @@ class Config:
     SCHEMA = ENV.get("NEBULO_SCHEMA")
     JWT_IDENTIFIER = ENV.get("NEBULO_JWT_IDENTIFIER")
     JWT_SECRET = ENV.get("NEBULO_JWT_SECRET")
-    DEFAULT_ROLE = ENV.get("DEFAULT_ROLE")
+    DEFAULT_ROLE = ENV.get("NEBULO_DEFAULT_ROLE")
 
     @staticmethod
     def function_name_mapper(sql_function: SQLFunction) -> str:

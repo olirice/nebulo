@@ -26,7 +26,7 @@ from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import Text, func, literal, select
 
 
-def jwt_claims_to_statement(jwt_claims: typing.Dict[str, typing.Any]):
+def jwt_claims_to_statement(jwt_claims: typing.Dict[str, typing.Any]) -> typing.List:
     """Emit statement to set 'jwt.claims.<key>' for each claim in claims dict"""
     # Setting local variables an not be done in prepared statement
     # since JWT claims are signed, literal binds should be ok
@@ -59,7 +59,7 @@ def jwt_claims_to_statement(jwt_claims: typing.Dict[str, typing.Any]):
                 True,
             )
         )
-    return select(claims)
+    return claims
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -75,9 +75,9 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
     async with database.transaction():
         # Set claims for transaction
-        if jwt_claims:
-            claims = jwt_claims_to_statement(jwt_claims)
-            await database.execute(claims)
+        claims = jwt_claims_to_statement(jwt_claims)
+        if claims:
+            await database.execute(select(claims))
 
         result: typing.Dict[str, typing.Any]
 
