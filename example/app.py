@@ -9,8 +9,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
-from starlette.middleware import Middleware
-from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount, Route
 
 # Config
@@ -79,11 +77,8 @@ def create_app(connection_str, sqla_models) -> Starlette:
         Mount("/static", GRAPHIQL_STATIC_FILES, name="static"),
     ]
 
-    middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
-
     _app = Starlette(
         routes=routes,
-        middleware=middleware,
         exception_handlers={HTTPException: http_exception},
         on_startup=[database.connect],
         on_shutdown=[database.disconnect],
