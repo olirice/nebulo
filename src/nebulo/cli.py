@@ -3,18 +3,19 @@ from __future__ import annotations
 import click
 import uvicorn
 from graphql.utilities import print_schema
+from nebulo import VERSION
 from nebulo.env import EnvManager
 from sqlalchemy import create_engine
 
 
 @click.group()
-@click.version_option(version="0.0.1")
+@click.version_option(version=VERSION)
 def main(**kwargs):
     pass  # pragma: no cover
 
 
 @main.command()
-@click.option("-c", "--connection", default="sqlite:///")
+@click.option("-c", "--connection")
 @click.option("-p", "--port", default=5034)
 @click.option("-h", "--host", default="0.0.0.0")
 @click.option("-w", "--workers", default=1)

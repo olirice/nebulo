@@ -1,9 +1,23 @@
+import os
+
 from setuptools import find_packages, setup
+
+
+def read_package_variable(key, filename="__init__.py"):
+    """Read the value of a variable from the package without importing."""
+    module_path = os.path.join("src/nebulo", filename)
+    with open(module_path) as module:
+        for line in module:
+            parts = line.strip().split(" ", 2)
+            if parts[:-1] == [key, "="]:
+                return parts[-1].strip("'").strip('"')
+    return None
+
 
 setup(
     name="nebulo",
-    version="0.1.9",
-    description="Nebulo: Reflect RDBMS to GraphQL API",
+    version=read_package_variable("VERSION"),
+    description="Nebulo: GraphQL API for PostgreSQL",
     author="Oliver Rice",
     author_email="oliver@oliverrice.com",
     license="MIT",
@@ -41,7 +55,7 @@ setup(
         "starlette==0.13.*",
         "sqlalchemy==1.3.*",
         "typing-extensions",
-        "uvicorn[standard]==0.12.*",
+        "uvicorn==0.12.*",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov", "requests"],
