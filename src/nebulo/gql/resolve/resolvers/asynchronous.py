@@ -5,61 +5,14 @@ import typing
 
 from flupy import flu
 from nebulo.config import Config
-from nebulo.gql.alias import (
-    CompositeType,
-    ConnectionType,
-    CreatePayloadType,
-    DeletePayloadType,
-    FunctionPayloadType,
-    MutationPayloadType,
-    ObjectType,
-    ResolveInfo,
-    ScalarType,
-    TableType,
-    UpdatePayloadType,
-)
+from nebulo.gql.alias import FunctionPayloadType, MutationPayloadType, ObjectType, ResolveInfo, ScalarType
 from nebulo.gql.parse_info import parse_resolve_info
 from nebulo.gql.relay.node_interface import NodeIdStructure, to_node_id_sql
+from nebulo.gql.resolve.resolvers.claims import build_claims
 from nebulo.gql.resolve.transpile.mutation_builder import build_mutation
 from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
 from nebulo.sql.table_base import TableProtocol
-from sqlalchemy import Text, func, literal, select
-
-
-def jwt_claims_to_statement(jwt_claims: typing.Dict[str, typing.Any]) -> typing.List:
-    """Emit statement to set 'jwt.claims.<key>' for each claim in claims dict"""
-    # Setting local variables an not be done in prepared statement
-    # since JWT claims are signed, literal binds should be ok
-    role_key = "role"
-
-    # Set all jwt.claims.*
-    claims = [
-        func.set_config(
-            literal("jwt.claims.").op("||")(func.cast(claim_key, Text())),
-            func.cast(str(claim_value), Text()),
-            True,
-        )
-        for claim_key, claim_value in jwt_claims.items()
-    ]
-    # Set all role claim if exists from jwt
-    if role_key in jwt_claims:
-        claims.append(
-            func.set_config(
-                func.cast(role_key, Text()),
-                func.cast(str(jwt_claims[role_key]), Text()),
-                True,
-            )
-        )
-    # Set default role from config if provided
-    elif Config.DEFAULT_ROLE is not None:
-        claims.append(
-            func.set_config(
-                func.cast(role_key, Text()),
-                func.cast(str(Config.DEFAULT_ROLE), Text()),
-                True,
-            )
-        )
-    return claims
+from sqlalchemy import select
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -70,14 +23,16 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     """
     context = info.context
     database = context["database"]
+    default_role = context["default_role"]
     jwt_claims = context["jwt_claims"]
+
     tree = parse_resolve_info(info)
 
     async with database.transaction():
         # Set claims for transaction
-        claims = jwt_claims_to_statement(jwt_claims)
-        if claims:
-            await database.execute(select(claims))
+        if jwt_claims or default_role:
+            claims_stmt = build_claims(jwt_claims, default_role)
+            await database.execute(claims_stmt)
 
         result: typing.Dict[str, typing.Any]
 

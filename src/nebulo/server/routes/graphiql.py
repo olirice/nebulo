@@ -1,10 +1,17 @@
+import os
 from functools import lru_cache
+from pathlib import Path
 
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
+from starlette.staticfiles import StaticFiles
+
+GRAPHIQL_STATIC_PATH = Path(os.path.abspath(__file__)).parent.parent.parent.resolve() / "static"
+
+GRAPHIQL_STATIC_FILES = StaticFiles(directory=GRAPHIQL_STATIC_PATH)
 
 
-async def graphiql_endpoint(request: Request, graphql_url_path: str = '"/"') -> HTMLResponse:
+async def graphiql_route(request: Request, graphql_url_path: str = '"/"') -> HTMLResponse:
     """Return the HTMLResponse for GraphiQL GraphQL explorer configured to hit the correct endpoint"""
 
     html_text = build_graphiql_html(graphql_url_path)

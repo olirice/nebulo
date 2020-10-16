@@ -56,7 +56,6 @@ def sqla_models_to_graphql_schema(
         if not Config.exclude_delete(sqla_model):
             # e.g. deleteAccount(input: DeleteAccountInput)
             mutation_fields.update(delete_entrypoint_factory(sqla_model, resolver=resolver))
-
     # Functions
     for sql_function in sql_functions:
         if is_jwt_function(sql_function, jwt_identifier):

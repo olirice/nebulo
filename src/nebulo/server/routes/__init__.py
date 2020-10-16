@@ -1,4 +1,4 @@
-from .graphiql import graphiql_endpoint
-from .graphql import get_graphql_endpoint
+from .graphiql import GRAPHIQL_STATIC_FILES, graphiql_route
+from .graphql import get_graphql_route
 
-__all__ = ["graphiql_endpoint", "get_graphql_endpoint"]
+__all__ = ["graphiql_route", "get_graphql_route", "GRAPHIQL_STATIC_FILES"]

@@ -53,6 +53,8 @@ class Config:
         referred_cls = relationship.argument
         if hasattr(referred_cls, "class_"):
             referred_cls = referred_cls.class_
+        elif callable(referred_cls):
+            referred_cls = referred_cls()
 
         referred_name = get_table_name(referred_cls)
         cardinal_name = to_plural(referred_name) if relationship.uselist else referred_name

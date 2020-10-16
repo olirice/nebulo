@@ -7,11 +7,11 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-__all__ = ["get_graphql_endpoint"]
+__all__ = ["get_graphql_route"]
 
 
-def get_graphql_endpoint(
-    schema: str, database: Database, jwt_secret: Optional[str]
+def get_graphql_route(
+    schema: str, database: Database, jwt_secret: Optional[str], default_role: Optional[str]
 ) -> Callable[[Request], Awaitable[JSONResponse]]:
     """Retrieve the GraphQL variables from the Starlette Request"""
 
@@ -28,6 +28,7 @@ def get_graphql_endpoint(
             "query": query,
             "variables": variables,
             "jwt_claims": jwt_claims,
+            "default_role": default_role,
         }
         result = await graphql_exec(
             schema=schema, source=query, context_value=request_context, variable_values=variables

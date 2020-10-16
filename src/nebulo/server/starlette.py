@@ -1,22 +1,16 @@
-import os
-from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Optional
 
 from databases import Database
-from nebulo.gql.alias import Schema
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
-from nebulo.server.routes import get_graphql_endpoint, graphiql_endpoint
+from nebulo.server.routes import GRAPHIQL_STATIC_FILES, get_graphql_route, graphiql_route
 from nebulo.sql.reflection.manager import reflect_sqla_models
-from sqlalchemy import Table, create_engine
+from sqlalchemy import create_engine
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount, Route
-from starlette.staticfiles import StaticFiles
-
-STATIC_PATH = Path(os.path.abspath(__file__)).parent.parent.resolve() / "static"
 
 
 def create_app(
@@ -24,7 +18,7 @@ def create_app(
     schema: str = "public",
     jwt_identifier: Optional[str] = None,
     jwt_secret: Optional[str] = None,
-    before_start: Optional[Callable[[Schema, List[Table], Database], Schema]] = None,
+    default_role: Optional[str] = None,
 ) -> Starlette:
     """Create an ASGI App"""
 
@@ -44,17 +38,15 @@ def create_app(
         jwt_secret=jwt_secret,
     )
 
-    if before_start:
-        core_tables = [x.__table__ for x in sqla_models]
-        gql_schema = before_start(gql_schema, core_tables, database)
-
     # Build Starlette app
-    graphql_endpoint = get_graphql_endpoint(gql_schema, database, jwt_secret)
+    graphql_route = get_graphql_route(
+        schema=gql_schema, database=database, jwt_secret=jwt_secret, default_role=default_role
+    )
 
     routes = [
-        Route("/", graphql_endpoint, methods=["POST"]),
-        Route("/graphiql", graphiql_endpoint, methods=["GET"]),
-        Mount("/static", StaticFiles(directory=STATIC_PATH), name="static"),
+        Route("/", graphql_route, methods=["POST"]),
+        Route("/graphiql", graphiql_route, methods=["GET"]),
+        Mount("/static", GRAPHIQL_STATIC_FILES, name="static"),
     ]
 
     middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
