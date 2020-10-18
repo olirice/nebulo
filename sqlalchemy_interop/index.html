@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>SQLAlchemy Interop - Nebulo</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "SQLAlchemy Interop";
+    var mkdocs_page_input_path = "sqlalchemy_interop.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Nebulo</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <p class="caption"><span class="caption-text">Welcome</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Introduction</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Feature Support</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_types/">Types</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Examples</span></p>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">SQLAlchemy Interop</a>
+    <ul class="current">
+    </ul>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Advanced</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../performance/">Performance</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Nebulo</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Examples &raquo;</li>
+        
+      
+    
+    <li>SQLAlchemy Interop</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/sqlalchemy_interop.md"> Edit on olirice/nebulo</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="sqlalchemy-interop-example">SQLAlchemy Interop Example</h1>
+<p>The following is a complete example showing how to add a nebulo-powered GraphQL API to an existing SQLAlchemy project.</p>
+<p>If you use docker, start the database with</p>
+<div class="shell codehilite"><pre><span></span><code>docker run --rm --name nebulo_example_local -p <span class="m">5522</span>:5432 -d -e <span class="nv">POSTGRES_DB</span><span class="o">=</span>nebulo_example -e <span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span>app_password <span class="nv">POSTGRES_USER</span><span class="o">=</span>app_user -d postgres
+</code></pre></div>
+
+<p>or update <code>DATABASE_URI</code> in <code>app.py</code> to the connection string for your database server.</p>
+<div class="python codehilite"><pre><span></span><code><span class="c1"># app.py</span>
+
+<span class="kn">import</span> <span class="nn">uvicorn</span>
+<span class="kn">from</span> <span class="nn">databases</span> <span class="kn">import</span> <span class="n">Database</span>
+<span class="kn">from</span> <span class="nn">nebulo.gql.sqla_to_gql</span> <span class="kn">import</span> <span class="n">sqla_models_to_graphql_schema</span>
+<span class="kn">from</span> <span class="nn">nebulo.server.exception</span> <span class="kn">import</span> <span class="n">http_exception</span>
+<span class="kn">from</span> <span class="nn">nebulo.server.routes</span> <span class="kn">import</span> <span class="n">GRAPHIQL_STATIC_FILES</span><span class="p">,</span> <span class="n">get_graphql_route</span><span class="p">,</span> <span class="n">graphiql_route</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">create_engine</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">text</span> <span class="k">as</span> <span class="n">sql_text</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span>
+<span class="kn">from</span> <span class="nn">starlette.applications</span> <span class="kn">import</span> <span class="n">Starlette</span>
+<span class="kn">from</span> <span class="nn">starlette.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span>
+<span class="kn">from</span> <span class="nn">starlette.routing</span> <span class="kn">import</span> <span class="n">Mount</span><span class="p">,</span> <span class="n">Route</span>
+
+<span class="c1"># Config</span>
+<span class="n">DATABASE_URI</span> <span class="o">=</span> <span class="s2">&quot;postgresql://app_user:app_password@localhost:5522/nebulo_example&quot;</span>
+
+
+<span class="c1">#####################</span>
+<span class="c1"># SQLAlchemy Models #</span>
+<span class="c1">#####################</span>
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;author&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude insert, update&quot;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">DateTime</span><span class="p">,</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">server_default</span><span class="o">=</span><span class="n">sql_text</span><span class="p">(</span><span class="s2">&quot;now()&quot;</span><span class="p">),</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude insert, update&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">books</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Book&quot;</span><span class="p">,</span> <span class="n">uselist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Book</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;book&quot;</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude insert, update&quot;</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">author_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;author.id&quot;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+        <span class="n">DateTime</span><span class="p">,</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">sql_text</span><span class="p">(</span><span class="s2">&quot;now()&quot;</span><span class="p">),</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude insert, update&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">author</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Author&quot;</span><span class="p">)</span>
+
+
+<span class="c1">#################################</span>
+<span class="c1"># Starlette Application Factory #</span>
+<span class="c1">#################################</span>
+
+
+<span class="k">def</span> <span class="nf">create_app</span><span class="p">(</span><span class="n">connection_str</span><span class="p">,</span> <span class="n">sqla_models</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Starlette</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Create the Starlette app&quot;&quot;&quot;</span>
+
+    <span class="c1"># Convert sqla models to graphql schema</span>
+    <span class="n">gql_schema</span> <span class="o">=</span> <span class="n">sqla_models_to_graphql_schema</span><span class="p">(</span>
+        <span class="n">sqla_models</span><span class="p">,</span>
+        <span class="n">sql_functions</span><span class="o">=</span><span class="p">[],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Build Starlette app</span>
+    <span class="n">database</span> <span class="o">=</span> <span class="n">Database</span><span class="p">(</span><span class="n">connection_str</span><span class="p">)</span>
+    <span class="n">graphql_route</span> <span class="o">=</span> <span class="n">get_graphql_route</span><span class="p">(</span><span class="n">gql_schema</span><span class="p">,</span> <span class="n">database</span><span class="p">,</span> <span class="n">jwt_secret</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_role</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">routes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Route</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">graphql_route</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;POST&quot;</span><span class="p">]),</span>
+        <span class="n">Route</span><span class="p">(</span><span class="s2">&quot;/graphiql&quot;</span><span class="p">,</span> <span class="n">graphiql_route</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GET&quot;</span><span class="p">]),</span>
+        <span class="n">Mount</span><span class="p">(</span><span class="s2">&quot;/static&quot;</span><span class="p">,</span> <span class="n">GRAPHIQL_STATIC_FILES</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;static&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">_app</span> <span class="o">=</span> <span class="n">Starlette</span><span class="p">(</span>
+        <span class="n">routes</span><span class="o">=</span><span class="n">routes</span><span class="p">,</span>
+        <span class="n">exception_handlers</span><span class="o">=</span><span class="p">{</span><span class="n">HTTPException</span><span class="p">:</span> <span class="n">http_exception</span><span class="p">},</span>
+        <span class="n">on_startup</span><span class="o">=</span><span class="p">[</span><span class="n">database</span><span class="o">.</span><span class="n">connect</span><span class="p">],</span>
+        <span class="n">on_shutdown</span><span class="o">=</span><span class="p">[</span><span class="n">database</span><span class="o">.</span><span class="n">disconnect</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_app</span>
+
+
+<span class="c1"># Instantiate the app</span>
+<span class="n">APP</span> <span class="o">=</span> <span class="n">create_app</span><span class="p">(</span><span class="n">connection_str</span><span class="o">=</span><span class="n">DATABASE_URI</span><span class="p">,</span> <span class="n">sqla_models</span><span class="o">=</span><span class="p">[</span><span class="n">Author</span><span class="p">,</span> <span class="n">Book</span><span class="p">])</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="c1"># Create Tables</span>
+    <span class="k">with</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">DATABASE_URI</span><span class="p">)</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">sqla_engine</span><span class="p">:</span>
+        <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">sqla_engine</span><span class="p">)</span>
+
+    <span class="n">uvicorn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="s2">&quot;app:APP&quot;</span><span class="p">,</span>
+        <span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="mi">5082</span><span class="p">,</span>
+        <span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+        <span class="n">reload</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+
+<p>Run the example with</p>
+<div class="shell codehilite"><pre><span></span><code>python app.py
+</code></pre></div>
+
+<p>and navigate to <a href="http://0.0.0.0:5082/graphiql">http://0.0.0.0:5082/graphiql</a> to interact with it</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../authentication/" class="btn btn-neutral float-right" title="Authentication">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../supported_entities/" class="btn btn-neutral" title="Entities"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../supported_entities/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../authentication/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

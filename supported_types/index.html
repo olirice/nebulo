@@ -9,7 +9,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Authentication - Nebulo</title>
+  <title>Types - Nebulo</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
 
   <link rel="stylesheet" href="../css/theme.css" />
@@ -18,8 +18,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Authentication";
-    var mkdocs_page_input_path = "authentication.md";
+    var mkdocs_page_name = "Types";
+    var mkdocs_page_input_path = "supported_types.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -55,8 +55,10 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Feature Support</span></p>
-                <ul>
-                    <li class="toctree-l1"><a class="reference internal" href="../supported_types/">Types</a>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Types</a>
+    <ul class="current">
+    </ul>
                     </li>
                     <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
                     </li>
@@ -67,10 +69,8 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Advanced</span></p>
-                <ul class="current">
-                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Authentication</a>
-    <ul class="current">
-    </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
                     </li>
                     <li class="toctree-l1"><a class="reference internal" href="../performance/">Performance</a>
                     </li>
@@ -96,14 +96,14 @@
     
       
         
-          <li>Advanced &raquo;</li>
+          <li>Feature Support &raquo;</li>
         
       
     
-    <li>Authentication</li>
+    <li>Types</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/olirice/nebulo/edit/master/docs/authentication.md"> Edit on olirice/nebulo</a>
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/supported_types.md"> Edit on olirice/nebulo</a>
       
     </li>
   </ul>
@@ -113,11 +113,21 @@
           <div role="main">
             <div class="section">
               
-                <h2 id="authentication">Authentication</h2>
-<p>The approach to authentication and row level security were shamelessly borrowed from the <a href="https://www.graphile.org/">postgraphile</a> project, a similar (but much more mature) PostgreSQL to GraphQL project written in Javascript.</p>
-<p>Please see <a href="https://www.graphile.org/postgraphile/security/">their security documentation</a> for instructions on setting up secure auth for api users.</p>
-<p>Note that JWT identifier and JWT secret can be passed to the nebulo CLI via <code>--jwt-identifier "public.my_jwt"</code> and <code>--jwt-secret "my_jwt_secret"</code> to cause functions returning the JWT type to reflect correctly.</p>
-<p>If the JWT type contains a <code>role</code> field, that role will be used to execute SQL statements for authenticated user's requests. Anonymous users' requests execute with the connections default role unless a default role is passed using the <code>--default-role</code> option</p>
+                <h1 id="supported-types">Supported Types</h1>
+<p>There is first class support for the following PG types:</p>
+<ul>
+<li>Boolean</li>
+<li>Integer</li>
+<li>BigInteger</li>
+<li>Float</li>
+<li>Numeric (casts to float)</li>
+<li>Text</li>
+<li>Timestamp (as ISO 8601 string)</li>
+<li>UUID</li>
+<li>Composite (excludes nested composites)</li>
+<li>Enum</li>
+</ul>
+<p>Other, unknown types, default to a String representation.</p>
               
             </div>
           </div>
@@ -125,10 +135,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../performance/" class="btn btn-neutral float-right" title="Performance">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../supported_entities/" class="btn btn-neutral float-right" title="Entities">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../sqlalchemy_interop/" class="btn btn-neutral" title="SQLAlchemy Interop"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../quickstart/" class="btn btn-neutral" title="Quickstart"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -154,10 +164,10 @@
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../sqlalchemy_interop/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../quickstart/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../performance/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../supported_entities/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
