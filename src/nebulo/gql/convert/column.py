@@ -4,9 +4,11 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+from nebulo.config import Config
 from nebulo.gql.alias import (
     Boolean,
     CompositeType,
+    EnumType,
     Field,
     Float,
     InputField,
@@ -62,9 +64,14 @@ SQLA_TO_GQL = {
 
 
 @lru_cache()
-def convert_type(sqla_type: typing.Type[TypeEngine]):
-    if issubclass(sqla_type, SQLACompositeType):
-        return composite_factory(sqla_type)
+def convert_type(sqla_type: TypeEngine):
+    type_class = type(sqla_type)
+
+    if issubclass(type_class, SQLACompositeType):
+        return composite_factory(type_class)
+
+    if issubclass(type_class, postgresql.base.ENUM):
+        return enum_factory(sqla_type)
 
     if isinstance(sqla_type, TableProtocol):
         from .table import table_factory
@@ -72,17 +79,22 @@ def convert_type(sqla_type: typing.Type[TypeEngine]):
         return table_factory(sqla_type)
 
     # TODO(OR): Enums
-    return SQLA_TO_GQL.get(sqla_type, String)
+    return SQLA_TO_GQL.get(type_class, String)
 
 
 @lru_cache()
 def convert_column(column: Column) -> Field:
     """Converts a sqlalchemy column into a graphql field or input field"""
-    sqla_type = type(column.type)
-    gql_type = convert_type(sqla_type)
+    gql_type = convert_type(column.type)
     notnull = not column.nullable
     return_type = NonNull(gql_type) if notnull else gql_type
     return Field(return_type, resolve=default_resolver)
+
+
+@lru_cache()
+def enum_factory(sqla_enum: typing.Type[postgresql.base.ENUM]) -> EnumType:
+    name = Config.enum_name_mapper(sqla_enum)
+    return EnumType(name=name, values={val: val for val in sqla_enum.enums})
 
 
 @lru_cache()

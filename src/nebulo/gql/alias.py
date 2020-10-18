@@ -58,6 +58,8 @@ Schema = GraphQLSchema
 Field = GraphQLField
 Float = GraphQLFloat
 
+EnumType = GraphQLEnumType
+
 
 class HasSQLAModel:  # pylint: disable= too-few-public-methods
     sqla_table = None

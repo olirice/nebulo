@@ -7,7 +7,7 @@ from functools import lru_cache
 
 from flupy import flu
 from nebulo.config import Config
-from nebulo.gql.alias import CompositeType, ConnectionType, ScalarType, TableType
+from nebulo.gql.alias import CompositeType, ConnectionType, EnumType, ScalarType, TableType
 from nebulo.gql.parse_info import ASTNode
 from nebulo.gql.relay.cursor import to_cursor_sql
 from nebulo.gql.relay.node_interface import ID, to_node_id_sql
@@ -149,7 +149,7 @@ def row_block(field: ASTNode, parent_name: typing.Optional[str] = None) -> Alias
         if subfield.return_type == ID:
             elem = select([to_node_id_sql(sqla_model, core_model_ref)]).label(subfield.alias)
             select_clause.append(elem)
-        elif isinstance(subfield.return_type, (ScalarType, CompositeType)):
+        elif isinstance(subfield.return_type, (ScalarType, CompositeType, EnumType)):
             col_name = field_name_to_column(sqla_model, subfield.name).name
             elem = core_model_ref.c[col_name].label(subfield.alias)
             select_clause.append(elem)
@@ -244,7 +244,7 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
             # elem = select([to_node_id_sql(sqla_model, core_model_ref)]).label(subfield.alias)
             elem = to_node_id_sql(sqla_model, core_model_ref).label(subfield.alias)
             new_edge_node_selects.append(elem)
-        elif isinstance(subfield.return_type, (ScalarType, CompositeType)):
+        elif isinstance(subfield.return_type, (ScalarType, CompositeType, EnumType)):
             col_name = field_name_to_column(sqla_model, subfield.name).name
             elem = core_model_ref.c[col_name].label(subfield.alias)
             new_edge_node_selects.append(elem)

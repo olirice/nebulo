@@ -1,5 +1,5 @@
 from inspect import isclass
-from typing import Union
+from typing import Type, Union
 
 from nebulo.env import EnvManager
 from nebulo.sql.inspect import get_comment, get_table_name
@@ -7,6 +7,7 @@ from nebulo.sql.reflection.function import SQLFunction
 from nebulo.sql.reflection.views import ViewMixin
 from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel, to_plural
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.schema import Column
 from typing_extensions import Literal
@@ -46,6 +47,10 @@ class Config:
     @staticmethod
     def column_name_mapper(column: Column) -> str:
         return snake_to_camel(column.name, upper=False)
+
+    @staticmethod
+    def enum_name_mapper(enum: Type[postgresql.base.ENUM]) -> str:
+        return snake_to_camel((enum.name or "") + "_enum", upper=True)
 
     @staticmethod
     def relationship_name_mapper(relationship: RelationshipProperty) -> str:

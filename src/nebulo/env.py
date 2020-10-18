@@ -28,7 +28,8 @@ class EnvManager:
     def __enter__(self):
         with self.app_env.open("w") as env_file:
             for key, val in self.vars.items():
-                env_file.write(f"{key}={val}\n")
+                if val is not None:
+                    env_file.write(f"{key}={val}\n")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
