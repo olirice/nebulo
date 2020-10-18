@@ -8,11 +8,17 @@ repo_name: olirice/nebulo
 repo_url: https://github.com/olirice/nebulo
 
 nav:
-    - Introduction: 'index.md'
-    - Quickstart: 'quickstart.md'
-    - Performance: 'performance.md'
-    - Authentication: 'authentication.md'
-    - Supported Entities: 'supported_entities.md'
+    - Welcome:
+        - Introduction: 'index.md'
+        - Quickstart: 'quickstart.md'
+    - Feature Support:
+        - Types: 'supported_types.md'
+        - Entities: 'supported_entities.md'
+    - Examples:
+        - SQLAlchemy Interop: 'sqlalchemy_interop.md'
+    - Advanced:
+        - Authentication: 'authentication.md'
+        - Performance: 'performance.md'
 
 markdown_extensions:
   - codehilite
