@@ -12,8 +12,7 @@ from nebulo.gql.resolve.resolvers.claims import build_claims
 from nebulo.gql.resolve.transpile.mutation_builder import build_mutation
 from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
 from nebulo.sql.table_base import TableProtocol
-from sqlalchemy import select
-from sqlalchemy import text as sql_text
+from sqlalchemy import literal_column, select
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -45,13 +44,13 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             # Function returning table row
             if isinstance(sql_function.return_sqla_type, TableProtocol):
                 # Unpack the table row to columns
-                stmt = select([sql_text("*")]).select_from(func_call.alias())  # type: ignore
                 return_sqla_model = sql_function.return_sqla_type
                 core_table = return_sqla_model.__table__
-                stmt = select([to_node_id_sql(return_sqla_model, core_table.alias()).label("nodeId")]).select_from(
-                    stmt.alias()
-                )
-                stmt_result = await database.fetch_one(query=stmt)
+                func_alias = func_call.alias("named_alias")
+                stmt = select([literal_column(c.name).label(c.name) for c in core_table.c]).select_from(func_alias)  # type: ignore
+                stmt_alias = stmt.alias()
+                node_id_stmt = select([to_node_id_sql(return_sqla_model, stmt_alias).label("nodeId")]).select_from(stmt_alias)  # type: ignore
+                stmt_result = await database.fetch_one(query=node_id_stmt)
                 row = json.loads(stmt_result["nodeId"])
                 node_id = NodeIdStructure.from_dict(row)
 
