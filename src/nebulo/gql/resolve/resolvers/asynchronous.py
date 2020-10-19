@@ -13,6 +13,7 @@ from nebulo.gql.resolve.transpile.mutation_builder import build_mutation
 from nebulo.gql.resolve.transpile.query_builder import sql_builder, sql_finalize
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy import select
+from sqlalchemy import text as sql_text
 
 
 async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
@@ -40,10 +41,11 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
             sql_function = tree.return_type.sql_function
             function_args = [val for key, val in tree.args["input"].items() if key != "clientMutationId"]
             func_call = sql_function.to_executable(function_args)
-            stmt = select([func_call.label("result")])
 
             # Function returning table row
             if isinstance(sql_function.return_sqla_type, TableProtocol):
+                # Unpack the table row to columns
+                stmt = select([sql_text("*")]).select_from(func_call.alias())  # type: ignore
                 return_sqla_model = sql_function.return_sqla_type
                 core_table = return_sqla_model.__table__
                 stmt = select([to_node_id_sql(return_sqla_model, core_table.alias()).label("nodeId")]).select_from(
@@ -64,6 +66,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                 else:
                     stmt_result = {}
             else:
+                stmt = select([func_call.label("result")])
                 stmt_result = await database.fetch_one(query=stmt)
 
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
