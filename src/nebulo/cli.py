@@ -15,17 +15,17 @@ def main(**kwargs):
 
 
 @main.command()
-@click.option("-c", "--connection")
-@click.option("-p", "--port", default=5034)
-@click.option("-h", "--host", default="0.0.0.0")
-@click.option("-w", "--workers", default=1)
-@click.option("-s", "--schema", default="public")
-@click.option("--jwt-identifier", default=None)
-@click.option("--jwt-secret", default=None)
-@click.option("--reload/--no-reload", default=False)
-@click.option("--default-role", type=str, default=None)
+@click.option("-c", "--connection", help="Database connection string")
+@click.option("-p", "--port", default=5034, help="Web server port")
+@click.option("-h", "--host", default="0.0.0.0", help="Host address")
+@click.option("-w", "--workers", default=1, help="Number of parallel workers")
+@click.option("-s", "--schema", default="public", help="SQL schema name")
+@click.option("--jwt-identifier", default=None, help='JWT composite type identifier e.g. "public.jwt"')
+@click.option("--jwt-secret", default=None, help="Secret key for JWT encryption")
+@click.option("--reload/--no-reload", default=False, help="Reload if source files change")
+@click.option("--default-role", type=str, default=None, help="Default PostgreSQL role for anonymous users")
 def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, workers, default_role):
-    """Run the GraphQL Server"""
+    """Run the GraphQL Web Server"""
     if reload and workers > 1:
         print("Reload not supported with workers > 1")
     else:
@@ -42,9 +42,9 @@ def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, work
 
 
 @main.command()
-@click.option("-c", "--connection", default="sqlite:///")
-@click.option("-s", "--schema", default="public")
-@click.option("-o", "--out-file", type=click.File("w"), default=None)
+@click.option("-c", "--connection", help="Database connection string")
+@click.option("-s", "--schema", default="public", help="SQL schema name")
+@click.option("-o", "--out-file", type=click.File("w"), default=None, help="Output file path")
 def dump_schema(connection, schema, out_file):
     """Dump the GraphQL Schema to stdout or file"""
     from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema

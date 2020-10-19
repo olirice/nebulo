@@ -14,8 +14,12 @@ nav:
     - Feature Support:
         - Types: 'supported_types.md'
         - Entities: 'supported_entities.md'
+    - Reference:
+        - CLI: 'cli.md'
+        - API: 'public_api.md'
     - Examples:
         - SQLAlchemy Interop: 'sqlalchemy_interop.md'
+        - Row Level Security: 'row_level_security.md'
     - Advanced:
         - Authentication: 'authentication.md'
         - Performance: 'performance.md'
