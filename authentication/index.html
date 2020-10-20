@@ -61,9 +61,18 @@
                     <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
                     </li>
                 </ul>
+                <p class="caption"><span class="caption-text">Reference</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../public_api/">API</a>
+                    </li>
+                </ul>
                 <p class="caption"><span class="caption-text">Examples</span></p>
                 <ul>
                     <li class="toctree-l1"><a class="reference internal" href="../sqlalchemy_interop/">SQLAlchemy Interop</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../row_level_security/">Row Level Security</a>
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Advanced</span></p>
@@ -115,7 +124,8 @@
               
                 <h2 id="authentication">Authentication</h2>
 <p>The approach to authentication and row level security were shamelessly borrowed from the <a href="https://www.graphile.org/">postgraphile</a> project, a similar (but much more mature) PostgreSQL to GraphQL project written in Javascript.</p>
-<p>Please see <a href="https://www.graphile.org/postgraphile/security/">their security documentation</a> for instructions on setting up secure auth for api users.</p>
+<p>Please see <a href="https://www.graphile.org/postgraphile/security/">their security documentation</a> for best practices when setting up secure auth for api user roles.</p>
+<p>For a complete usage, see <a href="https://github.com/olirice/nebulo/tree/master/examples/row_level_security">the row level security example project</a></p>
 <p>Note that JWT identifier and JWT secret can be passed to the nebulo CLI via <code>--jwt-identifier "public.my_jwt"</code> and <code>--jwt-secret "my_jwt_secret"</code> to cause functions returning the JWT type to reflect correctly.</p>
 <p>If the JWT type contains a <code>role</code> field, that role will be used to execute SQL statements for authenticated user's requests. Anonymous users' requests execute with the connections default role unless a default role is passed using the <code>--default-role</code> option</p>
               
@@ -128,7 +138,7 @@
         <a href="../performance/" class="btn btn-neutral float-right" title="Performance">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../sqlalchemy_interop/" class="btn btn-neutral" title="SQLAlchemy Interop"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../row_level_security/" class="btn btn-neutral" title="Row Level Security"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -154,7 +164,7 @@
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../sqlalchemy_interop/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../row_level_security/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
         <span style="margin-left: 15px"><a href="../performance/" style="color: #fcfcfc">Next &raquo;</a></span>

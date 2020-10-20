@@ -61,9 +61,18 @@
                     <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
                     </li>
                 </ul>
+                <p class="caption"><span class="caption-text">Reference</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../public_api/">API</a>
+                    </li>
+                </ul>
                 <p class="caption"><span class="caption-text">Examples</span></p>
                 <ul>
                     <li class="toctree-l1"><a class="reference internal" href="../sqlalchemy_interop/">SQLAlchemy Interop</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../row_level_security/">Row Level Security</a>
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Advanced</span></p>
@@ -116,13 +125,13 @@
                 <h1 id="performance">Performance</h1>
 <p><strong>Performance Enabling Features:</strong></p>
 <ul>
-<li>All queries are handled in a single round-trip to the database. No <a href="https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping">N+1 problems</a> here!</li>
+<li>All queries are handled in a single round-trip to the database so there are no <a href="https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping">N+1 issues</a></li>
 <li>SQL queries only fetch requested fields</li>
 <li>SQL queries return JSON which significantly reduces database IO when joins are present</li>
-<li>Fully async / built on <a href="https://github.com/encode/starlette">starlette</a></li>
+<li>Fully async</li>
 </ul>
 <p><strong>Benchmarks</strong></p>
-<p>Performance depends on netowrk, number of workers, log level etc. Despite all that, here are rough figures with postgres and the webserver running on a mid-tier 2017 Macbook Pro.</p>
+<p>Performance depends on network, number of workers, log level etc. Despite all that, here are rough figures with Postgres and the web server running on a mid-tier 2017 Macbook Pro.</p>
 <div class="text codehilite"><pre><span></span><code>Benchmarking 0.0.0.0 (be patient)
 
 

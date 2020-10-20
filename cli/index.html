@@ -9,7 +9,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Types - Nebulo</title>
+  <title>CLI - Nebulo</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
 
   <link rel="stylesheet" href="../css/theme.css" />
@@ -18,8 +18,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Types";
-    var mkdocs_page_input_path = "supported_types.md";
+    var mkdocs_page_name = "CLI";
+    var mkdocs_page_input_path = "cli.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -55,17 +55,21 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Feature Support</span></p>
-                <ul class="current">
-                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Types</a>
-    <ul class="current">
-    </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_types/">Types</a>
                     </li>
                     <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Reference</span></p>
-                <ul>
-                    <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">CLI</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#neb-run">neb run</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#neb-dump-schema">neb dump-schema</a>
+    </li>
+    </ul>
                     </li>
                     <li class="toctree-l1"><a class="reference internal" href="../public_api/">API</a>
                     </li>
@@ -105,14 +109,14 @@
     
       
         
-          <li>Feature Support &raquo;</li>
+          <li>Reference &raquo;</li>
         
       
     
-    <li>Types</li>
+    <li>CLI</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/olirice/nebulo/edit/master/docs/supported_types.md"> Edit on olirice/nebulo</a>
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/cli.md"> Edit on olirice/nebulo</a>
       
     </li>
   </ul>
@@ -122,21 +126,50 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="supported-types">Supported Types</h1>
-<p>There is first class support for the following PG types:</p>
-<ul>
-<li>Boolean</li>
-<li>Integer</li>
-<li>BigInteger</li>
-<li>Float</li>
-<li>Numeric (casts to float)</li>
-<li>Text</li>
-<li>Timestamp (as ISO 8601 string)</li>
-<li>UUID</li>
-<li>Composite (excludes nested composites)</li>
-<li>Enum</li>
-</ul>
-<p>Other, unknown types, default to a String representation.</p>
+                <h2 id="command-line-interface">Command Line Interface</h2>
+<p>The CLI provides a path for deploying GraphQL APIs without writting any python code. For full usage see <a href="../row_level_security/">the row level security example</a></p>
+<div class="text codehilite"><pre><span></span><code>Usage: neb [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --version  Show the version and exit.
+  --help     Show this message and exit.
+
+Commands:
+  dump-schema  Dump the GraphQL Schema to stdout or file
+  run          Run the GraphQL Web Server
+</code></pre></div>
+
+<h4 id="neb-run">neb run</h4>
+<p>Starts the GraphQL web server and serves the interactive documentation at <code>http://&lt;host&gt;:&lt;port&gt;/graphiql</code></p>
+<div class="text codehilite"><pre><span></span><code>Usage: neb run [OPTIONS]
+
+  Run the GraphQL Web Server
+
+Options:
+  -c, --connection TEXT   Database connection string
+  -p, --port INTEGER      Web server port
+  -h, --host TEXT         Host address
+  -w, --workers INTEGER   Number of parallel workers
+  -s, --schema TEXT       SQL schema name
+  --jwt-identifier TEXT   JWT composite type identifier e.g. &quot;public.jwt&quot;
+  --jwt-secret TEXT       Secret key for JWT encryption
+  --reload / --no-reload  Reload if source files change
+  --default-role TEXT     Default PostgreSQL role for anonymous users
+  --help                  Show this message and exit.
+</code></pre></div>
+
+<h4 id="neb-dump-schema">neb dump-schema</h4>
+<p>Export the GraphQL schema</p>
+<div class="text codehilite"><pre><span></span><code>Usage: neb dump-schema [OPTIONS]
+
+  Dump the GraphQL Schema to stdout or file
+
+Options:
+  -c, --connection TEXT    Database connection string
+  -s, --schema TEXT        SQL schema name
+  -o, --out-file FILENAME  Output file path
+  --help                   Show this message and exit.
+</code></pre></div>
               
             </div>
           </div>
@@ -144,10 +177,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../supported_entities/" class="btn btn-neutral float-right" title="Entities">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../public_api/" class="btn btn-neutral float-right" title="API">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../quickstart/" class="btn btn-neutral" title="Quickstart"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../supported_entities/" class="btn btn-neutral" title="Entities"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -173,10 +206,10 @@
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../quickstart/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../supported_entities/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../supported_entities/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../public_api/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

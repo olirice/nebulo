@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>API - Nebulo</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "API";
+    var mkdocs_page_input_path = "public_api.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Nebulo</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <p class="caption"><span class="caption-text">Welcome</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Introduction</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Feature Support</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_types/">Types</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Reference</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">API</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#reflection">Reflection</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#sqla-to-graphql">SQLA to GraphQL</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#server">Server</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#routes">Routes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#exception-handling">Exception Handling</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Examples</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../sqlalchemy_interop/">SQLAlchemy Interop</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../row_level_security/">Row Level Security</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Advanced</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../authentication/">Authentication</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../performance/">Performance</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Nebulo</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Reference &raquo;</li>
+        
+      
+    
+    <li>API</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/public_api.md"> Edit on olirice/nebulo</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="public-api">Public API</h1>
+<p>Nebulo exposes a minimal public API to allow the internals to change freely. The public API is defined as anything documented on this page.</p>
+<p>For a complete example see <a href="../sqlalchemy_interop/">the SQLAlchemy interop example</a></p>
+<div class="python codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">databases</span> <span class="kn">import</span> <span class="n">Database</span>
+<span class="kn">from</span> <span class="nn">nebulo.gql.sqla_to_gql</span> <span class="kn">import</span> <span class="n">sqla_models_to_graphql_schema</span>
+<span class="kn">from</span> <span class="nn">nebulo.server.exception</span> <span class="kn">import</span> <span class="n">http_exception</span>
+<span class="kn">from</span> <span class="nn">nebulo.server.routes</span> <span class="kn">import</span> <span class="n">GRAPHIQL_STATIC_FILES</span><span class="p">,</span> <span class="n">get_graphql_route</span><span class="p">,</span> <span class="n">graphiql_route</span>
+<span class="kn">from</span> <span class="nn">starlette.applications</span> <span class="kn">import</span> <span class="n">Starlette</span>
+<span class="kn">from</span> <span class="nn">starlette.exceptions</span> <span class="kn">import</span> <span class="n">HTTPException</span>
+<span class="kn">from</span> <span class="nn">starlette.routing</span> <span class="kn">import</span> <span class="n">Mount</span><span class="p">,</span> <span class="n">Route</span>
+
+<span class="kn">from</span> <span class="nn">myapp.sqla_models</span> <span class="kn">import</span> <span class="n">Author</span><span class="p">,</span> <span class="n">Book</span>
+<span class="kn">from</span> <span class="nn">myapp.config</span> <span class="kn">import</span> <span class="n">DATABASE_URI</span>
+
+
+<span class="k">def</span> <span class="nf">create_app</span><span class="p">(</span><span class="n">connection_str</span><span class="p">,</span> <span class="n">sqla_models</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Starlette</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Create the Starlette app&quot;&quot;&quot;</span>
+
+    <span class="n">database</span> <span class="o">=</span> <span class="n">Database</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+
+    <span class="c1"># Convert sqla models to graphql schema</span>
+    <span class="n">gql_schema</span> <span class="o">=</span> <span class="n">sqla_models_to_graphql_schema</span><span class="p">(</span><span class="n">sqla_models</span><span class="o">=</span><span class="n">sqla_models</span><span class="p">)</span>
+
+    <span class="n">graphql_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+
+    <span class="c1"># Build the Starlette GraphQL Route</span>
+    <span class="n">graphql_route</span> <span class="o">=</span> <span class="n">get_graphql_route</span><span class="p">(</span>
+        <span class="n">gql_schema</span><span class="o">=</span><span class="n">gql_schema</span><span class="p">,</span>
+        <span class="n">database</span><span class="o">=</span><span class="n">database</span><span class="p">,</span>
+        <span class="n">jwt_secret</span><span class="o">=</span><span class="n">jwt_secret</span><span class="p">,</span>
+        <span class="n">default_role</span><span class="o">=</span><span class="n">default_role</span><span class="p">,</span>
+        <span class="n">path</span><span class="o">=</span><span class="n">graphql_path</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;graphql&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Build the Starlette GraphiQL Route and StaticFiles</span>
+    <span class="n">graphiql_route</span> <span class="o">=</span> <span class="n">get_graphiql_route</span><span class="p">(</span>
+        <span class="n">graphiql_path</span><span class="o">=</span><span class="s1">&#39;/graphiql&#39;</span><span class="p">,</span>
+        <span class="n">graphql_path</span><span class="o">=</span><span class="n">graphql_path</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;graphiql&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Instantiate the Starlette app</span>
+    <span class="n">_app</span> <span class="o">=</span> <span class="n">Starlette</span><span class="p">(</span>
+        <span class="n">routes</span><span class="o">=</span><span class="p">[</span><span class="n">graphql_route</span><span class="p">,</span> <span class="n">graphiql_route</span><span class="p">],</span>
+        <span class="n">exception_handlers</span><span class="o">=</span><span class="p">{</span><span class="n">HTTPException</span><span class="p">:</span> <span class="n">http_exception</span><span class="p">},</span>
+        <span class="n">on_startup</span><span class="o">=</span><span class="p">[</span><span class="n">database</span><span class="o">.</span><span class="n">connect</span><span class="p">],</span>
+        <span class="n">on_shutdown</span><span class="o">=</span><span class="p">[</span><span class="n">database</span><span class="o">.</span><span class="n">disconnect</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_app</span>
+
+
+
+<span class="c1"># Instantiate the app</span>
+<span class="n">APP</span> <span class="o">=</span> <span class="n">create_app</span><span class="p">(</span><span class="n">connection_str</span><span class="o">=</span><span class="n">DATABASE_URI</span><span class="p">,</span> <span class="n">sqla_models</span><span class="o">=</span><span class="p">[</span><span class="n">Author</span><span class="p">,</span> <span class="n">Book</span><span class="p">])</span>
+</code></pre></div>
+
+<h3 id="reflection">Reflection</h3>
+<p>Utilities for reflecting SQL entities as GraphQL entities.</p>
+<h5 id="sqla-to-graphql">SQLA to GraphQL</h5>
+<hr />
+<div class="autodoc">
+<div class="autodoc-signature"><code>nebulo.gql.sqla_to_gql.<strong>sqla_models_to_graphql_schema</strong></code><span class="autodoc-punctuation">(</span><em class="autodoc-param">sqla_models</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">sql_functions=None</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">jwt_identifier=None</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">jwt_secret=None</em><span class="autodoc-punctuation">)</span></div>
+<div class="autodoc-docstring"><p>Creates a GraphQL Schema from SQLA Models</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>sqla_models</strong>: <em>List[Type[SQLAModel]]</em> = List of SQLAlchemy models to include in the GraphQL schema</li>
+<li><strong>jwt_identifier</strong>: <em>str</em> = qualified path of SQL composite type to use encode as a JWT e.g. 'public.jwt'</li>
+<li><strong>jwt_secret</strong>: <em>str</em> = Secret key used to encrypt JWT contents</li>
+<li><strong>sql_functions</strong> = <strong>NOT PUBLIC API</strong></li>
+</ul></div>
+</div>
+<h3 id="server">Server</h3>
+<p>Helpers to serve the GraphQL schema.</p>
+<h5 id="routes">Routes</h5>
+<hr />
+<div class="autodoc">
+<div class="autodoc-signature"><code>nebulo.server.routes.<strong>get_graphql_route</strong></code><span class="autodoc-punctuation">(</span><em class="autodoc-param">gql_schema</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">database</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">path='/'</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">jwt_secret=None</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">default_role=None</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">name=None</em><span class="autodoc-punctuation">)</span></div>
+<div class="autodoc-docstring"><p>Create a Starlette Route to serve GraphQL requests</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>schema</strong>: <em>Schema</em> = A GraphQL-core schema</li>
+<li><strong>database</strong>: <em>Database</em> = Database object for communicating with PostgreSQL</li>
+<li><strong>path</strong>: <em>str</em> = URL path to serve GraphQL from, e.g. '/'</li>
+<li><strong>jwt_secret</strong>: <em>str</em> = secret key used to encrypt JWT contents</li>
+<li><strong>default_role</strong>: <em>str</em> = Default SQL role to use when serving unauthenticated requests</li>
+<li><strong>name</strong>: <em>str</em> = Name of the GraphQL serving Starlette route</li>
+</ul></div>
+</div>
+<hr />
+<div class="autodoc">
+<div class="autodoc-signature"><code>nebulo.server.routes.<strong>get_graphiql_route</strong></code><span class="autodoc-punctuation">(</span><em class="autodoc-param">graphiql_path='/graphiql'</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">graphql_path='/'</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">name='graphiql'</em><span class="autodoc-punctuation">)</span></div>
+<div class="autodoc-docstring"><p>Return mountable routes serving GraphiQL interactive API explorer</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>graphiql_path</strong>: <em>str</em> = URL path to GraphiQL html page</li>
+<li><strong>graphql_path</strong>: <em>str</em> =  URL path to the GraphQL route</li>
+<li><strong>name</strong>: <em>str</em> =  Name for the mount</li>
+</ul></div>
+</div>
+<h5 id="exception-handling">Exception Handling</h5>
+<hr />
+<div class="autodoc">
+<div class="autodoc-signature"><code>nebulo.server.exception.<strong>http_exception</strong></code><span class="autodoc-punctuation">(</span><em class="autodoc-param">request</em><span class="autodoc-punctuation">, </span><em class="autodoc-param">exc</em><span class="autodoc-punctuation">)</span></div>
+<div class="autodoc-docstring"><p>Starlette exception handler converting starlette.exceptions.HTTPException into GraphQL responses</p></div>
+</div>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../sqlalchemy_interop/" class="btn btn-neutral float-right" title="SQLAlchemy Interop">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../cli/" class="btn btn-neutral" title="CLI"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../cli/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../sqlalchemy_interop/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

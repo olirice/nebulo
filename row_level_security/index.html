@@ -9,7 +9,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Types - Nebulo</title>
+  <title>Row Level Security - Nebulo</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
 
   <link rel="stylesheet" href="../css/theme.css" />
@@ -18,8 +18,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Types";
-    var mkdocs_page_input_path = "supported_types.md";
+    var mkdocs_page_name = "Row Level Security";
+    var mkdocs_page_input_path = "row_level_security.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -55,10 +55,8 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Feature Support</span></p>
-                <ul class="current">
-                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Types</a>
-    <ul class="current">
-    </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_types/">Types</a>
                     </li>
                     <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
                     </li>
@@ -71,10 +69,12 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Examples</span></p>
-                <ul>
+                <ul class="current">
                     <li class="toctree-l1"><a class="reference internal" href="../sqlalchemy_interop/">SQLAlchemy Interop</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../row_level_security/">Row Level Security</a>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Row Level Security</a>
+    <ul class="current">
+    </ul>
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Advanced</span></p>
@@ -105,14 +105,14 @@
     
       
         
-          <li>Feature Support &raquo;</li>
+          <li>Examples &raquo;</li>
         
       
     
-    <li>Types</li>
+    <li>Row Level Security</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/olirice/nebulo/edit/master/docs/supported_types.md"> Edit on olirice/nebulo</a>
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/row_level_security.md"> Edit on olirice/nebulo</a>
       
     </li>
   </ul>
@@ -122,21 +122,9 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="supported-types">Supported Types</h1>
-<p>There is first class support for the following PG types:</p>
-<ul>
-<li>Boolean</li>
-<li>Integer</li>
-<li>BigInteger</li>
-<li>Float</li>
-<li>Numeric (casts to float)</li>
-<li>Text</li>
-<li>Timestamp (as ISO 8601 string)</li>
-<li>UUID</li>
-<li>Composite (excludes nested composites)</li>
-<li>Enum</li>
-</ul>
-<p>Other, unknown types, default to a String representation.</p>
+                <h1 id="row-level-security-example">Row Level Security Example</h1>
+<p>The following is a complete example showing how to leverage PostgreSQL row level security with JWTs to restrict data access.</p>
+<p><a href="https://github.com/olirice/nebulo/tree/master/examples/row_level_security">row level security example project</a></p>
               
             </div>
           </div>
@@ -144,10 +132,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../supported_entities/" class="btn btn-neutral float-right" title="Entities">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../authentication/" class="btn btn-neutral float-right" title="Authentication">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../quickstart/" class="btn btn-neutral" title="Quickstart"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../sqlalchemy_interop/" class="btn btn-neutral" title="SQLAlchemy Interop"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -173,10 +161,10 @@
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../quickstart/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../sqlalchemy_interop/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../supported_entities/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../authentication/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
