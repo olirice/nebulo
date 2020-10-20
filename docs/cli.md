@@ -1,6 +1,6 @@
 ## Command Line Interface
 
-The CLI provides a path for deploying GraphQL APIs without writting any python code.
+The CLI provides a path for deploying GraphQL APIs without writting any python code. For full usage see [the row level security example](row_level_security.md)
 
 ```text
 Usage: neb [OPTIONS] COMMAND [ARGS]...

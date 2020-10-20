@@ -3,14 +3,13 @@ from typing import Optional
 from databases import Database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
-from nebulo.server.routes import GRAPHIQL_STATIC_FILES, get_graphql_route, graphiql_route
+from nebulo.server.routes import get_graphiql_route, get_graphql_route
 from nebulo.sql.reflection.manager import reflect_sqla_models
 from sqlalchemy import create_engine
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.routing import Mount, Route
 
 
 def create_app(
@@ -20,7 +19,7 @@ def create_app(
     jwt_secret: Optional[str] = None,
     default_role: Optional[str] = None,
 ) -> Starlette:
-    """Create an ASGI App"""
+    """Instantiate the Starlette app"""
 
     if not (jwt_identifier is not None) == (jwt_secret is not None):
         raise Exception("jwt_token_identifier and jwt_secret must be provided together")
@@ -38,22 +37,22 @@ def create_app(
         jwt_secret=jwt_secret,
     )
 
-    # Build Starlette app
+    graphql_path = "/"
+
     graphql_route = get_graphql_route(
-        schema=gql_schema, database=database, jwt_secret=jwt_secret, default_role=default_role
+        gql_schema=gql_schema,
+        database=database,
+        jwt_secret=jwt_secret,
+        default_role=default_role,
+        path=graphql_path,
+        name="graphql",
     )
 
-    routes = [
-        Route("/", graphql_route, methods=["POST"]),
-        Route("/graphiql", graphiql_route, methods=["GET"]),
-        Mount("/static", GRAPHIQL_STATIC_FILES, name="static"),
-    ]
-
-    middleware = [Middleware(CORSMiddleware, allow_origins=["*"])]
+    graphiql_route = get_graphiql_route(graphiql_path="/graphiql", graphql_path=graphql_path, name="graphiql")
 
     _app = Starlette(
-        routes=routes,
-        middleware=middleware,
+        routes=[graphql_route, graphiql_route],
+        middleware=[Middleware(CORSMiddleware, allow_origins=["*"])],
         exception_handlers={HTTPException: http_exception},
         on_startup=[database.connect],
         on_shutdown=[database.disconnect],

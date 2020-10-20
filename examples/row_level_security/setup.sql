@@ -106,9 +106,6 @@ as $$
 $$ language plpgsql strict security definer;
 
 
-create or replace function check_role() returns text
-as $$ select current_setting('role'); $$ language sql;
-
 /*************
 Access Control
 **************/

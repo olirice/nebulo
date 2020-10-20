@@ -2,14 +2,13 @@ import uvicorn
 from databases import Database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
-from nebulo.server.routes import GRAPHIQL_STATIC_FILES, get_graphql_route, graphiql_route
+from nebulo.server.routes import get_graphiql_route, get_graphql_route
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, create_engine
 from sqlalchemy import text as sql_text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
-from starlette.routing import Mount, Route
 
 # Config
 DATABASE_URI = "postgresql://app_user:app_password@localhost:5522/nebulo_example"
@@ -61,28 +60,25 @@ class Book(Base):
 def create_app(connection_str, sqla_models) -> Starlette:
     """Create the Starlette app"""
 
-    # Convert sqla models to graphql schema
-    gql_schema = sqla_models_to_graphql_schema(
-        sqla_models,
-        sql_functions=[],
-    )
-
-    # Build Starlette app
     database = Database(connection_str)
-    graphql_route = get_graphql_route(gql_schema, database, jwt_secret=None, default_role=None)
 
-    routes = [
-        Route("/", graphql_route, methods=["POST"]),
-        Route("/graphiql", graphiql_route, methods=["GET"]),
-        Mount("/static", GRAPHIQL_STATIC_FILES, name="static"),
-    ]
+    # Convert sqla models to graphql schema
+    gql_schema = sqla_models_to_graphql_schema(sqla_models)
 
+    # Build the Starlette GraphQL Route
+    graphql_route = get_graphql_route(gql_schema=gql_schema, database=database)
+
+    # Build the Starlette GraphiQL Route and StaticFiles
+    graphiql_route = get_graphiql_route()
+
+    # Instantiate the Starlette app
     _app = Starlette(
-        routes=routes,
+        routes=[graphql_route, graphiql_route],
         exception_handlers={HTTPException: http_exception},
         on_startup=[database.connect],
         on_shutdown=[database.disconnect],
     )
+
     return _app
 
 
@@ -99,7 +95,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app:APP",
         host="0.0.0.0",
-        port=5082,
+        port=5084,
         log_level="info",
         reload=False,
     )

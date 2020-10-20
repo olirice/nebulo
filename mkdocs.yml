@@ -28,3 +28,4 @@ markdown_extensions:
   - codehilite
   - admonition
   - pymdownx.inlinehilite
+  - mkautodoc

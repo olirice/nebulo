@@ -24,11 +24,22 @@ __all__ = ["sqla_models_to_graphql_schema"]
 
 def sqla_models_to_graphql_schema(
     sqla_models,
-    sql_functions: typing.List[SQLFunction],
+    sql_functions: typing.Optional[typing.List[SQLFunction]] = None,
     jwt_identifier: typing.Optional[str] = None,
     jwt_secret: typing.Optional[str] = None,
 ) -> Schema:
-    """Creates a GraphQL Schema from SQLA Models"""
+    """Creates a GraphQL Schema from SQLA Models
+
+    **Parameters**
+
+    * **sqla_models**: _List[Type[SQLAModel]]_ = List of SQLAlchemy models to include in the GraphQL schema
+    * **jwt_identifier**: _str_ = qualified path of SQL composite type to use encode as a JWT e.g. 'public.jwt'
+    * **jwt_secret**: _str_ = Secret key used to encrypt JWT contents
+    * **sql_functions** = **NOT PUBLIC API**
+    """
+
+    if sql_functions is None:
+        sql_functions = []
 
     query_fields = {}
     mutation_fields = {}

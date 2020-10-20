@@ -61,6 +61,6 @@ setup(
         "test": ["pytest", "pytest-cov", "requests"],
         "dev": ["pylint", "black", "sqlalchemy-stubs", "pre-commit"],
         "nvim": ["neovim", "python-language-server"],
-        "docs": ["mkdocs", "pygments", "pymdown-extensions"],
+        "docs": ["mkdocs", "pygments", "pymdown-extensions", "mkautodoc"],
     },
 )

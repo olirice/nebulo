@@ -13,3 +13,5 @@ Then start the webserver
 ```shell
 python app.py
 ```
+
+Explore the GraphQL API at [http://0.0.0.0:5034/graphiql](http://0.0.0.0:5034/graphiql)

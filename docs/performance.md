@@ -2,14 +2,15 @@
 
 **Performance Enabling Features:**
 
-* All queries are handled in a single round-trip to the database. No [N+1 problems](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) here!
+* All queries are handled in a single round-trip to the database so there are no [N+1 issues](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)
 * SQL queries only fetch requested fields
 * SQL queries return JSON which significantly reduces database IO when joins are present
-- Fully async / built on [starlette](https://github.com/encode/starlette)
+* Fully async
+
 
 **Benchmarks**
 
-Performance depends on netowrk, number of workers, log level etc. Despite all that, here are rough figures with postgres and the webserver running on a mid-tier 2017 Macbook Pro.
+Performance depends on network, number of workers, log level etc. Despite all that, here are rough figures with Postgres and the web server running on a mid-tier 2017 Macbook Pro.
 
 ```text
 Benchmarking 0.0.0.0 (be patient)
