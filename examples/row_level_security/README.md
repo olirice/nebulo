@@ -14,15 +14,17 @@ Permissions are scoped such that:
     - Edit their own blog posts
     - See blog posts
 
-# Start the database
+Start the database
 ```shell
 docker run --rm --name nebulo_rls -p 5523:5432 -d -e POSTGRES_DB=nebulo_example -e POSTGRES_PASSWORD=app_password -e POSTGRES_USER=app_user -d postgres
 ```
 
+Copy the SQL schema setup script into the container
 ```shell
 docker cp ./setup.sql nebulo_rls:/docker-entrypoint-initdb.d/setup.sql
 ```
 
+Run the SQL setup script on the database
 ```shell
 docker exec -u postgres nebulo_rls psql nebulo_example app_user -f docker-entrypoint-initdb.d/setup.sql
 ```
