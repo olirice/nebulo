@@ -17,6 +17,7 @@ nav:
     - Reference:
         - CLI: 'cli.md'
         - API: 'public_api.md'
+        - Comment Directives: 'comment_directives.md'
     - Examples:
         - SQLAlchemy Interop: 'sqlalchemy_interop.md'
         - Row Level Security: 'row_level_security.md'
