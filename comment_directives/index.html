@@ -9,7 +9,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Entities - Nebulo</title>
+  <title>Comment Directives - Nebulo</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
 
   <link rel="stylesheet" href="../css/theme.css" />
@@ -18,8 +18,8 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Entities";
-    var mkdocs_page_input_path = "supported_entities.md";
+    var mkdocs_page_name = "Comment Directives";
+    var mkdocs_page_input_path = "comment_directives.md";
     var mkdocs_page_url = null;
   </script>
   
@@ -55,21 +55,27 @@
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Feature Support</span></p>
-                <ul class="current">
+                <ul>
                     <li class="toctree-l1"><a class="reference internal" href="../supported_types/">Types</a>
                     </li>
-                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Entities</a>
-    <ul class="current">
-    </ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../supported_entities/">Entities</a>
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Reference</span></p>
-                <ul>
+                <ul class="current">
                     <li class="toctree-l1"><a class="reference internal" href="../cli/">CLI</a>
                     </li>
                     <li class="toctree-l1"><a class="reference internal" href="../public_api/">API</a>
                     </li>
-                    <li class="toctree-l1"><a class="reference internal" href="../comment_directives/">Comment Directives</a>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Comment Directives</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#exclude">Exclude</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                     </li>
                 </ul>
                 <p class="caption"><span class="caption-text">Examples</span></p>
@@ -107,14 +113,14 @@
     
       
         
-          <li>Feature Support &raquo;</li>
+          <li>Reference &raquo;</li>
         
       
     
-    <li>Entities</li>
+    <li>Comment Directives</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/olirice/nebulo/edit/master/docs/supported_entities.md"> Edit on olirice/nebulo</a>
+        <a href="https://github.com/olirice/nebulo/edit/master/docs/comment_directives.md"> Edit on olirice/nebulo</a>
       
     </li>
   </ul>
@@ -124,13 +130,37 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="supported-entities">Supported Entities</h1>
-<p>There is automatic reflection support for:</p>
+                <h1 id="comment-directives">Comment Directives</h1>
+<p>Some SQL comments are interpreted as directives and impact how nebulo reflects database entities.</p>
+<h2 id="exclude">Exclude</h2>
+<p><code>@exclude ...</code></p>
+<p>The exclude directive can be applied to tables, views, functions, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following verbs.</p>
+<p><strong>Allowed Verbs:</strong></p>
 <ul>
-<li>Tables</li>
-<li>Views</li>
-<li>Functions</li>
+<li>insert</li>
+<li>update</li>
+<li>delete</li>
+<li>read</li>
 </ul>
+<p>For example, the directive <code>@exclude delete, update</code> would make the entity immutable.</p>
+<h4 id="example">Example</h4>
+<p>The following examples show how you could exclude a column named <code>password_hash</code> from being exposed through the GraphQL API using SQL or SQLAlchemy.</p>
+<p><strong>SQL</strong></p>
+<div class="sql codehilite"><pre><span></span><code><span class="k">create</span> <span class="k">table</span> <span class="n">account</span> <span class="p">(</span>
+    <span class="n">username</span> <span class="nb">text</span> <span class="k">not</span> <span class="k">null</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">password_hash</span> <span class="nb">text</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="k">comment</span> <span class="k">on</span> <span class="k">column</span> <span class="n">account</span><span class="p">.</span><span class="n">password_hash</span> <span class="k">is</span> <span class="n">E</span><span class="s1">&#39;@exclude insert, update, delete, read&#39;</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>SQLAlchemy</strong></p>
+<div class="python codehilite"><pre><span></span><code><span class="k">class</span> <span class="nc">Account</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;account&quot;</span>
+
+    <span class="n">username</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">password_hash</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude insert, update, delete, read&quot;</span><span class="p">)</span>
+</code></pre></div>
               
             </div>
           </div>
@@ -138,10 +168,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../cli/" class="btn btn-neutral float-right" title="CLI">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../sqlalchemy_interop/" class="btn btn-neutral float-right" title="SQLAlchemy Interop">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../supported_types/" class="btn btn-neutral" title="Types"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../public_api/" class="btn btn-neutral" title="API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -167,10 +197,10 @@
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../supported_types/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../public_api/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../cli/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../sqlalchemy_interop/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
