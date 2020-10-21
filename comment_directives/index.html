@@ -130,19 +130,29 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="comment-directives">Comment Directives</h1>
+                <h1 id="comment-directives-experimental">Comment Directives (Experimental)</h1>
 <p>Some SQL comments are interpreted as directives and impact how nebulo reflects database entities.</p>
 <h2 id="exclude">Exclude</h2>
 <p><code>@exclude ...</code></p>
-<p>The exclude directive can be applied to tables, views, functions, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following verbs.</p>
-<p><strong>Allowed Verbs:</strong></p>
+<p>The exclude directive can be applied to tables, views, functions, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following.</p>
+<p><strong>Column Allowed Params:</strong></p>
 <ul>
-<li>insert</li>
+<li>create</li>
+<li>read</li>
 <li>update</li>
 <li>delete</li>
+</ul>
+<p><strong>Table/View Allowed Params:</strong></p>
+<ul>
+<li>create</li>
 <li>read</li>
+<li>read_one</li>
+<li>read_all</li>
+<li>update</li>
+<li>delete</li>
 </ul>
 <p>For example, the directive <code>@exclude delete, update</code> would make the entity immutable.</p>
+<p>Note: that <code>read</code> is equivalent to <code>read_one</code> and <code>read_all</code> together.</p>
 <h4 id="example">Example</h4>
 <p>The following examples show how you could exclude a column named <code>password_hash</code> from being exposed through the GraphQL API using SQL or SQLAlchemy.</p>
 <p><strong>SQL</strong></p>
@@ -151,7 +161,7 @@
     <span class="n">password_hash</span> <span class="nb">text</span> <span class="k">not</span> <span class="k">null</span><span class="p">,</span>
 <span class="p">);</span>
 
-<span class="k">comment</span> <span class="k">on</span> <span class="k">column</span> <span class="n">account</span><span class="p">.</span><span class="n">password_hash</span> <span class="k">is</span> <span class="n">E</span><span class="s1">&#39;@exclude insert, update, delete, read&#39;</span><span class="p">;</span>
+<span class="k">comment</span> <span class="k">on</span> <span class="k">column</span> <span class="n">account</span><span class="p">.</span><span class="n">password_hash</span> <span class="k">is</span> <span class="n">E</span><span class="s1">&#39;@exclude create, read, update, delete&#39;</span><span class="p">;</span>
 </code></pre></div>
 
 <p><strong>SQLAlchemy</strong></p>
@@ -159,7 +169,7 @@
     <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;account&quot;</span>
 
     <span class="n">username</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">password_hash</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude insert, update, delete, read&quot;</span><span class="p">)</span>
+    <span class="n">password_hash</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;@exclude create, read, update, delete&quot;</span><span class="p">)</span>
 </code></pre></div>
               
             </div>
