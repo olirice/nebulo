@@ -1,4 +1,4 @@
-# Comment Directives
+# Comment Directives (Experimental)
 
 Some SQL comments are interpreted as directives and impact how nebulo reflects database entities.
 
@@ -8,16 +8,28 @@ Some SQL comments are interpreted as directives and impact how nebulo reflects d
 `@exclude ...`
 
 
-The exclude directive can be applied to tables, views, functions, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following verbs.
+The exclude directive can be applied to tables, views, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following.
 
-**Allowed Verbs:**
+**Column Allowed Params:**
 
-- insert
+- create
+- read
 - update
 - delete
+
+**Table/View Allowed Params:**
+
+- create
 - read
+- read_one
+- read_all
+- update
+- delete
+
 
 For example, the directive `@exclude delete, update` would make the entity immutable.
+
+Note: that `read` is equivalent to `read_one` and `read_all` together.
 
 
 #### Example
@@ -32,7 +44,7 @@ create table account (
 	password_hash text not null,
 );
 
-comment on column account.password_hash is E'@exclude insert, update, delete, read';
+comment on column account.password_hash is E'@exclude create, read, update, delete';
 ```
 
 
@@ -42,5 +54,5 @@ class Account(Base):
     __tablename__ = "account"
 
     username = Column(Text, primary_key=False)
-    password_hash = Column(Text, comment="@exclude insert, update, delete, read")
+    password_hash = Column(Text, comment="@exclude create, read, update, delete")
 ```

@@ -23,9 +23,9 @@ create table account (
 	created_at timestamp without time zone default (now() at time zone 'utc')
 );
 -- Do not expose the "password_hash" column
-comment on column account.password_hash is E'@exclude insert, update, delete, read';
+comment on column account.password_hash is E'@exclude create, update, delete, read';
 -- Hide createAccount mutation, so we can provide our own to handle "password_hash"
-comment on table account is E'@exclude insert';
+comment on table account is E'@exclude create';
 
 -- Allow the anonymous user to create and read and account
 grant insert on table public.account to anon_api_user;

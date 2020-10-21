@@ -54,7 +54,7 @@ def input_type_factory(sqla_model: TableProtocol) -> TableInputType:
 
     attrs = {}
     for column in get_columns(sqla_model):
-        if not Config.exclude_insert(column):
+        if not Config.exclude_create(column):
             field_key = Config.column_name_mapper(column)
             attrs[field_key] = convert_column_to_input(column)
     return TableInputType(result_name, attrs, description=f"An input for mutations affecting {relevant_type_name}.")

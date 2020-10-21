@@ -47,16 +47,17 @@ def sqla_models_to_graphql_schema(
     # Tables
     for sqla_model in sqla_models:
 
-        if not Config.exclude_read(sqla_model):
+        if not Config.exclude_read_one(sqla_model):
             # e.g. account(nodeId: NodeID)
             single_name = snake_to_camel(get_table_name(sqla_model), upper=False)
             query_fields[single_name] = table_field_factory(sqla_model, resolver)
 
+        if not Config.exclude_read_all(sqla_model):
             # e.g. allAccounts(first: Int, last: Int ....)
             connection_name = "all" + snake_to_camel(to_plural(get_table_name(sqla_model)), upper=True)
             query_fields[connection_name] = connection_field_factory(sqla_model, resolver)
 
-        if not Config.exclude_insert(sqla_model):
+        if not Config.exclude_create(sqla_model):
             # e.g. createAccount(input: CreateAccountInput)
             mutation_fields.update(create_entrypoint_factory(sqla_model, resolver=resolver))
 

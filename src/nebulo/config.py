@@ -78,7 +78,14 @@ class Config:
     @staticmethod
     def _exclude_check(
         entity: Union[TableProtocol, Column],
-        operation: Union[Literal["read"], Literal["insert"], Literal["update"], Literal["delete"]],
+        operation: Union[
+            Literal["read"],
+            Literal["create"],
+            Literal["update"],
+            Literal["delete"],
+            Literal["read_one"],
+            Literal["read_all"],
+        ],
     ) -> bool:
         """Shared SQL comment parsing logic for excludes"""
         comment: str = get_comment(entity)
@@ -90,21 +97,31 @@ class Config:
 
     @classmethod
     def exclude_read(cls, entity: Union[TableProtocol, Column]) -> bool:
-        """Should the entity be excluded from reads?"""
+        """Should the entity be excluded from reads? e.g. entity(nodeId ...) and allEntities(...)"""
         return cls._exclude_check(entity, "read")
 
     @classmethod
-    def exclude_insert(cls, entity: Union[TableProtocol, Column]) -> bool:
-        """Should the entity be excluded from inserts?"""
+    def exclude_read_one(cls, entity: Union[TableProtocol, Column]) -> bool:
+        """Should the entity be excluded from reads? e.g. entity(nodeId ...)"""
+        return any([cls._exclude_check(entity, "read_one"), cls.exclude_read(entity)])
+
+    @classmethod
+    def exclude_read_all(cls, entity: Union[TableProtocol, Column]) -> bool:
+        """Should the entity be excluded from reads? e.g. allEntities(...)"""
+        return any([cls._exclude_check(entity, "read_all"), cls.exclude_read(entity)])
+
+    @classmethod
+    def exclude_create(cls, entity: Union[TableProtocol, Column]) -> bool:
+        """Should the entity be excluded from create mutations?"""
         # Views do not support insert
         if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
             return True
 
-        return cls._exclude_check(entity, "insert")
+        return cls._exclude_check(entity, "create")
 
     @classmethod
     def exclude_update(cls, entity: Union[TableProtocol, Column]) -> bool:
-        """Should the entity be excluded from updates?"""
+        """Should the entity be excluded from update mutations?"""
 
         # Views do not support updates
         if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
@@ -114,7 +131,7 @@ class Config:
 
     @classmethod
     def exclude_delete(cls, entity: Union[TableProtocol, Column]) -> bool:
-        """Should the entity be excluded from deletes?"""
+        """Should the entity be excluded from delete mutations?"""
 
         # Views do not support deletes
         if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore

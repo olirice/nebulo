@@ -6,7 +6,7 @@ create table person(
     created_at timestamp
 );
 
-comment on column person.created_at is E'@exclude insert, update';
+comment on column person.created_at is E'@exclude create, update';
 comment on column person.email is E'@exclude update';
 comment on column person.dob is E'@exclude read';
 """

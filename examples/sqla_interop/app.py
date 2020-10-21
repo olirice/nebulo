@@ -24,13 +24,13 @@ Base = declarative_base()
 class Author(Base):
     __tablename__ = "author"
 
-    id = Column(Integer, primary_key=True, comment="@exclude insert, update")
+    id = Column(Integer, primary_key=True, comment="@exclude create, update")
     name = Column(Text, nullable=False)
     created_at = Column(
         DateTime,
         nullable=False,
         server_default=sql_text("now()"),
-        comment="@exclude insert, update",
+        comment="@exclude create, update",
     )
 
     books = relationship("Book", uselist=True)
@@ -39,14 +39,14 @@ class Author(Base):
 class Book(Base):
     __tablename__ = "book"
 
-    id = Column(Integer, primary_key=True, comment="@exclude insert, update")
+    id = Column(Integer, primary_key=True, comment="@exclude create, update")
     title = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey("author.id"), nullable=False)
     created_at = Column(
         DateTime,
         nullable=False,
         default=sql_text("now()"),
-        comment="@exclude insert, update",
+        comment="@exclude create, update",
     )
 
     author = relationship("Author")
