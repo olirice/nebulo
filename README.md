@@ -32,7 +32,7 @@
 
 [Reflect](https://en.wikipedia.org/wiki/Reflection_(computer_programming)) a highly performant [GraphQL](https://graphql.org/learn/) API from an existing [PostgreSQL](https://www.postgresql.org/) database.
 
-Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases wtih 0 code or can be added to existing [SQLAlchemy](https://www.sqlalchemy.org/) projects.
+Nebulo is a python library for building GraphQL APIs on top of PostgreSQL. It has a command line interface for reflecting databases with 0 code or can be added to existing [SQLAlchemy](https://www.sqlalchemy.org/) projects.
 
 
 ## TL;DR
