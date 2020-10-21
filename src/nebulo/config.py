@@ -91,8 +91,11 @@ class Config:
         comment: str = get_comment(entity)
         lines = comment.split("\n")
         for line in lines:
-            if "@exclude" in line and operation in line:
-                return True
+            if "@exclude" in line:
+                operations_dirty = line[len("@exclude") :].split(",")
+                operations_clean = {x.strip() for x in operations_dirty}
+                if operation in operations_clean:
+                    return True
         return False
 
     @classmethod
