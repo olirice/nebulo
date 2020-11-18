@@ -1,5 +1,5 @@
 from inspect import isclass
-from typing import Type, Union
+from typing import Optional, Type, Union
 
 from nebulo.env import EnvManager
 from nebulo.sql.inspect import get_comment, get_table_name
@@ -33,8 +33,15 @@ class Config:
         """to_upper -> ToUpper"""
         return snake_to_camel(sql_function.name, upper=True)
 
-    @staticmethod
-    def table_type_name_mapper(sqla_table: TableProtocol) -> str:
+    @classmethod
+    def table_type_name_mapper(cls, sqla_table: TableProtocol) -> str:
+        table_comment = get_comment(sqla_table)
+
+        # If an @name directive exists, use it
+        maybe_name: Optional[str] = cls.read_name_directive(table_comment)
+        if maybe_name:
+            return maybe_name
+
         table_name = get_table_name(sqla_table)
         return snake_to_camel(table_name)
 
@@ -44,9 +51,32 @@ class Config:
         type_name = cls.table_type_name_mapper(sqla_table)
         return type_name[0].lower() + type_name[1:]
 
+    @classmethod
+    def column_name_mapper(cls, column: Column) -> str:
+        """Return the type name with the first character lower case"""
+        column_comment = get_comment(column)
+
+        # If an @name directive exists, use it
+        maybe_name: Optional[str] = cls.read_name_directive(column_comment)
+        if maybe_name:
+            return maybe_name
+
+        column_key = column.key
+        type_name = snake_to_camel(column_key)
+        return type_name[0].lower() + type_name[1:]
+
     @staticmethod
-    def column_name_mapper(column: Column) -> str:
-        return snake_to_camel(column.name, upper=False)
+    def read_name_directive(comment: str) -> Optional[str]:
+        """Returns the name following a @name comment directive"""
+        lines = comment.split("\n")
+        for line in lines:
+            line = line.strip()
+            if line.startswith("@name"):
+                line = line.lstrip("@name")
+                name = line.strip()
+                if name:
+                    return name
+        return None
 
     @staticmethod
     def enum_name_mapper(enum: Type[postgresql.base.ENUM]) -> str:

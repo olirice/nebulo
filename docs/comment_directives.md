@@ -4,9 +4,11 @@ Some SQL comments are interpreted as directives and impact how nebulo reflects d
 
 ## Exclude
 
-
+*Usage*
 `@exclude ...`
 
+
+*Description*
 
 The exclude directive can be applied to tables, views, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following.
 
@@ -56,3 +58,16 @@ class Account(Base):
     username = Column(Text, primary_key=False)
     password_hash = Column(Text, comment="@exclude create, read, update, delete")
 ```
+
+## Name
+
+*Usage*
+
+   `@name <name>`
+
+
+*Description*
+
+Overrides the GraphQL type's associated with the commented entity. The directive can be applied to tables, views, table columns, or view columns.
+
+For example, the directive `@ename ShippingAddress` on an `address` table would result in the GraphQL type being named `ShippingAddress`.
