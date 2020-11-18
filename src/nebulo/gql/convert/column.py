@@ -24,6 +24,7 @@ from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel
 from sqlalchemy import Column, types
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.sql import sqltypes
 from sqlalchemy.sql.type_api import TypeEngine
 
 UnknownType = ScalarType(name="UnknownString", serialize=str)
@@ -37,6 +38,7 @@ CIDRType = ScalarType(name="CIDR", serialize=str)
 
 SQLA_TO_GQL = {
     types.Boolean: Boolean,
+    sqltypes.BOOLEAN: Boolean,
     # Integer
     types.Integer: Int,
     types.INTEGER: Int,
@@ -77,6 +79,8 @@ def convert_type(sqla_type: TypeEngine):
         from .table import table_factory
 
         return table_factory(sqla_type)
+
+    print(type_class)
 
     # TODO(OR): Enums
     return SQLA_TO_GQL.get(type_class, String)
