@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
+from nebulo.sql.inspect import get_constraints
+from nebulo.sql.reflection.constraint_comments import populate_constraint_comment
 from nebulo.sql.reflection.function import SQLFunction, reflect_functions
 from nebulo.sql.reflection.names import rename_table, rename_to_many_collection, rename_to_one_collection
 from nebulo.sql.reflection.types import reflect_composites
@@ -54,6 +56,13 @@ def reflect_sqla_models(engine: Engine, schema: str = "public") -> Tuple[List[Ta
 
     # Reflect functions, allowing composite types
     functions = reflect_functions(engine=engine, schema=schema, type_map=type_map)
+
+    # Populate constraint.info['comment'] for constraint comments becasue
+    # sqlalchemy does not support constraint comment reflection
+    # https://github.com/sqlalchemy/sqlalchemy/issues/5667
+    for table in tables:
+        for constraint in get_constraints(table):
+            populate_constraint_comment(engine=engine, constraint=constraint)
 
     # SQLA Tables
     return (tables, functions)

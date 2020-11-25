@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from itertools import zip_longest
-from typing import Any, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from nebulo.exceptions import SQLParseError
 from sqlalchemy import cast, func
 from sqlalchemy import text as sql_text
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import sqltypes
 from sqlalchemy.sql.type_api import TypeEngine
 
@@ -53,7 +54,7 @@ class SQLFunction:
         return sqla_func(*call_sig)
 
 
-def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
+def reflect_functions(engine: Engine, schema: str, type_map: Dict) -> List[SQLFunction]:
     """Get a list of functions available in the database"""
 
     # TODO: Support default arguments
@@ -79,9 +80,15 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
     select
         n.nspname as function_schema,
         p.proname as function_name,
-        proargnames arg_names,
-        (select array_agg((select typnamespace::regnamespace::text from pg_type where oid=type_oid)) from unnest(proargtypes) x(type_oid)) arg_types_schema,
-        (select array_agg(type_oid::regtype::text) from unnest(proargtypes) x(type_oid)) arg_types,
+        coalesce(proargnames, '{}'::text[]) arg_names,
+        coalesce(
+            (select array_agg((select typnamespace::regnamespace::text from pg_type where oid=type_oid)) from unnest(proargtypes) x(type_oid)),
+            '{}'::text[]
+        ) as arg_types_schema,
+        coalesce(
+            (select array_agg(type_oid::regtype::text) from unnest(proargtypes) x(type_oid)),
+            '{}'::text[]
+        ) arg_types,
         t.typnamespace::regnamespace::text as return_type_schema,
         t.typname as return_type,
         p.provolatile = 'i' is_immutable
@@ -111,10 +118,7 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
         pg_return_type_name,
         is_immutable,
     ) in rows:
-        arg_names = arg_names or []
-        pg_arg_types = pg_arg_types or []
         pg_arg_names = [arg_name for arg_name, _ in zip_longest(arg_names, pg_arg_types, fillvalue=None)]
-        arg_type_schemas = arg_type_schemas or []
         sqla_arg_types = [
             type_map.get(pg_type_name, sqltypes.NULLTYPE)
             for pg_type_schema, pg_type_name in zip(arg_type_schemas, pg_arg_types) or []
@@ -125,12 +129,12 @@ def reflect_functions(engine, schema, type_map) -> List[SQLFunction]:
             schema=func_schema,
             name=func_name,
             arg_names=pg_arg_names,
-            arg_pg_types=pg_arg_types,
+            arg_pg_types=[str(x) for x in pg_arg_types],  # noop to silence mypy
             arg_sqla_types=sqla_arg_types,
             return_sqla_type=sqla_return_type,
             return_pg_type_schema=pg_return_type_schema,
             return_pg_type=pg_return_type_name,
-            is_immutable=is_immutable,
+            is_immutable=bool(is_immutable),
         )
         functions.append(function)
 

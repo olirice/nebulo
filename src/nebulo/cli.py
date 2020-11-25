@@ -27,7 +27,7 @@ def main(**kwargs):
 def run(connection, schema, host, port, jwt_identifier, jwt_secret, reload, workers, default_role):
     """Run the GraphQL Web Server"""
     if reload and workers > 1:
-        print("Reload not supported with workers > 1")
+        click.echo("Reload not supported with workers > 1")
     else:
 
         with EnvManager(

@@ -1,19 +1,20 @@
 # pylint: disable=unsubscriptable-object, invalid-name
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import lru_cache, singledispatch
 from typing import List, Union
 
 from nebulo.sql.table_base import TableProtocol
-from sqlalchemy import Column
+from sqlalchemy import Column, Table
 from sqlalchemy import inspect as sql_inspect
 from sqlalchemy.orm import RelationshipProperty
+from sqlalchemy.sql.schema import Constraint
 
 
 @lru_cache()
-def get_table_name(sqla_model: TableProtocol) -> str:
+def get_table_name(entity: Union[Table, TableProtocol]) -> str:
     """Name of the table"""
-    return str(sqla_model.__table__.name)
+    return str(to_table(entity).name)
 
 
 @lru_cache()
@@ -34,11 +35,10 @@ def get_columns(sqla_model: TableProtocol) -> List[Column]:
     return [x for x in sqla_model.__table__.columns]
 
 
-def get_comment(entity: Union[TableProtocol, Column]) -> str:
-    """Get comment on entity"""
-    if isinstance(entity, TableProtocol):
-        return entity.__table__.comment or ""
-    return entity.comment or ""
+@lru_cache()
+def get_constraints(entity: Union[TableProtocol, Table]) -> List[Constraint]:
+    """Retrieve constraints from a table"""
+    return list(to_table(entity).constraints)
 
 
 @lru_cache()
@@ -48,3 +48,26 @@ def is_nullable(relationship: RelationshipProperty) -> bool:
         if local_col.nullable or remote_col.nullable:
             return True
     return False
+
+
+def to_table(entity: Union[Table, TableProtocol]) -> Table:
+    """Coerces Table and ORM Table to Table"""
+    if isinstance(entity, Table):
+        return entity
+    return entity.__table__
+
+
+@singledispatch
+def get_comment(entity: Union[Table, TableProtocol, Column, Constraint]) -> str:
+    """Get comment on entity"""
+    if isinstance(entity, TableProtocol):
+        return to_table(entity).comment or ""
+    elif isinstance(entity, Table):
+        return entity.comment or ""
+    elif isinstance(entity, Column):
+        return entity.comment or ""
+    elif isinstance(entity, Constraint):
+        if hasattr(entity, "info"):
+            return getattr(entity, "info").get("comment") or ""
+        return ""
+    raise ValueError("invalid entity passed to get_comment")

@@ -80,8 +80,6 @@ def convert_type(sqla_type: TypeEngine):
 
         return table_factory(sqla_type)
 
-    print(type_class)
-
     # TODO(OR): Enums
     return SQLA_TO_GQL.get(type_class, String)
 
