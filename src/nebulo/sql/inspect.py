@@ -1,7 +1,7 @@
 # pylint: disable=unsubscriptable-object, invalid-name
 from __future__ import annotations
 
-from functools import lru_cache, singledispatch
+from functools import lru_cache
 from typing import List, Union
 
 from nebulo.sql.table_base import TableProtocol
@@ -57,7 +57,6 @@ def to_table(entity: Union[Table, TableProtocol]) -> Table:
     return entity.__table__
 
 
-@singledispatch
 def get_comment(entity: Union[Table, TableProtocol, Column, Constraint]) -> str:
     """Get comment on entity"""
     if isinstance(entity, TableProtocol):

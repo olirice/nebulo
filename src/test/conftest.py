@@ -9,6 +9,7 @@ import pytest
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.starlette import create_app
 from nebulo.sql import table_base
+from nebulo.sql.reflection.constraint_comments import reflect_all_constraint_comments
 from nebulo.sql.reflection.manager import reflect_sqla_models
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -20,6 +21,11 @@ SQL_DOWN = """
     CREATE SCHEMA public;
     GRANT ALL ON SCHEMA public TO nebulo_user;
 """
+
+
+@pytest.fixture(scope="function", autouse=True)
+def clear_caches():
+    reflect_all_constraint_comments.cache_clear()
 
 
 @pytest.fixture(scope="session")
