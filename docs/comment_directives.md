@@ -11,14 +11,7 @@ Some SQL comments are interpreted as directives and impact how nebulo reflects d
 
 *Description*
 
-The exclude directive can be applied to tables, views, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following.
-
-**Column Allowed Params:**
-
-- create
-- read
-- update
-- delete
+The exclude directive can be applied to tables, views, foreign keys, table columns, or view columns. The mutation or query you'd like the entity to be omitted from may be described with a combination of the following.
 
 **Table/View Allowed Params:**
 
@@ -29,11 +22,22 @@ The exclude directive can be applied to tables, views, table columns, or view co
 - update
 - delete
 
+**Column Allowed Params:**
+
+- create
+- read
+- update
+- delete
+
+**Foreign Key Allowed Params:**
+- read
+
 
 For example, the directive `@exclude delete, update` would make the entity immutable.
 
-Note: that `read` is equivalent to `read_one` and `read_all` together.
-
+Note:
+- that `read` is equivalent to `read_one` and `read_all` together.
+- `@exclude connection` prevents any associations to the table via foreign keys
 
 #### Example
 

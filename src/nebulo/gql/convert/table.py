@@ -8,7 +8,7 @@ from nebulo.gql.alias import Argument, Field, NonNull, TableType
 from nebulo.gql.convert.column import convert_column
 from nebulo.gql.relay.node_interface import ID, NodeInterface
 from nebulo.gql.resolve.resolvers.default import default_resolver
-from nebulo.sql.inspect import get_columns, get_relationships, is_nullable
+from nebulo.sql.inspect import get_columns, get_foreign_key_constraint_from_relationship, get_relationships, is_nullable
 from nebulo.sql.table_base import TableProtocol
 from sqlalchemy.orm import interfaces
 
@@ -53,6 +53,11 @@ def table_factory(sqla_model: TableProtocol) -> TableType:
         for relationship in get_relationships(sqla_model):
             direction = relationship.direction
             to_sqla_model = relationship.mapper.class_
+
+            fkey_constraint = get_foreign_key_constraint_from_relationship(relationship)
+            if fkey_constraint and Config.exclude_read(fkey_constraint):
+                continue
+
             relationship_is_nullable = is_nullable(relationship)
 
             # Name of the attribute on the model
@@ -66,6 +71,7 @@ def table_factory(sqla_model: TableProtocol) -> TableType:
 
             # Otherwise, set it up as a connection
             elif direction in (interfaces.ONETOMANY, interfaces.MANYTOMANY):
+
                 connection_field = connection_field_factory(
                     to_sqla_model, resolver=default_resolver, not_null=relationship_is_nullable
                 )

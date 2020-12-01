@@ -193,7 +193,7 @@ class Config:
     ###########
 
     @classmethod
-    def exclude_read(cls, entity: Union[TableProtocol, Column]) -> bool:
+    def exclude_read(cls, entity: Union[TableProtocol, Column, RelationshipProperty]) -> bool:
         """Should the entity be excluded from reads? e.g. entity(nodeId ...) and allEntities(...)"""
         return cls._exclude_check(entity, "read")
 

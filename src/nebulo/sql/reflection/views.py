@@ -5,6 +5,7 @@ from typing import List
 
 from nebulo.sql.reflection.names import rename_table
 from nebulo.sql.table_base import TableProtocol
+from parse import parse
 from sqlalchemy import ForeignKeyConstraint, PrimaryKeyConstraint, Table
 from sqlalchemy import text as sql_text
 
@@ -94,33 +95,46 @@ def reflect_virtual_foreign_key_constraints(comment: str) -> List[ForeignKeyCons
     """
     Reflects virtual foreign key constraints from view comments
 
-    Format:
-        @foreign_key (variant_id, key2) references public.variant (id, key2)'
+    Formats:
+        @foreign_key (variant_id, key2) references public.variant (id, key2)
+        @foreign_key (variant_id, key2) references public.variant (id, key2) LocalName RemoteName
 
     """
+    templates = [
+        "@foreign_key ({local_col_csv}) references {schema_name}.{remote_table_name} ({remote_col_csv}) {local_name_for_remote} {remote_name_for_local}",
+        "@foreign_key ({local_col_csv}) references {schema_name}.{remote_table_name} ({remote_col_csv})",
+    ]
+
     foreign_keys = []
     for row in comment.split("\n"):
         if not row.startswith("@foreign_key"):
             continue
 
-        # Remove all spaces
-        # Ex: @foreign_key(variant_id)referencespublic.variant(id)
-        row = row.replace(" ", "")
+        # Remove right spaces
+        row = row.rstrip()
 
-        # Ex: (variant_id)referencespublic.variant(id)
-        row = row.strip("@foreign_key")
-
-        # Ex: ('(variant_id', 'public.variant(id)')
-        local, remote = row.split(")references")
+        for template in templates:
+            match = parse(template, row)
+            if match:
+                break
+        else:
+            raise ValueError("invalid comment directive")
 
         # Ex: ['variant_id']
-        local_col_names = local.lstrip("(").split(",")
+        local_col_names = [x.strip() for x in match.named["local_col_csv"].split(",")]
+        remote_col_names = [x.strip() for x in match.named["remote_col_csv"].split(",")]
 
-        # Ex: ('public.variant', 'id)')
-        remote_table, remote = remote.lstrip("references").split("(")
-        remote_col_names = remote.strip().rstrip(")").split(",")
+        remote_table = match.named["schema_name"].strip() + "." + match.named["remote_table_name"].strip()
 
         remote_qualified_col_names = [f"{remote_table}.{remote_col_name}" for remote_col_name in remote_col_names]
-        foreign_key = ForeignKeyConstraint(local_col_names, remote_qualified_col_names)
+
+        local_name = match.named.get("local_name_for_remote")
+        remote_name = match.named.get("remote_name_for_local")
+
+        foreign_key = ForeignKeyConstraint(
+            local_col_names,
+            remote_qualified_col_names,
+            info={"comment": f"@name {local_name} {remote_name}" if local_name else ""},
+        )
         foreign_keys.append(foreign_key)
     return foreign_keys
