@@ -50,6 +50,7 @@ def field_name_to_column(sqla_model: TableProtocol, gql_field_name: str) -> Colu
 @lru_cache()
 def field_name_to_relationship(sqla_model: TableProtocol, gql_field_name: str) -> RelationshipProperty:
     for relationship in get_relationships(sqla_model):
+
         if Config.relationship_name_mapper(relationship) == gql_field_name:
             return relationship
     raise Exception(f"No relationship corresponding to field {gql_field_name}")

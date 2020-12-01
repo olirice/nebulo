@@ -1,12 +1,14 @@
 from inspect import isclass
-from typing import Optional, Type, Union
+from typing import Optional, Tuple, Type, Union
 
 from nebulo.env import EnvManager
-from nebulo.sql.inspect import get_comment, get_table_name
+from nebulo.sql.inspect import get_comment, get_foreign_key_constraint_from_relationship, get_table_name, to_table
 from nebulo.sql.reflection.function import SQLFunction
 from nebulo.sql.reflection.views import ViewMixin
 from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel, to_plural
+from parse import parse
+from sqlalchemy import Table
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.schema import Column
@@ -83,17 +85,75 @@ class Config:
         return snake_to_camel((enum.name or "") + "_enum", upper=True)
 
     @staticmethod
-    def relationship_name_mapper(relationship: RelationshipProperty) -> str:
+    def read_foreign_key_comment_directive(comment: str) -> Tuple[Optional[str], Optional[str]]:
+        """Accepts a comment from a foreign key backing a sqlalchemy RelationshipProperty and searches for
+        a comment directive defining what the names for each side of the relationship should be for the local
+        and remote graphql models on either side.
+
+        Template:
+            @name {local_name_for_remote} {remote_name_for_local}
+
+        Example:
+            Given:
+                ALTER TABLE public.address
+                ADD CONSTRAINT fk_address_to_person
+                FOREIGN KEY (address_id)
+                REFERENCES public.person (id);
+
+            The comment
+
+                COMMENT ON CONSTRAINT fk_address_to_person
+                ON public.addresses
+                IS E'@name Person Addresses';
+
+            Would give:
+                - The "Person" graphql model an "Addresses" field
+                - The "Adress" graphql model a "Person" field
+        """
+
+        template = "@name {local_name_for_remote} {remote_name_for_local}"
+
+        lines = comment.split("\n")
+        for line in lines:
+            line = line.strip()
+            match = parse(template, line)
+            if match is not None:
+                local_name, remote_name = match.named.values()
+                return (
+                    local_name,
+                    remote_name,
+                )
+        return None, None
+
+    @classmethod
+    def relationship_name_mapper(cls, relationship: RelationshipProperty) -> str:
+
+        # Check the foreign key backing the relationship for a comment defining its name
+        backing_fkey = get_foreign_key_constraint_from_relationship(relationship)
+        if backing_fkey is not None:
+            comment: str = get_comment(backing_fkey)
+            local_name, remote_name = cls.read_foreign_key_comment_directive(comment)
+            if local_name and remote_name:
+                backing_fkey_parent_entity = backing_fkey.parent  # type: ignore
+                fkey_parent_table: Table = to_table(backing_fkey_parent_entity)
+                relationship_parent_table: Table = to_table(relationship.parent)
+                if fkey_parent_table == relationship_parent_table:
+                    return local_name
+                return remote_name
+
+        # No comment directive existed, reverting to default
+
         # Union of Mapper or ORM instance
-        referred_cls = relationship.argument
-        if hasattr(referred_cls, "class_"):
-            referred_cls = referred_cls.class_
-        elif callable(referred_cls):
-            referred_cls = referred_cls()
+        referred_cls = to_table(relationship.argument)
+        # if hasattr(referred_cls, "class_"):
+        #    referred_cls = referred_cls.class_
+        # elif callable(referred_cls):
+        #    referred_cls = referred_cls()
 
         referred_name = get_table_name(referred_cls)
         cardinal_name = to_plural(referred_name) if relationship.uselist else referred_name
         camel_name = snake_to_camel(cardinal_name, upper=False)
+
         relationship_name = (
             camel_name
             + "By"
@@ -127,6 +187,10 @@ class Config:
                 if operation in operations_clean:
                     return True
         return False
+
+    ###########
+    # Exclude #
+    ###########
 
     @classmethod
     def exclude_read(cls, entity: Union[TableProtocol, Column]) -> bool:

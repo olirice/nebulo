@@ -16,3 +16,9 @@ def snake_to_camel(s: str, upper: bool = True) -> str:
     if upper:
         s = s[:1].upper() + s[1:]
     return s
+
+
+@lru_cache()
+def camel_to_snake(s: str) -> str:
+    """Convert from CamelCase to snake_case"""
+    return "".join(["_" + i.lower() if i.isupper() else i for i in s]).lstrip("_")
