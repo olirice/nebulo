@@ -8,7 +8,7 @@ from nebulo.sql.reflection.views import ViewMixin
 from nebulo.sql.table_base import TableProtocol
 from nebulo.text_utils import snake_to_camel, to_plural
 from parse import parse
-from sqlalchemy import Table
+from sqlalchemy import ForeignKeyConstraint, Table
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import RelationshipProperty
 from sqlalchemy.sql.schema import Column
@@ -167,7 +167,7 @@ class Config:
     # SQL Comment Config
     @staticmethod
     def _exclude_check(
-        entity: Union[TableProtocol, Column],
+        entity: Union[TableProtocol, Column, ForeignKeyConstraint],
         operation: Union[
             Literal["read"],
             Literal["create"],
@@ -193,7 +193,7 @@ class Config:
     ###########
 
     @classmethod
-    def exclude_read(cls, entity: Union[TableProtocol, Column, RelationshipProperty]) -> bool:
+    def exclude_read(cls, entity: Union[TableProtocol, Column, ForeignKeyConstraint]) -> bool:
         """Should the entity be excluded from reads? e.g. entity(nodeId ...) and allEntities(...)"""
         return cls._exclude_check(entity, "read")
 
