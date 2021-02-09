@@ -24,8 +24,6 @@ def get_jwt_claims_handler(secret: Optional[str]) -> Callable[[Request], Awaitab
             if scheme.lower() == "bearer":
                 contents = jwt.decode(token, secret, algorithms=["HS256"])
                 return contents
-        except ValueError:
-            # The user probably forgot to prepend "Bearer "
             raise HTTPException(401, "Invalid JWT Authorization header. Expected 'Bearer <JWT>'")
         except DecodeError:
             raise HTTPException(401, "Invalid JWT credentials")

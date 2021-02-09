@@ -73,6 +73,7 @@ class Account(Base):
 
 *Description*
 
-Overrides the GraphQL type's associated with the commented entity. The directive can be applied to tables, views, table columns, or view columns.
 
-For example, the directive `@ename ShippingAddress` on an `address` table would result in the GraphQL type being named `ShippingAddress`.
+The name directive can be applied to tables, and table columns to override the GraphQL type's associated with the commented entity.
+
+For example, the directive `@name ShippingAddress` on an `address` table would result in the GraphQL type being named `ShippingAddress`.
