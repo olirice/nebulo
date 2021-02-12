@@ -55,7 +55,7 @@ setup(
         "psycopg2-binary==2.8.*",
         "pyjwt==1.7.*",
         "starlette==0.14.*",
-        "sqlalchemy>=1.3.*",
+        "sqlalchemy==1.3.*",
         "typing-extensions",
         "uvicorn==0.13.*",
     ],
