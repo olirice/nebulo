@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import typing
+from dataclasses import dataclass
 
 from graphql.execution.execute import get_field_def
 from graphql.execution.values import get_argument_values
@@ -20,7 +23,18 @@ def field_to_type(field):
     return field
 
 
+@dataclass
 class ASTNode:
+
+    name: str
+    alias: str
+    return_type: FieldNode
+    parent: typing.Optional[ASTNode]
+    parent_type: typing.Optional[typing.Any]
+    args: typing.Dict[str, typing.Any]
+    path: typing.Tuple[str, ...]
+    fields: typing.List[ASTNode]
+
     def __init__(
         self,
         field_node: FieldNode,
@@ -46,9 +60,9 @@ class ASTNode:
         self.parent: typing.Optional[ASTNode] = parent
         self.parent_type = parent_type
         self.args: typing.Dict[str, typing.Any] = _args
-        self.path: typing.List[str] = parent.path + [self.name] if parent is not None else ["root"]
+        self.path = parent.path + (self.name,) if parent is not None else ("root",)
 
-        def from_selection_set(selection_set):
+        def from_selection_set(selection_set) -> typing.Generator[ASTNode, None, None]:
             for selection_ast in selection_set.selections:
 
                 # Handle fragments
