@@ -14,7 +14,8 @@ $$ language sql;
 
 -- solve query root type nust not be none issue
 create table trash (
-    id serial primary key
+    id serial primary key,
+    name text
 );
 """
 

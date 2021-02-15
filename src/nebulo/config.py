@@ -214,6 +214,10 @@ class Config:
         if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
             return True
 
+        if isinstance(entity, Column) and entity.primary_key:
+            # Primary keys must be server generated
+            return True
+
         return cls._exclude_check(entity, "create")
 
     @classmethod
@@ -222,6 +226,10 @@ class Config:
 
         # Views do not support updates
         if isclass(entity) and issubclass(entity, ViewMixin):  # type: ignore
+            return True
+
+        if isinstance(entity, Column) and entity.primary_key:
+            # Primary keys can not be upadted via the API
             return True
 
         return cls._exclude_check(entity, "update")

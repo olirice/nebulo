@@ -5,16 +5,17 @@ from sqlalchemy.dialects.postgresql import base as pg_base
 
 CREATE_FUNCTION = """
 create table account(
-    id int primary key
+    id int primary key,
+    name text
 );
 
-insert into account (id)
-values (1);
+insert into account (id, name)
+values (1, 'oli');
 
 create function get_account(id int)
 returns account
 as $$
-    select 1;
+    select (1, 'oli')::account;
 $$ language sql;
 """
 
@@ -29,7 +30,7 @@ def test_reflect_function_returning_row(engine, session):
     res = session.execute(get_account.to_executable([1])).first()
     print(res)
     # psycopg2 does not know how to deserialize row results
-    assert res == ("(1)",)
+    assert res == ("(1,oli)",)
 
 
 def test_integration_function(client_builder):

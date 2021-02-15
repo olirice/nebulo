@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from functools import lru_cache
 
 from nebulo.config import Config
@@ -26,7 +27,7 @@ updateAccount(input: UpdateAccountInput!):
 
 
 @lru_cache()
-def update_entrypoint_factory(sqla_model: TableProtocol, resolver) -> Field:
+def update_entrypoint_factory(sqla_model: TableProtocol, resolver) -> t.Dict[str, Field]:
     """updateAccount"""
     relevant_type_name = Config.table_type_name_mapper(sqla_model)
     name = f"update{relevant_type_name}"

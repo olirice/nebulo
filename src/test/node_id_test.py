@@ -2,7 +2,8 @@ from nebulo.gql.relay.node_interface import NodeIdStructure
 
 SQL_UP = """
 CREATE TABLE account (
-    id serial primary key
+    id serial primary key,
+    name text
 );
 
 INSERT INTO account (id) VALUES

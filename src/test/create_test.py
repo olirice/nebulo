@@ -8,9 +8,9 @@ CREATE TABLE account (
 );
 
 INSERT INTO account (id, name) VALUES
-(1, 'oliver'),
-(2, 'rachel'),
-(3, 'sophie');
+(10, 'oliver'),
+(20, 'rachel'),
+(30, 'sophie');
 """
 
 
@@ -22,7 +22,6 @@ mutation {
   createAccount(input: {
     clientMutationId: "a44df",
     account: {
-      id: 31,
       name: "Buddy"
     }
   }) {
@@ -42,6 +41,6 @@ mutation {
     payload = json.loads(resp.text)
     print(payload)
     assert isinstance(payload["data"]["createAccount"]["account"], dict)
-    assert payload["data"]["createAccount"]["account"]["dd"] == 31
+    assert payload["data"]["createAccount"]["account"]["dd"]
     assert payload["data"]["createAccount"]["account"]["name"] == "Buddy"
     assert len(payload["errors"]) == 0
