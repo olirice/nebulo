@@ -23,7 +23,7 @@ def field_to_type(field):
     return field
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class ASTNode:
 
     name: str

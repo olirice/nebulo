@@ -78,17 +78,6 @@ def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[Binary
     return join_clause
 
 
-def to_pkey_clause(field: ASTNode, pkey_eq: typing.List[str]) -> typing.List[BinaryExpression]:
-    local_table = field.return_type.sqla_model
-    local_table_name = get_table_name(field.return_type.sqla_model)
-    pkey_cols = get_primary_key_columns(local_table)
-
-    res = []
-    for col, val in zip(pkey_cols, pkey_eq):
-        res.append(literal_column(f"{local_table_name}.{col.name}") == val)
-    return res
-
-
 def to_limit(field: ASTNode) -> int:
     args = field.args
     default = 20
@@ -110,8 +99,8 @@ def to_conditions_clause(field: ASTNode) -> typing.List[BinaryExpression]:
 
     res = []
     for field_name, val in conditions.items():
-        column_name = field_name_to_column(return_sqla_model, field_name).name
-        res.append(literal_column(f"{local_table_name}.{column_name}") == val)
+        column = field_name_to_column(return_sqla_model, field_name)
+        res.append(column == val)
     return res
 
 
