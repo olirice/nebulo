@@ -19,10 +19,19 @@ ENV = EnvManager.get_environ()
 
 class Config:
 
+    # SQLAlchemy connection string
     CONNECTION = ENV.get("NEBULO_CONNECTION")
+
+    # schema name
     SCHEMA = ENV.get("NEBULO_SCHEMA")
+
+    # SQL Composite type identifier e.g. api.jwt_key
     JWT_IDENTIFIER = ENV.get("NEBULO_JWT_IDENTIFIER")
+
+    # JWT secret key
     JWT_SECRET = ENV.get("NEBULO_JWT_SECRET")
+
+    # Default SQL role to use for unauthenticated users
     DEFAULT_ROLE = ENV.get("NEBULO_DEFAULT_ROLE")
 
     @staticmethod

@@ -4,7 +4,7 @@ from sqlalchemy import Text, func, literal, select
 from sqlalchemy.sql.selectable import Select
 
 
-def build_claims(jwt_claims: typing.Dict[str, typing.Any], default_role: typing.Optional[str]) -> Select:
+def build_claims(jwt_claims: typing.Dict[str, typing.Any], default_role: typing.Optional[str] = None) -> Select:
     """Emit statement to set 'jwt.claims.<key>' for each claim in claims dict
     and a 'role'
     """
