@@ -10,7 +10,10 @@ def build_claims(jwt_claims: typing.Dict[str, typing.Any], default_role: typing.
     """
     # Setting local variables an not be done in prepared statement
     # since JWT claims are signed, literal binds should be ok
+
+    # Keys with special meaning that should not be prefixed with 'jwt.claims'
     role_key = "role"
+    special_keys = {role_key, "statement_timeout"}
 
     # Set all jwt.claims.*
     claims = [
@@ -20,23 +23,22 @@ def build_claims(jwt_claims: typing.Dict[str, typing.Any], default_role: typing.
             True,
         )
         for claim_key, claim_value in jwt_claims.items()
+        if claim_key not in special_keys
     ]
-    # Set all role claim if exists from jwt
-    if role_key in jwt_claims:
-        claims.append(
-            func.set_config(
-                func.cast(role_key, Text()),
-                func.cast(str(jwt_claims[role_key]), Text()),
-                True,
+
+    # Set role to default if exists and not provided by jwt
+    if role_key not in jwt_claims and default_role is not None:
+        jwt_claims[role_key] = default_role
+
+    # Set keys with special meaning to postgres
+    for key in special_keys:
+        if key in jwt_claims:
+            claims.append(
+                func.set_config(
+                    func.cast(key, Text()),
+                    func.cast(str(jwt_claims[key]), Text()),
+                    True,
+                )
             )
-        )
-    # Set default role from config if provided
-    elif default_role is not None:
-        claims.append(
-            func.set_config(
-                func.cast(role_key, Text()),
-                func.cast(str(default_role), Text()),
-                True,
-            )
-        )
+
     return select(claims)
