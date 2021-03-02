@@ -157,6 +157,98 @@ def test_retrieve_1_before_cursor(client_builder):
     assert result["data"]["allAccounts"]["edges"][0]["node"]["id"] == 1
 
 
+def test_first_without_after(client_builder):
+    client = client_builder(SQL_UP)
+    gql_query = f"""
+    {{
+        allAccounts {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    # Get a cursor to 2nd entry
+    cursor = result["data"]["allAccounts"]["edges"][1]["cursor"]
+    print(cursor)
+
+    # Query for 1 item after the cursor
+    gql_query = f"""
+    {{
+        allAccounts(first: 1) {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    assert result["data"]["allAccounts"]["edges"][0]["node"]["id"] == 1
+
+
+def test_last_without_before(client_builder):
+    client = client_builder(SQL_UP)
+    gql_query = f"""
+    {{
+        allAccounts {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    # Get a cursor to 2nd entry
+    cursor = result["data"]["allAccounts"]["edges"][1]["cursor"]
+    print(cursor)
+
+    # Query for 1 item after the cursor
+    gql_query = f"""
+    {{
+        allAccounts(last: 1) {{
+            edges {{
+                cursor
+                node {{
+                    id
+                }}
+            }}
+        }}
+    }}
+    """
+    with client:
+        resp = client.post("/", json={"query": gql_query})
+    assert resp.status_code == 200
+    result = resp.json()
+    assert result["errors"] == []
+
+    assert result["data"]["allAccounts"]["edges"][0]["node"]["id"] == 7
+
+
 def test_pagination_order(client_builder):
     client = client_builder(SQL_UP)
     gql_query = f"""

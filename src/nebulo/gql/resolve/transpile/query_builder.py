@@ -257,6 +257,8 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
     if first is not None and last is not None:
         raise ValueError('only one of "first" and "last" may be provided')
 
+    pkey_cols = get_primary_key_columns(sqla_model)
+
     if after_cursor or before_cursor:
         local_table_name = get_table_name(field.return_type.sqla_model)
         cursor_table_name = before_cursor.table_name if before_cursor else after_cursor.table_name
@@ -273,8 +275,6 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
 
         if cursor_table_name != local_table_name:
             raise ValueError("Invalid cursor for entity type")
-
-        pkey_cols = get_primary_key_columns(sqla_model)
 
         pagination_clause = tuple_(*[core_model_ref.c[col.name] for col in pkey_cols]).op(
             ">" if after_cursor is not None else "<"
@@ -307,7 +307,7 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         )
         .select_from(core_model_ref)
         .where(pagination_clause)
-        .order_by(*(reverse_order_clause if is_page_before else order_clause), *order_clause)
+        .order_by(*(reverse_order_clause if (is_page_before or last is not None) else order_clause), *order_clause)
         .limit(cast(limit + 1, Integer()))
     ).alias(block_name + "_p1")
 
@@ -318,7 +318,9 @@ def connection_block(field: ASTNode, parent_name: typing.Optional[str]) -> Alias
         .limit(limit)
     ).alias(block_name + "_p2")
 
-    ordering = desc(literal_column("_row_num")) if is_page_before else asc(literal_column("_row_num"))
+    ordering = (
+        desc(literal_column("_row_num")) if (is_page_before or last is not None) else asc(literal_column("_row_num"))
+    )
 
     p3_block = (select(p2_block.c).select_from(p2_block).order_by(ordering)).alias(block_name + "_p3")
 
