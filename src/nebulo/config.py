@@ -34,6 +34,9 @@ class Config:
     # Default SQL role to use for unauthenticated users
     DEFAULT_ROLE = ENV.get("NEBULO_DEFAULT_ROLE")
 
+    # Default number of entries per API page
+    DEFAULT_PAGE_SIZE = int(ENV.get("NEBULO_DEFAULT_PAGE_SIZE", 20))
+
     @staticmethod
     def function_name_mapper(sql_function: SQLFunction) -> str:
         """to_upper -> toUpper"""

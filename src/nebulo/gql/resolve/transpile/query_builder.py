@@ -80,7 +80,7 @@ def to_join_clause(field: ASTNode, parent_block_name: str) -> typing.List[Binary
 
 def to_limit(field: ASTNode) -> int:
     args = field.args
-    default = 20
+    default = Config.DEFAULT_PAGE_SIZE
     first = int(args.get("first", default))
     last = int(args.get("last", default))
     limit = min(first, last, default)
