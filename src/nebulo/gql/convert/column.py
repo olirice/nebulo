@@ -4,6 +4,7 @@ from __future__ import annotations
 import typing
 from functools import lru_cache
 
+from cachetools import LRUCache, cached
 from nebulo.config import Config
 from nebulo.gql.alias import (
     Boolean,
@@ -73,14 +74,13 @@ def convert_type(sqla_type: TypeEngine):
         return composite_factory(type_class)
 
     if issubclass(type_class, postgresql.base.ENUM):
-        return enum_factory(sqla_type)
+        return enum_factory(sqla_type)  # type: ignore
 
     if isinstance(sqla_type, TableProtocol):
         from .table import table_factory
 
         return table_factory(sqla_type)
 
-    # TODO(OR): Enums
     return SQLA_TO_GQL.get(type_class, String)
 
 
@@ -93,7 +93,7 @@ def convert_column(column: Column) -> Field:
     return Field(return_type, resolve=default_resolver)
 
 
-@lru_cache()
+@cached(LRUCache(maxsize=9999), key=lambda x: "{x.schema}-{x.name}")  # type: ignore
 def enum_factory(sqla_enum: typing.Type[postgresql.base.ENUM]) -> EnumType:
     name = Config.enum_name_mapper(sqla_enum)
     return EnumType(name=name, values={val: val for val in sqla_enum.enums})
