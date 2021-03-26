@@ -2,7 +2,7 @@ import sqlalchemy as sqla
 from nebulo.gql import alias
 from nebulo.gql.convert.column import convert_type
 from sqlalchemy import MetaData
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy.dialects.postgresql import ARRAY, DOUBLE_PRECISION
 from sqlalchemy.ext.automap import automap_base
 
 SQL_UP = """
@@ -17,7 +17,8 @@ CREATE TABLE public.refl_numer (
     col_7 numeric(10,2),
     col_8 real,
     col_9 double precision,
-    col_10 boolean
+    col_10 boolean,
+    col_11 boolean[]
 );
 """
 
@@ -42,6 +43,7 @@ def test_reflect_types(engine, session):
     assert isinstance(tab.col_8.type, sqla.REAL)
     assert isinstance(tab.col_9.type, DOUBLE_PRECISION)
     assert isinstance(tab.col_10.type, sqla.Boolean)
+    assert isinstance(tab.col_11.type, ARRAY)
 
 
 def test_reflect_gql_boolean(engine, session):

@@ -15,6 +15,7 @@ from nebulo.gql.alias import (
     InputField,
     InputObjectType,
     Int,
+    List,
     NonNull,
     ScalarType,
     String,
@@ -76,6 +77,9 @@ def convert_type(sqla_type: TypeEngine):
     if issubclass(type_class, postgresql.base.ENUM):
         return enum_factory(sqla_type)  # type: ignore
 
+    if issubclass(type_class, postgresql.ARRAY):
+        return array_factory(sqla_type)  # type: ignore
+
     if isinstance(sqla_type, TableProtocol):
         from .table import table_factory
 
@@ -97,6 +101,11 @@ def convert_column(column: Column) -> Field:
 def enum_factory(sqla_enum: typing.Type[postgresql.base.ENUM]) -> EnumType:
     name = Config.enum_name_mapper(sqla_enum)
     return EnumType(name=name, values={val: val for val in sqla_enum.enums})
+
+
+@lru_cache()
+def array_factory(sqla_array: typing.Type[postgresql.ARRAY]) -> List:
+    return List(convert_type(sqla_array.item_type))
 
 
 @lru_cache()
