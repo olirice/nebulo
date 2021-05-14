@@ -1,9 +1,9 @@
 from typing import Any, Awaitable, Dict, Optional
 
-from databases import Database
 from graphql import graphql as graphql_exec
 from nebulo.gql.alias import Schema
 from nebulo.server.jwt import get_jwt_claims_handler
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -14,7 +14,7 @@ __all__ = ["get_graphql_route"]
 
 def get_graphql_route(
     gql_schema: Schema,
-    database: Database,
+    engine: AsyncEngine,
     path: str = "/",
     jwt_secret: Optional[str] = None,
     default_role: Optional[str] = None,
@@ -25,7 +25,7 @@ def get_graphql_route(
     **Parameters**
 
     * **schema**: _Schema_ = A GraphQL-core schema
-    * **database**: _Database_ = Database object for communicating with PostgreSQL
+    * **engine**: _AsyncEngine_ = Database connection object for communicating with PostgreSQL
     * **path**: _str_ = URL path to serve GraphQL from, e.g. '/'
     * **jwt_secret**: _str_ = secret key used to encrypt JWT contents
     * **default_role**: _str_ = Default SQL role to use when serving unauthenticated requests
@@ -41,7 +41,7 @@ def get_graphql_route(
         jwt_claims = await get_jwt_claims(request)
         request_context = {
             "request": request,
-            "database": database,
+            "engine": engine,
             "query": query,
             "variables": variables,
             "jwt_claims": jwt_claims,

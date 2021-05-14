@@ -56,6 +56,7 @@ def test_integration_function(client_builder):
 
     with client:
         resp = client.post("/", json={"query": query})
+    print(resp.text)
     result = json.loads(resp.text)
     assert resp.status_code == 200
     assert result["errors"] == []

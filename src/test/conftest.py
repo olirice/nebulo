@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 from __future__ import annotations
 
-import asyncio
 import importlib
 from typing import Callable, Optional
 
@@ -26,14 +25,6 @@ SQL_DOWN = """
 @pytest.fixture(scope="function", autouse=True)
 def clear_caches():
     reflect_all_constraint_comments.cache_clear()
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """ Event loop for use testing async functions """
-    loop = asyncio.get_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="session")
@@ -88,7 +79,7 @@ def schema_builder(session, engine):
 
 
 @pytest.fixture
-def app_builder(event_loop, connection_str, session) -> Callable[[str, Optional[str], Optional[str]], Starlette]:
+def app_builder(connection_str, session) -> Callable[[str, Optional[str], Optional[str]], Starlette]:
     def build(sql: str, jwt_identifier: Optional[str] = None, jwt_secret: Optional[str] = None) -> Starlette:
         session.execute(sql)
         session.commit()
