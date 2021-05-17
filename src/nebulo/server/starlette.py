@@ -1,11 +1,11 @@
 from typing import Optional
 
-from databases import Database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphiql_route, get_graphql_route
 from nebulo.sql.reflection.manager import reflect_sqla_models
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
@@ -24,7 +24,8 @@ def create_app(
     if not (jwt_identifier is not None) == (jwt_secret is not None):
         raise Exception("jwt_token_identifier and jwt_secret must be provided together")
 
-    database = Database(connection)
+    async_connection = connection.replace("postgresql://", "postgresql+asyncpg://")
+    engine = create_async_engine(async_connection)
     # Reflect database to sqla models
     sqla_engine = create_engine(connection)
     sqla_models, sql_functions = reflect_sqla_models(engine=sqla_engine, schema=schema)
@@ -41,7 +42,7 @@ def create_app(
 
     graphql_route = get_graphql_route(
         gql_schema=gql_schema,
-        database=database,
+        engine=engine,
         jwt_secret=jwt_secret,
         default_role=default_role,
         path=graphql_path,
@@ -54,8 +55,8 @@ def create_app(
         routes=[graphql_route, graphiql_route],
         middleware=[Middleware(CORSMiddleware, allow_origins=["*"])],
         exception_handlers={HTTPException: http_exception},
-        on_startup=[database.connect],
-        on_shutdown=[database.disconnect],
+        on_startup=[engine.connect],
+        on_shutdown=[engine.dispose],
     )
 
     return _app

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing
 
 from flupy import flu
@@ -19,20 +18,20 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
     """Awaitable GraphQL Entrypoint resolver
 
     Expects:
-        info.context['database'] to contain a databases.Database
+        info.context['engine'] to contain an sqlalchemy.ext.asyncio.AsyncEngine
     """
     context = info.context
-    database = context["database"]
+    engine = context["engine"]
     default_role = context["default_role"]
     jwt_claims = context["jwt_claims"]
 
     tree = parse_resolve_info(info)
 
-    async with database.transaction():
+    async with engine.begin() as trans:
         # Set claims for transaction
         if jwt_claims or default_role:
             claims_stmt = build_claims(jwt_claims, default_role)
-            await database.execute(claims_stmt)
+            await trans.execute(claims_stmt)
 
         result: typing.Dict[str, typing.Any]
 
@@ -50,8 +49,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                 stmt = select([literal_column(c.name).label(c.name) for c in core_table.c]).select_from(func_alias)  # type: ignore
                 stmt_alias = stmt.alias()
                 node_id_stmt = select([to_node_id_sql(return_sqla_model, stmt_alias).label("nodeId")]).select_from(stmt_alias)  # type: ignore
-                stmt_result = await database.fetch_one(query=node_id_stmt)
-                row = json.loads(stmt_result["nodeId"])
+                ((row,),) = await trans.execute(node_id_stmt)
                 node_id = NodeIdStructure.from_dict(row)
 
                 # Add nodeId to AST and query
@@ -60,13 +58,12 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                     query_tree.args["nodeId"] = node_id
                     base_query = sql_builder(query_tree)
                     query = sql_finalize(query_tree.alias, base_query)
-                    coro_rvf_result: str = (await database.fetch_one(query=query))["json"]
-                    stmt_result = json.loads(coro_rvf_result)
+                    ((stmt_result,),) = await trans.execute(query)
                 else:
                     stmt_result = {}
             else:
                 stmt = select([func_call.label("result")])
-                stmt_result = await database.fetch_one(query=stmt)
+                (stmt_result,) = await trans.execute(stmt)
 
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
             mutation_id_alias = next(
@@ -77,8 +74,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
 
         elif isinstance(tree.return_type, MutationPayloadType):
             stmt = build_mutation(tree)
-            stmt_result = await database.fetch_one(query=stmt)
-            row = json.loads(stmt_result["nodeId"])
+            ((row,),) = await trans.execute(stmt)
             node_id = NodeIdStructure.from_dict(row)
 
             maybe_mutation_id = tree.args["input"].get("clientMutationId")
@@ -95,8 +91,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
                 query_tree.args["nodeId"] = node_id
                 base_query = sql_builder(query_tree)
                 query = sql_finalize(query_tree.alias, base_query)
-                coro_result: str = (await database.fetch_one(query=query))["json"]
-                sql_result = json.loads(coro_result)
+                ((sql_result,),) = await trans.execute(query)
             result = {
                 tree.alias: {**sql_result, mutation_id_alias: maybe_mutation_id},
                 mutation_id_alias: maybe_mutation_id,
@@ -106,12 +101,7 @@ async def async_resolver(_, info: ResolveInfo, **kwargs) -> typing.Any:
         elif isinstance(tree.return_type, (ObjectType, ScalarType)):
             base_query = sql_builder(tree)
             query = sql_finalize(tree.name, base_query)
-
-            query_coro = database.fetch_one(query=query)
-            coro_result = await query_coro
-            str_result: str = coro_result["json"]  # type: ignore
-
-            query_json_result = json.loads(str_result)
+            ((query_json_result,),) = await trans.execute(query)
 
             if isinstance(tree.return_type, ScalarType):
                 # If its a scalar, unwrap the top level name
