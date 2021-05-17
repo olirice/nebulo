@@ -1,10 +1,10 @@
 import uvicorn
-from databases import Database
 from nebulo.gql.sqla_to_gql import sqla_models_to_graphql_schema
 from nebulo.server.exception import http_exception
 from nebulo.server.routes import get_graphiql_route, get_graphql_route
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, create_engine
 from sqlalchemy import text as sql_text
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from starlette.applications import Starlette
@@ -60,13 +60,14 @@ class Book(Base):
 def create_app(connection_str, sqla_models) -> Starlette:
     """Create the Starlette app"""
 
-    database = Database(connection_str)
+    async_connection = connection_str.replace("postgresql://", "postgresql+asyncpg://")
+    engine = create_async_engine(async_connection)
 
     # Convert sqla models to graphql schema
     gql_schema = sqla_models_to_graphql_schema(sqla_models)
 
     # Build the Starlette GraphQL Route
-    graphql_route = get_graphql_route(gql_schema=gql_schema, database=database)
+    graphql_route = get_graphql_route(gql_schema=gql_schema, engine=engine)
 
     # Build the Starlette GraphiQL Route and StaticFiles
     graphiql_route = get_graphiql_route()
@@ -75,8 +76,8 @@ def create_app(connection_str, sqla_models) -> Starlette:
     _app = Starlette(
         routes=[graphql_route, graphiql_route],
         exception_handlers={HTTPException: http_exception},
-        on_startup=[database.connect],
-        on_shutdown=[database.disconnect],
+        on_startup=[engine.connect],
+        on_shutdown=[engine.dispose],
     )
 
     return _app
