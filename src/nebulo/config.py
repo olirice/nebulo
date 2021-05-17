@@ -139,7 +139,6 @@ class Config:
 
     @classmethod
     def relationship_name_mapper(cls, relationship: RelationshipProperty) -> str:
-
         # Check the foreign key backing the relationship for a comment defining its name
         backing_fkey = get_foreign_key_constraint_from_relationship(relationship)
         if backing_fkey is not None:
@@ -153,14 +152,14 @@ class Config:
                     return local_name
                 return remote_name
 
-        # No comment directive existed, reverting to default
+        # No comment directive existed, checking if argument is string
+        # Occurs when using human annotated sqla models vs reflection
+        if isinstance(relationship.argument, str):
+            return relationship.argument
 
+        # No string provided name, reverting to default
         # Union of Mapper or ORM instance
         referred_cls = to_table(relationship.argument)
-        # if hasattr(referred_cls, "class_"):
-        #    referred_cls = referred_cls.class_
-        # elif callable(referred_cls):
-        #    referred_cls = referred_cls()
 
         referred_name = get_table_name(referred_cls)
         cardinal_name = to_plural(referred_name) if relationship.uselist else referred_name

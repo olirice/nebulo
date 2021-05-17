@@ -33,7 +33,7 @@ class Author(Base):
         comment="@exclude create, update",
     )
 
-    books = relationship("Book", uselist=True)
+    books = relationship("Book", uselist=True, backref="Author")
 
 
 class Book(Base):
@@ -49,7 +49,7 @@ class Book(Base):
         comment="@exclude create, update",
     )
 
-    author = relationship("Author")
+    # backref: Author
 
 
 #################################
