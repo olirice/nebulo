@@ -52,7 +52,7 @@ setup(
         "graphql-core==3.1.*",
         "inflect==4.1.*",
         "parse==1.15.*",
-        "psycopg2-binary>=2.8.*",
+        "psycopg2-binary>2.8",
         "pyjwt==1.7.*",
         "starlette==0.14.*",
         "sqlalchemy>=1.4.0",
